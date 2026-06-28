@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.lesachtal.briefing</string>
+
+  <!-- Runs in your laptop's local time. In the Alps that's CEST, so this fires at 08:20 festival time. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>8</integer>
+    <key>Minute</key><integer>20</integer>
+  </dict>
+
+  <!-- login shell so `uv` is found on PATH; edit the path to where you put the files -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>cd "$HOME/lesachtal" &amp;&amp; uv run briefing.py &gt;&gt; run.log 2&gt;&amp;1</string>
+  </array>
+
+  <!-- if the laptop is asleep at 08:20, run as soon as it wakes -->
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

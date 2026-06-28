@@ -1,0 +1,91 @@
+{
+  "_meta": {
+    "purpose": "Vetted quote + fact pools for the daily briefing coda. Routine picks per that day's repertoire and rotates without repeats across the fortnight.",
+    "tiers": {
+      "sourced": "Specific documented origin — letter, interview, or book+page. Safe to print verbatim with citation.",
+      "attributed": "Widely attributed but anecdotal or secondary-sourced. Print only with a hedge ('reportedly', 'a story has it').",
+      "standard": "Uncontroversial biographical fact, Wikipedia/Grove-grade. For facts, not quotes."
+    },
+    "rules": [
+      "Never promote a quote above its tier. If it isn't 'sourced', say so or skip it.",
+      "Bruch has no Wikiquote page and no online full-text bio; expand his pool only from Fifield, Grove, or reputable features.",
+      "On Bruch days, prefer two facts over a thin quote.",
+      "verify:true means confirm wording/page before relying on it."
+    ],
+    "topup": {
+      "dvorak": "en.wikiquote.org Sourced section",
+      "brahms": "en.wikiquote.org Sourced section",
+      "faure": "en.wikiquote.org Sourced section",
+      "bruch": "Fifield, *Max Bruch: His Life and Works* (Boydell, 2005) — manual only"
+    }
+  },
+
+  "dvorak": {
+    "name": "Antonín Dvořák",
+    "_note": "Quotes verified against Šourek, Letters and Reminiscences (1954), page-cited.",
+    "quotes": [
+      {"text": "Well, remember: Mozart is sunshine!", "src": "To a pupil; recalled in Josef Michl, 'From Dvořák's School', in Šourek, Letters and Reminiscences, p. 140", "tier": "sourced", "tags": ["mozart", "teaching"], "note": "His pronouncement gazing out at the sky — genuine, not the folklore it's often taken for."},
+      {"text": "I look at the first page and can tell straight away whether it is the work of a dilettante or an artist.", "src": "Letter from New York, 1894; Šourek, p. 152", "tier": "sourced", "tags": ["judgement", "america"]},
+      {"text": "Forgive me for lacking a little in modesty, but I am only telling you what the American papers are constantly writing.", "src": "Letter from New York, 1894; Šourek, p. 152", "tier": "sourced", "tags": ["modesty", "humor"]},
+      {"text": "You know very well that I love my country above all else and am glad to offer my humble services where they are needed and wanted.", "src": "Letter to Dr. J. Tragy, New York, 16 Nov 1893; Šourek, p. 172", "tier": "sourced", "tags": ["patriotism", "homesick"]},
+      {"text": "It is an attention I am due my countrymen to make it possible for them to sing my songs in the Czech language.", "src": "Letter to Simrock; Šourek, p. 58", "tier": "sourced", "tags": ["czech", "simrock"]},
+      {"text": "In the negro melodies of America I discover all that is needed for a great and noble school of music.", "src": "Interview by James Creelman, New York Herald, 21 May 1893", "tier": "sourced", "tags": ["america", "melody"], "note": "Documented but weighty — not a light morning quote; use with care."}
+    ],
+    "facts": [
+      {"text": "Before the fame, he earned his living for over a decade as an orchestral violist — much of it under Smetana at Prague's Provisional Theatre — which is why the inner voices in his quartets carry so much of the tune.", "src": "std. biography (Wikipedia/Grove)", "tier": "standard", "tags": ["viola", "smetana"]},
+      {"text": "Brahms championed him to the publisher Simrock, the break that launched his international career.", "src": "std. biography", "tier": "standard", "tags": ["brahms", "simrock"]},
+      {"text": "He spent the summer of 1893 — four months — in the Czech farming community of Spillville, Iowa, the retreat behind the 'American' Quartet.", "src": "Šourek, Letters and Reminiscences (letter, 16 Nov 1893), p. 172", "tier": "sourced", "tags": ["spillville", "america"]},
+      {"text": "His daughter Otýlie married his pupil Josef Suk in 1898; Suk was second violinist of the Bohemian Quartet.", "src": "std. biography", "tier": "standard", "tags": ["suk", "quartet"]}
+    ]
+  },
+
+  "brahms": {
+    "name": "Johannes Brahms",
+    "quotes": [
+      {"text": "On one stave, for a small instrument, the man writes a whole world of the deepest thoughts and most powerful feelings.", "src": "On Bach's Chaconne; letter to Clara Schumann, in Litzmann, Letters of Clara Schumann and Johannes Brahms", "tier": "sourced", "tags": ["bach", "chaconne"]},
+      {"text": "Your letters are like kisses.", "src": "Letter to Clara Schumann, 31 May 1856, in Litzmann", "tier": "sourced", "tags": ["clara", "letters"]},
+      {"text": "If there is anyone here whom I have not offended, I apologize.", "src": "Anecdotal; prefaced 'there is a story that…' in One Hundred Songs by Ten Masters (1917)", "tier": "attributed", "tags": ["humor"]},
+      {"text": "I should be glad if something occurred to me as a main idea that occurs to Dvořák only by the way.", "src": "Brahms on Dvořák, recalled by Josef B. Foerster; in Šourek, Letters and Reminiscences, p. 15", "tier": "sourced", "tags": ["dvorak", "praise"], "note": "A Brahms tribute TO Dvořák — a natural cross-link on a week with both."}
+    ],
+    "facts": [
+      {"text": "Hans von Bülow grouped him with Bach and Beethoven as the 'Three B's'.", "src": "std. biography", "tier": "standard", "tags": ["three-bs"]},
+      {"text": "A virtuoso pianist, he premiered many of his own works himself.", "src": "std. biography", "tier": "standard", "tags": ["pianist"]}
+    ]
+  },
+
+  "faure": {
+    "name": "Gabriel Fauré",
+    "quotes": [
+      {"text": "I always enjoy seeing sunlight play on the rocks, the water, the trees… I wish my music could show as much diversity.", "src": "Letter, in Marguerite Long, At the Piano with Gabriel Fauré", "tier": "sourced", "tags": ["nature", "light"]},
+      {"text": "In piano music one cannot use padding; one must pay in cash so that it is interesting all the time.", "src": "Letter, 2 Aug 1910, in Marguerite Long, At the Piano with Gabriel Fauré", "tier": "sourced", "tags": ["piano", "craft"]},
+      {"text": "I see death as a happy deliverance, an aspiration towards happiness above, rather than as a painful experience.", "src": "Interview with Louis Aguettant, 1902; in Orledge, Gabriel Fauré", "tier": "sourced", "tags": ["requiem", "death"]}
+    ],
+    "facts": [
+      {"text": "He wrote the First Piano Quartet (Op. 15) in 1876–79 around Marianne Viardot's breaking of their engagement — then replaced the finale wholesale in 1883.", "src": "Chamber Music Society of Lincoln Center; std.", "tier": "standard", "tags": ["pq1"]},
+      {"text": "Trained at the École Niedermeyer on plainchant and the church modes — the root of his unusually free, top-down harmony.", "src": "Chamber Music Society of Lincoln Center", "tier": "standard", "tags": ["harmony", "modes"]},
+      {"text": "A pupil of Saint-Saëns, he went on to teach Ravel and to run the Paris Conservatoire.", "src": "std. biography (Classic FM/Grove)", "tier": "standard", "tags": ["teaching"]}
+    ]
+  },
+
+  "bruch": {
+    "name": "Max Bruch",
+    "_note": "Best-sourced of the four — primary letters and scholarly facts from the Fifield loan, page-cited.",
+    "quotes": [
+      {"text": "I preferred three whole oratorios with choir and orchestra to three string quartets.", "src": "Letter to Fritz Simrock, 1897; Fifield, Max Bruch: His Life and Works, p. 322", "tier": "sourced", "tags": ["chamber", "simrock"], "note": "His disdain for chamber music — which is what makes the late Octet such a surprise."},
+      {"text": "For a publisher to earn money from chamber music was impossible, for the days of chamber music are long past and the last one to achieve anything significant in this area, Brahms, is gone.", "src": "Letter to Simrock, 1901; Fifield, p. 274", "tier": "sourced", "tags": ["chamber", "brahms"]},
+      {"text": "Spiritually my father retains his former freshness.", "src": "Margarethe Bruch (his daughter), family letter, 1920; Fifield, p. 322", "tier": "sourced", "tags": ["late-life"], "note": "About Bruch, not by him — written as she described his physical decline."}
+    ],
+    "facts": [
+      {"text": "The Octet (early 1920) capped an intense final burst of chamber music — two String Quintets in late 1919, then the Octet — modeled on Mendelssohn's but with a double bass in place of the second cello, for a darker sonority.", "src": "Fifield, p. 322", "tier": "sourced", "tags": ["octet", "mendelssohn"]},
+      {"text": "The only surviving manuscript parts of the Octet are in the hand of Gertrude Bruch, held in the BBC Music Library — how they got there is unknown.", "src": "Fifield, p. 322", "tier": "sourced", "tags": ["octet", "manuscript"]},
+      {"text": "Those surviving Octet parts are mislabeled Op. 97.", "src": "Fifield, p. 322", "tier": "sourced", "tags": ["octet", "opus"]},
+      {"text": "The late chamber works were probably written at the urging of Bruch's violinist friend Willy Hess.", "src": "Fifield, p. 322", "tier": "sourced", "tags": ["late", "hess"]},
+      {"text": "The Eight Pieces, Op. 83 (1909) — for clarinet, viola and piano, written for his clarinettist son Max Felix — were his first real return to chamber music in roughly half a century, since the Second String Quartet.", "src": "Fifield, pp. 292–293; Gramophone (son)", "tier": "sourced", "tags": ["op83", "son"]},
+      {"text": "His only other work in 1920, the year he died, was a Festpräludium for eleven winds and timpani.", "src": "Fifield, p. 322", "tier": "sourced", "tags": ["late"]},
+      {"text": "He died in 1920 — after the premieres of Pierrot lunaire and The Rite of Spring — yet stayed rooted in mid-nineteenth-century Romanticism; the Octet belongs to an older world than its date.", "src": "Fifield, pp. 325–326", "tier": "sourced", "tags": ["late", "context"]},
+      {"text": "Kol Nidrei (1880) led many to assume he was Jewish; on that mistaken basis the Nazis banned his music from 1933 — he was in fact Protestant.", "src": "std.; Fifield", "tier": "standard", "tags": ["kol-nidrei"]},
+      {"text": "He taught at the Berlin Hochschule, where Vaughan Williams was among his pupils.", "src": "Fifield, Max Bruch: His Life and Works", "tier": "standard", "tags": ["teaching", "vaughan-williams"]},
+      {"text": "He resented his fate as a 'one-work composer', forever in the shadow of the G-minor Violin Concerto and of Brahms.", "src": "Fifield; H-Net review", "tier": "standard", "tags": ["reputation"]}
+    ]
+  }
+}
