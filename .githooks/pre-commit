@@ -1,0 +1,9 @@
+#!/bin/sh
+# Refresh the sheet tab→gid map (app.js) before each commit. Network-tolerant:
+# if the fetch fails (offline in the Alps) the script exits non-zero and we keep
+# the existing map rather than blocking the commit. Enable once per clone with:
+#   git config core.hooksPath .githooks
+if command -v python3 >/dev/null 2>&1 && python3 scripts/update-gids.py; then
+  git add app.js
+fi
+exit 0

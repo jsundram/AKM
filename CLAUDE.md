@@ -28,6 +28,7 @@ Data sources:
 ## Constants (top of app.js)
 
 - `SID` — sheet id. Tab naming convention is **`Ddd M/D`**, no leading zeros (e.g. `Mon 6/29`). Confirmed against the live sheet.
+- `GID` — tab name → numeric gid, so the footer "source sheet ↗" link can deep-link to the day's actual tab (`/edit?gid=…#gid=…`). gids can't be fetched cross-origin at runtime, so they're baked in and **auto-maintained** — don't hand-edit (see *gid map* below).
 - `FEST = ["2026-06-29","2026-07-12"]` — drives day chips + the weather range. Day 1 = 6/29.
 - `LAT/LON = 46.70/12.85`, `TZ = Europe/Vienna`. The laptop is in the Alps, so local = festival time (no timezone math anywhere).
 - `MINE` — Jason's pieces → composer key: Dvořák Quartet→dvorak, Bruch Octet→bruch, Brahms Piano Quartet→brahms, Fauré Piano Quartet→faure. A rehearsal is "his" only on an exact phrase match (so "Dvořák Piano Quintet" and "Brahms String Quartet" correctly do **not** match).
@@ -45,7 +46,7 @@ Alpine palette; Fraunces (display) / IBM Plex Mono (data) / Inter (body). **Warm
 The parser has a Node harness (pure functions are exported when `app.js` is required outside a browser):
 
 ```
-node archive/parser-test.js   # if you keep one; the original passed 8/8 on the real Tuesday grid
+node archive/parser-test.js   # passes 10/10 on the real Tuesday grid (incl. morning all-hands above the room grid)
 ```
 
 `app.js` exports `{parse, rowsFrom, mins, norm, despace}` under Node and only calls `boot()` in a browser, so it's safe to `require`. Build a gviz-JSON fixture (`{table:{rows:[{c:[{v},…]}]}}`) and assert on `parse(rowsFrom(fixture))`. Verified behaviors to preserve: chronological sort by clock time (not string — "9:00" must precede "14:30"); meal venue spacing intact ("Mascha Wirt"); `despace` collapses only letter-spaced runs ("L U N C H"→"LUNCH"); evening faculty readings flagged, string quartets and Jason's own pieces specially tagged.
@@ -53,6 +54,18 @@ node archive/parser-test.js   # if you keep one; the original passed 8/8 on the 
 ## Deploy (browser or laptop)
 
 GitHub Pages, `main` / root. Relative paths throughout, so it works as a project page (`<you>.github.io/AKM/`). After deploy, open the URL **online once** so it caches, then Add to Home Screen. The one thing only verifiable live is the in-browser gviz fetch — if rehearsals render at the Pages URL, everything downstream is proven.
+
+## gid map (auto-maintained)
+
+`scripts/update-gids.py` probes the sheet's `htmlview` (which embeds every `name → gid`) and rewrites the `GID` literal in `app.js`. A **pre-commit hook** (`.githooks/pre-commit`) runs it on every commit and re-stages `app.js`, so the map self-heals when tabs are added/rebuilt. It's network-tolerant: if the fetch fails (offline) it keeps the existing map rather than blocking the commit — so you may commit a stale map offline; the next online commit fixes it.
+
+Enable the hook once per clone:
+
+```
+git config core.hooksPath .githooks
+```
+
+Run it by hand anytime: `python3 scripts/update-gids.py`. gids are stable across tab rename/reorder; only a from-scratch rebuild of the sheet changes them.
 
 ## Gotchas
 

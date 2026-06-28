@@ -5,9 +5,9 @@ const SID = "1AvNjAUQMFPjJAlwY4Day2MgHt5-2Vd8EDocpdxJQ6_A";
 // tab → gid, so the footer can deep-link to the day's actual sheet tab. gids are stable per
 // tab; probed from the sheet's htmlview (can't be fetched cross-origin at runtime). Sundays off.
 const GID = {"Mon 6/29":"1079055190","Tue 6/30":"385081621","Wed 7/1":"1231106928",
-  "Thu 7/2":"140636796","Fri 7/3":"1941915385","Sat 7/4":"1201647531","Mon 7/6":"1017105753",
-  "Tue 7/7":"839058497","Wed 7/8":"600713019","Thu 7/9":"636626947","Fri 7/10":"1243481570",
-  "Sat 7/11":"1506438549"};
+  "Thu 7/2":"140636796","Fri 7/3":"1941915385","Sat 7/4":"1201647531",
+  "Mon 7/6":"1017105753","Tue 7/7":"839058497","Wed 7/8":"600713019",
+  "Thu 7/9":"636626947","Fri 7/10":"1243481570","Sat 7/11":"1506438549"};
 const LAT = 46.70, LON = 12.85, TZ = "Europe/Vienna";
 const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusive
 const ROOMS = new Set(["A1","A2","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
