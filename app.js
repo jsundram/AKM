@@ -1,4 +1,4 @@
-// Lesachtal — pure-pull briefing PWA. Fetches the live sheet (gviz JSONP) + Open-Meteo
+// AKM — pure-pull briefing PWA. Fetches the live sheet (gviz JSONP) + Open-Meteo
 // client-side, renders the card, caches the whole festival week for offline use.
 
 const SID = "1AvNjAUQMFPjJAlwY4Day2MgHt5-2Vd8EDocpdxJQ6_A";
@@ -7,7 +7,8 @@ const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusi
 const ROOMS = new Set(["A1","A2","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
 const MINE = {"dvorak quartet":"dvorak","bruch octet":"bruch",
               "brahms piano quartet":"brahms","faure piano quartet":"faure"};
-const CK = "lesa-cache";
+const MEET = /Participant Tour|Info Meeting|Informational Meeting|Festival Meeting|Festival Informational/;
+const CK = "akm-cache";
 
 const $ = s => document.querySelector(s);
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
@@ -72,6 +73,9 @@ function parse(rows){
       day.meals.push([start,end,kind,venue]); continue;
     }
     const evening = U.includes("PRACTICE BLOCK") || U.includes("FREE READING");
+    // all-hands meetings can sit above the first room grid (cols still empty), so match per-row
+    const meet = cells.slice(li+1).filter(c => MEET.test(c));
+    if(meet.length){ for(const c of meet) day.allhands.push([start,end,c.split("\n").map(x=>x.trim()).filter(Boolean).join(" "),""]); continue; }
     for(const i in cols){
       const cell = cells[+i] || ""; if(!cell) continue;
       const lines = cell.split("\n").map(x=>x.trim()).filter(Boolean);
@@ -82,9 +86,6 @@ function parse(rows){
       const mt = lines.length ? lines[lines.length-1].match(/^(.*?)\s*[-–]\s*([PC])\b/) : null;
       if(mt && !fac){ coach=mt[1].trim(); tag=mt[2]; piece=lines.slice(0,-1).join(" ").trim()||piece; }
       const key = Object.keys(MINE).find(k => norm(piece).includes(k));
-      if(/Participant Tour|Info Meeting|Informational Meeting|Festival Meeting|Festival Informational/.test(text)){
-        day.allhands.push([start,end,piece,cols[i]]); continue;
-      }
       if(fac || evening){ day.evening.push([start,end,piece,cols[i],fac]); continue; }
       if(key && !fac) day.mine.push([start,end,piece,cols[i],coach,tag,MINE[key]]);
     }
@@ -206,7 +207,7 @@ function masthead(isoStr,eyebrow){
   const dd=d.getDate(), mon=d.toLocaleDateString("en-US",{month:"long"});
   const n=Math.round((d-new Date(FEST[0]+"T12:00:00"))/864e5)+1;
   const eb = eyebrow ? (n>=1?`${eyebrow} · Day ${n}`:eyebrow) : "";
-  return `<div class="masthead"><div class="eyebrow"><span>Daily Briefing</span><span>${esc(eb)}</span></div><h1 class="date"><span class="dow">${dow}</span>${dd} ${mon}</h1><div class="fest">Lesachtal Chamber Music Festival</div></div>`;
+  return `<div class="masthead"><div class="eyebrow"><span>Daily Briefing</span><span>${esc(eb)}</span></div><h1 class="date"><span class="dow">${dow}</span>${dd} ${mon}</h1><div class="fest">AKM Chamber Music Festival</div></div>`;
 }
 
 // ---- cache + state ----

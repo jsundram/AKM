@@ -2,7 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""Lesachtal daily briefing runner. Resolve today's tab, pull weather, pick from the
+"""AKM daily briefing runner. Resolve today's tab, pull weather, pick from the
 bank, render the template, deliver. Runs on the laptop (CEST) via launchd at 08:20.
 
   uv run briefing.py                       # today, live

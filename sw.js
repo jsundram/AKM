@@ -1,4 +1,4 @@
-const V = "lesa-v1";
+const V = "akm-v1";
 const SHELL = ["./", "./index.html", "./app.js", "./manifest.json",
                "./composer-bank.json", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 

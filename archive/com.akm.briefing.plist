@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.lesachtal.briefing</string>
+  <string>com.akm.briefing</string>
 
   <!-- Runs in your laptop's local time. In the Alps that's CEST, so this fires at 08:20 festival time. -->
   <key>StartCalendarInterval</key>
@@ -17,7 +17,7 @@
   <array>
     <string>/bin/zsh</string>
     <string>-lc</string>
-    <string>cd "$HOME/lesachtal" &amp;&amp; uv run briefing.py &gt;&gt; run.log 2&gt;&amp;1</string>
+    <string>cd "$HOME/akm" &amp;&amp; uv run briefing.py &gt;&gt; run.log 2&gt;&amp;1</string>
   </array>
 
   <!-- if the laptop is asleep at 08:20, run as soon as it wakes -->

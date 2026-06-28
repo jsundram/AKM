@@ -6,6 +6,8 @@ const N = null;
 
 const gv = { table: { rows: [
   R(N, "T U E S D A Y  J U N E   3 0     |     W E E K   O N E"),
+  R(N, "9:00 - 9:30", "New Participant Tour\nMeet Matt at the fountain. All welcome!"),
+  R(N, "9:30 - 10:20", "Full Festival Informational Meeting\n(Lesachtalerhof Terrace)"),
   R(N, N, "A1", "A2", "AH", "KS", "BAND\nROOM", "THEATRE", "CHAPEL", "WERNER"),
   R(N, "9:00 - 10:15\nGroup B", "Schubert Cello Quintet\nYoanna - P", "Grieg Quartet\nClaudia - C", "Prokofiev Quintet\nEmi - P", "Casarrubios Piano Trio\nSteve - C", "Schubert Piano Trio\nTanya - C", "Schumann Piano Trio\nNathan - P", "Shostakovich Quartet no. 9\nGijs - C", "Dvorak Quartet\nYoojin - C"),
   R(N, "10:25 - 11:40\nGroup C", "Beethoven String Trio\nIlinca - P", "Korngold Suite\nYoanna - P", "Mozart Clarinet Quintet\nJesus - P", "Faure Piano Quartet\nClaudia - P", "Schumann Piano Quartet\nSteve - C", "Ravel Piano Trio\nJames - P", "Jacob Oboe Quartet\nChad - C", "Haydn Quartet\nEmi - C"),
@@ -27,6 +29,8 @@ const checks = [
   ["lunch venue intact", day.meals.some(m => m[2] === "Lunch" && m[3] === "Mascha Wirt")],
   ["dinner venue", day.meals.some(m => m[2] === "Dinner" && m[3] === "Lesachtalerhof")],
   ["evening Webern + Faure faculty", day.evening.filter(e => e[4]).length === 2],
+  ["morning all-hands above grid", day.allhands.length === 2],
+  ["all-hands times chronological", day.allhands.map(e => e[0]).join(",") === "9:00,9:30"],
 ];
 let pass = 0;
 for (const [n, r] of checks) { console.log((r ? "PASS" : "FAIL") + "  " + n); pass += r ? 1 : 0; }

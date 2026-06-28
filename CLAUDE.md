@@ -1,10 +1,10 @@
-# CLAUDE.md — Lesachtal briefing
+# CLAUDE.md — AKM briefing
 
 Context for working on this project in Claude Code. Read this first.
 
 ## What this is
 
-A pure-pull **PWA** that shows the day at the Lesachtal Chamber Music Festival: Jason's
+A pure-pull **PWA** that shows the day at the AKM Chamber Music Festival: Jason's
 rehearsals (room + coach), an hourly weather curve, and a grace-note quote. It fetches the
 live schedule and forecast **client-side** — no backend, no scheduled job — and caches the
 whole festival week so it works offline once loaded. Hosted on **GitHub Pages**, installed to
@@ -23,7 +23,7 @@ Static files only. Nothing server-side.
 Data sources:
 - **Schedule** — the public, view-only Google Sheet via its **gviz endpoint as JSONP** (`tqx=out:json;responseHandler:cb`). JSONP is deliberate: a plain `fetch` hits CORS, and we only have *view* access so we can't "Publish to web." Don't switch it to `fetch`.
 - **Weather** — Open-Meteo hourly (`temperature_2m`, `precipitation`, `weathercode`, daily max/min/sun). CORS-friendly, normal `fetch`.
-- **Offline** — `app.js` stores each day's parsed schedule + weather in `localStorage` (key `lesa-cache`), renders instantly from it on open (stale-while-revalidate), then refreshes if online. Every successful online load re-caches the **whole week**, so a morning open on wifi covers the afternoon offline. Day chips browse cached days.
+- **Offline** — `app.js` stores each day's parsed schedule + weather in `localStorage` (key `akm-cache`), renders instantly from it on open (stale-while-revalidate), then refreshes if online. Every successful online load re-caches the **whole week**, so a morning open on wifi covers the afternoon offline. Day chips browse cached days.
 
 ## Constants (top of app.js)
 
@@ -52,7 +52,7 @@ node archive/parser-test.js   # if you keep one; the original passed 8/8 on the 
 
 ## Deploy (browser or laptop)
 
-GitHub Pages, `main` / root. Relative paths throughout, so it works as a project page (`<you>.github.io/lesachtal/`). After deploy, open the URL **online once** so it caches, then Add to Home Screen. The one thing only verifiable live is the in-browser gviz fetch — if rehearsals render at the Pages URL, everything downstream is proven.
+GitHub Pages, `main` / root. Relative paths throughout, so it works as a project page (`<you>.github.io/AKM/`). After deploy, open the URL **online once** so it caches, then Add to Home Screen. The one thing only verifiable live is the in-browser gviz fetch — if rehearsals render at the Pages URL, everything downstream is proven.
 
 ## Gotchas
 
@@ -65,4 +65,4 @@ GitHub Pages, `main` / root. Relative paths throughout, so it works as a project
 
 - iOS "Add to Home Screen" hint banner (only when on iOS Safari and not yet installed) — Apple leaves this step un-prompted.
 - Optional share/render-to-image.
-- `archive/` holds the **superseded** laptop-cron approach (`briefing.py` runner + `com.lesachtal.briefing.plist` launchd job + `preflight.py` + `SETUP.md`) and `daily-briefing.html` (the original finished design, handy as a visual reference). Not part of the deployed site; keep for reference or if the pull model ever needs a server-side companion.
+- `archive/` holds the **superseded** laptop-cron approach (`briefing.py` runner + `com.akm.briefing.plist` launchd job + `preflight.py` + `SETUP.md`) and `daily-briefing.html` (the original finished design, handy as a visual reference). Not part of the deployed site; keep for reference or if the pull model ever needs a server-side companion.

@@ -1,11 +1,11 @@
-# Lesachtal morning briefing — laptop setup
+# AKM morning briefing — laptop setup
 
 Runs every morning at **08:20 local time**. Your laptop is in the Alps, so local = CEST = festival time. No timezone math.
 
-## 1. Files — put these together in `~/lesachtal/`
+## 1. Files — put these together in `~/akm/`
 
 ```
-~/lesachtal/
+~/akm/
   briefing.py              # the runner
   briefing-template.html   # the design (edit here to change looks)
   composer-bank.json       # vetted quotes + facts
@@ -24,7 +24,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ## 3. Preflight — confirm the two live calls work from your network
 
 ```sh
-cd ~/lesachtal
+cd ~/akm
 uv run preflight.py 2026-06-29
 ```
 
@@ -41,12 +41,12 @@ Writes `briefings/briefing-2026-06-29.html`, opens it in your browser, and fires
 ## 5. Schedule it
 
 ```sh
-cp com.lesachtal.briefing.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.lesachtal.briefing.plist
+cp com.akm.briefing.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.akm.briefing.plist
 ```
 
-To stop it: `launchctl unload ~/Library/LaunchAgents/com.lesachtal.briefing.plist`.
-The job assumes the files are in `~/lesachtal/`; if you put them elsewhere, edit the `cd` path in the plist.
+To stop it: `launchctl unload ~/Library/LaunchAgents/com.akm.briefing.plist`.
+The job assumes the files are in `~/akm/`; if you put them elsewhere, edit the `cd` path in the plist.
 
 If the laptop is asleep at 08:20, launchd runs the job as soon as it wakes.
 

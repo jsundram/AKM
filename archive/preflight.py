@@ -2,7 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""Preflight for the Lesachtal briefing — confirms the two live calls this sandbox couldn't.
+"""Preflight for the AKM briefing — confirms the two live calls this sandbox couldn't.
   uv run preflight.py                # checks today (Vienna)
   uv run preflight.py 2026-06-29     # checks a specific festival day
 Run it on a machine with normal network (your Mini). Exit 0 = ready.
