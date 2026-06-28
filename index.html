@@ -129,7 +129,8 @@
 
   footer{margin-top:28px;padding-top:13px;border-top:1px solid var(--line);
     font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.05em;color:var(--faint);
-    display:flex;justify-content:space-between}
+    display:flex;justify-content:space-between;gap:12px}
+  footer a{flex:none;color:var(--muted);text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line)}
 
   @media (prefers-reduced-motion:no-preference){
     .row,.wx,.masthead{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
@@ -178,7 +179,7 @@
     <div class="stat"><span class="netdot" id="netdot"></span><span id="asof">loading…</span></div>
   </div>
   <main id="app"></main>
-  <footer>AKM Chamber Music Festival · pulls the live schedule + forecast · works offline once loaded</footer>
+  <footer><span>AKM Chamber Music Festival · pulls the live schedule + forecast · works offline once loaded</span><a id="src" target="_blank" rel="noopener">source sheet ↗</a></footer>
 </div>
 <script src="./app.js"></script>
 </body>

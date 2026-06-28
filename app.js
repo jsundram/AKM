@@ -2,6 +2,12 @@
 // client-side, renders the card, caches the whole festival week for offline use.
 
 const SID = "1AvNjAUQMFPjJAlwY4Day2MgHt5-2Vd8EDocpdxJQ6_A";
+// tab → gid, so the footer can deep-link to the day's actual sheet tab. gids are stable per
+// tab; probed from the sheet's htmlview (can't be fetched cross-origin at runtime). Sundays off.
+const GID = {"Mon 6/29":"1079055190","Tue 6/30":"385081621","Wed 7/1":"1231106928",
+  "Thu 7/2":"140636796","Fri 7/3":"1941915385","Sat 7/4":"1201647531","Mon 7/6":"1017105753",
+  "Tue 7/7":"839058497","Wed 7/8":"600713019","Thu 7/9":"636626947","Fri 7/10":"1243481570",
+  "Sat 7/11":"1506438549"};
 const LAT = 46.70, LON = 12.85, TZ = "Europe/Vienna";
 const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusive
 const ROOMS = new Set(["A1","A2","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
@@ -29,6 +35,10 @@ function festDays(){
 function tabName(isoStr){
   const d=new Date(isoStr+"T12:00:00");
   return d.toLocaleDateString("en-US",{weekday:"short"}) + " " + (d.getMonth()+1) + "/" + d.getDate();
+}
+function sheetUrl(isoStr){
+  const b=`https://docs.google.com/spreadsheets/d/${SID}`, g=GID[tabName(isoStr)];
+  return g ? `${b}/edit?gid=${g}#gid=${g}` : `${b}/edit`;   // fall back to the workbook if no tab
 }
 
 // ---- gviz JSONP (bypasses CORS for view-only public sheets) ----
@@ -218,6 +228,7 @@ const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
 function render(){
   const c=load(), day=c.sched&&c.sched[sel], w=c.wx&&c.wx[sel];
   const app=$("#app");
+  $("#src").href = sheetUrl(sel);
   if(!day){ app.innerHTML = masthead(sel,"") + `<div class="wx"><div class="wx-top"><div class="wx-sum"><b>Schedule not posted yet for this day.</b><br>${w?"forecast below.":"check back on wifi."}</div></div></div>` + (w?wxcard(w):""); return; }
   const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
   app.innerHTML = masthead(sel,day.eyebrow) + wxcard(w) + `<div class="tl">${timeline(day,w||{})}</div>` + coda(day,BANK,dnum);
