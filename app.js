@@ -229,7 +229,16 @@ function render(){
   const c=load(), day=c.sched&&c.sched[sel], w=c.wx&&c.wx[sel];
   const app=$("#app");
   $("#src").href = sheetUrl(sel);
-  if(!day){ app.innerHTML = masthead(sel,"") + `<div class="wx"><div class="wx-top"><div class="wx-sum"><b>Schedule not posted yet for this day.</b><br>${w?"forecast below.":"check back on wifi."}</div></div></div>` + (w?wxcard(w):""); return; }
+  if(!day){
+    const fetching = navigator.onLine && !c.ts;       // first load, refresh still in flight
+    const head = fetching ? "<b>Loading today's schedule…</b><br>fetching the live sheet."
+      : navigator.onLine ? `<b>Schedule not posted yet for this day.</b><br>${w?"forecast below.":"check back later."}`
+      : `<b>You're offline.</b><br>${w?"showing cached forecast.":"reconnect to load this day."}`;
+    app.innerHTML = masthead(sel,"") + `<div class="wx"><div class="wx-top"><div class="wx-sum">${head}</div></div></div>` + (w?wxcard(w):"");
+    chips();
+    $("#asof").innerHTML = fetching ? "loading…" : c.ts ? `as of ${new Date(c.ts).toLocaleString("en-GB",{timeZone:TZ,weekday:"short",hour:"2-digit",minute:"2-digit"})}` : "no data yet";
+    return;
+  }
   const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
   app.innerHTML = masthead(sel,day.eyebrow) + wxcard(w) + `<div class="tl">${timeline(day,w||{})}</div>` + coda(day,BANK,dnum);
   chips();
@@ -250,6 +259,26 @@ function chips(){
 }
 function net(on){ const d=$("#netdot"); d.classList.toggle("off",!on); }
 
+// pull-to-refresh — standalone iOS (home-screen card) has no browser reload
+function setupPTR(){
+  const ptr=$("#ptr"), TH=64; let y0=null, pull=0, busy=false;
+  const reset=()=>{ ptr.classList.add("snap"); ptr.style.height="0"; y0=null; pull=0; };
+  addEventListener("touchstart", e=>{ if(scrollY<=0 && !busy){ y0=e.touches[0].clientY; pull=0; ptr.classList.remove("snap"); } }, {passive:true});
+  addEventListener("touchmove", e=>{
+    if(y0==null) return;
+    pull = e.touches[0].clientY - y0;
+    if(pull<=0 || scrollY>0){ ptr.style.height="0"; return; }
+    ptr.style.height = Math.min(pull*0.45, 58) + "px";
+    ptr.textContent = pull>TH ? "Release to refresh" : "Pull to refresh";
+  }, {passive:true});
+  addEventListener("touchend", ()=>{
+    if(y0==null) return;
+    if(pull>TH){ busy=true; ptr.classList.add("snap"); ptr.style.height="40px"; ptr.textContent="Refreshing…";
+      Promise.resolve(refresh()).finally(()=>{ busy=false; reset(); }); }
+    else reset();
+  }, {passive:true});
+}
+
 async function refresh(){
   net(navigator.onLine);
   if(!navigator.onLine) return;
@@ -269,6 +298,11 @@ async function boot(){
   render();                 // instant from cache (offline-safe)
   addEventListener("online", ()=>{net(true);refresh();});
   addEventListener("offline", ()=>net(false));
+  // reopening the home-screen card may resume from suspension (no reload) — refresh on foreground
+  addEventListener("visibilitychange", ()=>{ if(document.hidden) return;
+    const c=load(), age=c.ts?Date.now()-new Date(c.ts).getTime():Infinity;
+    if(age>60e3) refresh(); });
+  setupPTR();
   refresh();                // stale-while-revalidate
   if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
 }

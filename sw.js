@@ -1,6 +1,7 @@
-const V = "akm-v1";
+const V = "akm-v4";
 const SHELL = ["./", "./index.html", "./app.js", "./manifest.json",
-               "./composer-bank.json", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
+               "./composer-bank.json", "./icon.svg",
+               "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -12,6 +13,11 @@ self.addEventListener("activate", e => {
 });
 self.addEventListener("fetch", e => {
   const u = new URL(e.request.url);
+  if (u.hostname === "fonts.googleapis.com" || u.hostname === "fonts.gstatic.com") {
+    e.respondWith(caches.open(V).then(c =>                 // cache fonts so the design survives offline
+      c.match(e.request).then(r => r || fetch(e.request).then(resp => { c.put(e.request, resp.clone()); return resp; }))));
+    return;
+  }
   if (u.origin !== location.origin) return;   // let gviz + open-meteo go straight to network
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request).then(resp => {

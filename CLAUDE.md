@@ -16,8 +16,8 @@ Static files only. Nothing server-side.
 
 - `index.html` — app shell + all CSS (the design system). Mount point `#app`, a day-chip row, and an online/as-of status line.
 - `app.js` — the brain: fetch → parse → render → cache. Ported 1:1 from the earlier Python runner.
-- `sw.js` — service worker; precaches the shell for offline, passes cross-origin data calls through to network.
-- `manifest.json` + `icon-*.png` — installable/standalone.
+- `sw.js` — service worker; precaches the shell for offline, cache-first for Google Fonts (so the type survives offline), passes cross-origin *data* calls (gviz, open-meteo) through to network. Bump `V` when the shell changes.
+- `manifest.json` + `icon-*.png` — installable/standalone. Icons are rasterized from `icon.svg` (the source of truth) via `scripts/make-icons.sh`; edit the SVG, rerun the script, don't hand-edit the PNGs. `icon.svg` doubles as the in-browser favicon.
 - `composer-bank.json` — vetted quotes + facts, provenance-tiered.
 
 Data sources:
@@ -39,7 +39,7 @@ Jason writes terse, DRY, idiomatic JS — short names, minimal comments (comment
 
 ## Design system (don't drift)
 
-Alpine palette; Fraunces (display) / IBM Plex Mono (data) / Inter (body). **Warm brass cards are reserved exclusively for Jason's own rehearsals** — never repurpose the warm accent for other UI. The temperature curve (cool→warm gradient, H/L dots, shaded SHOWERS band) is the signature element and the app icon. Full light + dark via `prefers-color-scheme`, contrasts verified WCAG AA+. Edit CSS in `index.html`; render functions in `app.js` emit matching classes.
+Alpine palette; Fraunces (display) / IBM Plex Mono (data) / Inter (body) — **loaded from Google Fonts** in `index.html` (`<link>` + preconnect) and SW-cached; they are *not* iOS system fonts, so without the link the phone silently falls back to Times/Courier. `viewport-fit=cover` + `env(safe-area-inset-*)` padding keeps content clear of the Dynamic Island / home indicator in standalone mode. **Warm brass cards are reserved exclusively for Jason's own rehearsals** — never repurpose the warm accent for other UI. The temperature curve (cool→warm gradient, H/L dots, shaded SHOWERS band) is the signature in-app element. The app icon/favicon is a flat layered Lesachtal dawn scene (`icon.svg`): warm sun — the one nod to the brass accent — snow-capped hero peak, hazy side ranges, rolling meadows. Full light + dark via `prefers-color-scheme`, contrasts verified WCAG AA+. Edit CSS in `index.html`; render functions in `app.js` emit matching classes.
 
 ## Test
 

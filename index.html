@@ -4,11 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Inter:wght@400;500&amp;display=swap">
 <meta name="theme-color" content="#E9EDEC" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0F1817" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="AKM">
 <link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="icon" type="image/png" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <title>AKM — today</title>
 <style>
@@ -20,7 +25,9 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%}
   body{background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;
-    line-height:1.4;padding:28px 16px 48px;display:flex;justify-content:center}
+    line-height:1.4;display:flex;justify-content:center;overscroll-behavior-y:contain;
+    padding:calc(28px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+            calc(48px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
   .sheet{width:100%;max-width:452px}
 
   .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.22em;
@@ -157,23 +164,29 @@
 
   /* --- app chrome (pull/offline PWA) --- */
   .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;flex-wrap:wrap}
-  .days{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .days{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex:1;min-width:0}
   .days::-webkit-scrollbar{display:none}
   .chip{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.02em;color:var(--muted);
     border:1px solid var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap;cursor:pointer;background:none}
   .chip.on{color:var(--brass-deep);border-color:var(--warm-line);background:#EFE2C8}
   .chip.empty{opacity:.45}
-  .stat{display:flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--faint);white-space:nowrap}
+  .stat{display:flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--faint);white-space:nowrap;flex:none}
   .netdot{width:7px;height:7px;border-radius:50%;background:#6E9A6B;flex:none}
   .netdot.off{background:#B07A3A}
   .stale{color:#B07A3A}
   #app:empty::after{content:"Loading today…";display:block;color:var(--faint);font-size:13px;padding:24px 2px}
+  #ptr{position:fixed;top:env(safe-area-inset-top);left:0;right:0;height:0;overflow:hidden;z-index:20;
+    pointer-events:none;display:flex;align-items:flex-end;justify-content:center;padding-bottom:9px;
+    font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--faint);background:linear-gradient(180deg,var(--paper) 55%,transparent)}
+  #ptr.snap{transition:height .25s ease}
 
   @media (prefers-color-scheme: dark){ .chip.on{background:#2E2616} }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div id="ptr"></div>
+<div class="sheet">
   <div class="bar">
     <div class="days" id="days"></div>
     <div class="stat"><span class="netdot" id="netdot"></span><span id="asof">loading…</span></div>
