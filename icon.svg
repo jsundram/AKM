@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- AKM app icon: an idyllic Lesachtal dawn — warm sun (a nod to the brass accent),
+       snow-capped hero peak, hazy side ranges, rolling meadows. On-palette alpine scene. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#86A9C0"/>
+      <stop offset="0.48" stop-color="#BCCED5"/>
+      <stop offset="0.78" stop-color="#ECDCBB"/>
+      <stop offset="1"    stop-color="#F1D096"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#FBE0A6"/>
+      <stop offset="0.55" stop-color="#F0B85A"/>
+      <stop offset="1"    stop-color="#C9892B"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#F4C36A" stop-opacity="0.55"/>
+      <stop offset="1"   stop-color="#F4C36A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#sky)"/>
+
+  <!-- dawn sun -->
+  <circle cx="372" cy="156" r="120" fill="url(#halo)"/>
+  <circle cx="372" cy="156" r="48"  fill="url(#sun)"/>
+
+  <!-- hazy side ranges -->
+  <path d="M-20,360 L110,205 L250,360 Z" fill="#9DB6C2"/>
+  <path d="M300,360 L420,222 L540,360 Z" fill="#A9C0CA"/>
+
+  <!-- hero peak (off-center apex + ridge shoulder) + snow cap -->
+  <path d="M64,360 L240,116 L300,206 L342,180 L446,360 Z" fill="#5C7682"/>
+  <path d="M240,116 L268,180 L260,169 L251,182 L242,162 L233,182 L224,169 L213,181 Z" fill="#F2F5F4"/>
+
+  <!-- rolling meadows -->
+  <path d="M0,352 C120,328 182,344 256,337 C340,329 410,350 512,334 L512,512 L0,512 Z" fill="#94A56C"/>
+  <path d="M0,402 C140,380 202,397 292,389 C382,381 452,402 512,393 L512,512 L0,512 Z" fill="#6E8350"/>
+</svg>
