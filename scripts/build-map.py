@@ -35,9 +35,10 @@ POIS = [
     {"name": "Haus Lanzinger",          "cat": "lodging", "st": "Liesing", "hn": "21"},
     {"name": "Haus Obernosterer",       "cat": "lodging", "st": "Liesing", "hn": "25"},
     {"name": "Kleines Berghotel",       "cat": "lodging", "st": "Klebas",  "hn": "7"},
-    {"name": "Kultursaal",               "cat": "venue", "st": "Liesing", "hn": "15"},
+    {"name": "Kultursaal",               "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A2", "AH"]},  # the Akademie; A2/AH are rooms inside it
+    {"name": "Werner",                   "cat": "venue", "st": "Liesing", "hn": "46"},   # yellow house next to Musikhof Lexer (the WERNER rehearsal room)
     {"name": "Pfarrkirche Hl. Nikolaus", "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus"},
-    {"name": "Badstubn",     "cat": "food", "osm": "Badstubn"},
+    {"name": "Badstubn",     "cat": "food", "osm": "Badstubn", "aliases": ["KS"]},   # KS = the Konzertsaal in this building
     {"name": "GH Wilhelmer / Mascha Wirt", "cat": "food", "st": "Liesing", "hn": "24"},  # slash → line break in the label
 ]
 
@@ -87,6 +88,7 @@ def build(els):
             missed.append(poi["name"]); continue
         p = {"name": poi["name"], "cat": poi["cat"]}
         if poi.get("mine"): p["mine"] = True
+        if poi.get("aliases"): p["aliases"] = poi["aliases"]   # schedule room codes (A2/AH/KS) → shown on the pin
         if geom:                                            # area feature → centroid + footprint
             p["xy"] = centroid(geom); p["fp"] = line(geom)
         else:                                               # bare node → its point
