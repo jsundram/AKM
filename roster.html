@@ -57,6 +57,9 @@
     text-transform:uppercase;color:#7A8794;padding-top:2px}
   .dl .v{color:var(--doc-ink)}
   .dl .v a{color:#2A6F97;text-decoration:underline;word-break:break-all}
+  .wa{display:inline-flex;vertical-align:middle;margin-left:6px;opacity:.9;line-height:0}
+  .wa:hover{opacity:1}
+  .wa svg{display:block}
   tr.you td{font-weight:600}
   tr.you td.n{box-shadow:inset 3px 0 var(--brass)}
   tr.you .youtag{font-family:"IBM Plex Mono",monospace;font-size:8.5px;font-weight:500;letter-spacing:.1em;
@@ -88,7 +91,7 @@
     </table>
     <div id="msg" hidden></div>
   </div>
-  <footer><span>where everyone is staying</span><span class="flinks"><a class="back" id="editlink" target="_blank" rel="noopener">Edit sheet ↗</a><a class="back" href="./index.html">← Schedule</a></span></footer>
+  <footer><span>where everyone is staying</span><span class="flinks"><a class="back" href="./network.html">Network</a><a class="back" id="editlink" target="_blank" rel="noopener">Edit sheet ↗</a><a class="back" href="./index.html">← Schedule</a></span></footer>
 </div>
 <script>
 // Roster lives in its own view-only Google Sheet, pulled live (gviz JSONP) and cached for offline —
@@ -129,7 +132,8 @@ function colMap(labels){
   if(name<0 || hotel<0) return null;
   const num = at("number")>=0 ? at("number") : at("#");
   const from = ["hometown","location","from","home","city"].reduce((a,k)=> a>=0?a:at(k), -1);   // "Hometown" header; aliases as fallback
-  return {n: num<0?0:num, name, instrument: at("instr"), type: at("type"), hotel, pieces: at("piece"), notes: at("note"), from};
+  const whatsapp = at("whatsapp")>=0 ? at("whatsapp") : at("phone");
+  return {n: num<0?0:num, name, instrument: at("instr"), type: at("type"), hotel, pieces: at("piece"), notes: at("note"), from, whatsapp};
 }
 const pick = (r,i) => i<0 ? "" : (r[i]||"");
 function parseRoster(gv){
@@ -140,10 +144,20 @@ function parseRoster(gv){
   if(!m) return [];
   return rows
     .map(r => ({n:pick(r,m.n), name:r[m.name], instrument:pick(r,m.instrument), type:pick(r,m.type), hotel:r[m.hotel],
-                pieces:pick(r,m.pieces), notes:pick(r,m.notes), from:pick(r,m.from)}))
+                pieces:pick(r,m.pieces), notes:pick(r,m.notes), from:pick(r,m.from), whatsapp:pick(r,m.whatsapp)}))
     .filter(p => p.name && p.name.toLowerCase()!=="name");
 }
 
+// click the WhatsApp glyph → open a chat (app on phone) pre-filled with this greeting ({first} = first name)
+const WA_MSG = "Hi {first}, it's Jason from AKM ";
+const WA_SVG = '<svg viewBox="0 0 32 32" width="14" height="14" aria-hidden="true"><path fill="#25D366" d="M16 .6C7.5.6.6 7.5.6 16c0 2.8.8 5.5 2.1 7.8L.5 31.5l7.9-2.1c2.2 1.2 4.8 1.9 7.6 1.9 8.5 0 15.4-6.9 15.4-15.4S24.5.6 16 .6z"/><path fill="#fff" d="M23.1 19.3c-.4-.2-2.3-1.1-2.6-1.3-.3-.1-.6-.2-.8.2-.2.3-.9 1.2-1.2 1.5-.2.2-.4.2-.8.1-.4-.2-1.6-.6-3.1-1.9-1.1-1-1.9-2.3-2.1-2.7-.2-.4 0-.6.2-.8l.5-.6c.2-.2.2-.4.4-.6.1-.3 0-.5 0-.7-.1-.2-.8-2.1-1.2-2.8-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.5 3.8 6 5.3.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 2.3-.9 2.6-1.8.3-.9.3-1.7.2-1.8z"/></svg>';
+function waLink(p){
+  const num = (p.whatsapp||"").replace(/\D/g,"");
+  if(!num) return "";
+  const first = (p.name||"").split(/[\s,]/)[0];
+  const msg = encodeURIComponent(WA_MSG.replace("{first}", first));
+  return `<a class="wa" href="https://wa.me/${num}?text=${msg}" target="_blank" rel="noopener" title="WhatsApp ${esc(first)}" aria-label="Message ${esc(first)} on WhatsApp" onclick="event.stopPropagation()">${WA_SVG}</a>`;
+}
 let PEOPLE=[], sortKey=null, sortDir=1;     // null = sheet order (by number)
 const TYPE_RANK={DIR:0,MGR:1,F:2,AF:3,TF:4,W1:5,W2:6,G:7};  // staff, faculty/fellows/weeks, then guests (G); blanks last
 // instruments collapse to a fixed set, shown + sorted in this order; nothing else
@@ -181,7 +195,7 @@ function paint(){
     tr.style.background = fill;
     tr.className = (you?"you ":"") + (exp?"exp":"");
     tr.innerHTML = `<td class="n">${esc(p.n)}</td>`+
-      `<td>${esc(p.name)}${you?'<span class="youtag">you</span>':''}</td>`+
+      `<td>${esc(p.name)}${you?'<span class="youtag">you</span>':''}${waLink(p)}</td>`+
       `<td class="in">${esc(instLabel(p.instrument))||"·"}</td>`+
       `<td class="ty">${esc(p.type)}</td>`+
       `<td class="ht">${esc(p.hotel)}${exp?'<span class="caret">›</span>':''}</td>`;

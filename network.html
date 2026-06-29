@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#E9EDEC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1817" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>AKM — Network</title>
+<style>
+  :root{
+    --paper:#E9EDEC; --haze:#DFE5E3; --ink:#172526; --muted:#5F7072; --faint:#8C9A9B;
+    --line:#CBD3D1; --warm-line:#E2D2B2; --brass:#9A6B22; --brass-deep:#7C5417;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;line-height:1.4;
+    display:flex;justify-content:center;
+    padding:calc(18px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
+            calc(34px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+  .wrap{width:100%;max-width:620px}
+
+  .top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  h1{font-family:"Fraunces",serif;font-weight:500;font-size:30px;letter-spacing:-.015em;line-height:1.05}
+  .sub{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.04em;color:var(--faint);margin-top:5px}
+  .back{flex:none;display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:11px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;
+    border:1px solid var(--line);border-radius:7px;padding:5px 10px}
+  .back:hover{color:var(--brass-deep);border-color:var(--warm-line)}
+
+  #legend{display:flex;flex-wrap:wrap;gap:5px 12px;margin:14px 0 4px;
+    font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.03em;color:var(--muted)}
+  #legend b{display:inline-flex;align-items:center;gap:5px;font-weight:400}
+  #legend i{width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+
+  #chart{display:flex;justify-content:center;margin:6px 0;min-height:120px}
+  #chart svg{display:block;max-width:100%;height:auto;overflow:visible}
+  .rib{cursor:pointer}
+  .arc{cursor:pointer}
+  .clab{font-family:"Inter",sans-serif;fill:var(--ink);pointer-events:none;paint-order:stroke;
+    stroke:var(--paper);stroke-width:2.4px}
+  .hint{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em;
+    color:var(--faint);margin-top:2px}
+  #msg{padding:30px 10px;text-align:center;color:var(--muted);font-size:13px}
+
+  .seg{display:inline-flex;overflow:hidden;border:1px solid var(--line);border-radius:8px;
+    background:var(--paper);margin-top:12px;box-shadow:0 1px 3px rgba(20,30,30,.1)}
+  .seg button{border:0;background:var(--paper);color:var(--muted);font:inherit;font-size:11px;font-weight:600;
+    letter-spacing:.04em;padding:7px 15px;cursor:pointer}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button.on{color:var(--brass-deep);background:#EFE2C8}
+
+  /* ego (rings) view */
+  #chart .ring{fill:none;stroke:var(--line);stroke-dasharray:2 5;opacity:.6}
+  #chart .edge{fill:none;pointer-events:none}
+  #chart .ehit{fill:none;stroke:transparent;stroke-width:8px;cursor:pointer}
+  #chart .node{stroke:var(--paper);stroke-width:1;cursor:pointer}
+  #chart .node.mine{stroke:var(--brass-deep);stroke-width:2}
+  #chart .nlab{font-family:"Inter",sans-serif;fill:var(--ink);pointer-events:none;paint-order:stroke;
+    stroke:var(--paper);stroke-width:2.4px}
+
+  #tip{position:absolute;z-index:9;max-width:240px;padding:7px 11px 8px;border:1px solid var(--line);
+    border-radius:8px;background:rgba(249,250,249,.98);box-shadow:0 3px 12px rgba(20,30,30,.22);
+    font-size:12.5px;line-height:1.4;color:var(--ink)}
+  #tip b{font-weight:600}
+  #tip .x{float:right;margin:-2px -4px 0 8px;color:var(--faint);cursor:pointer;font-size:15px;line-height:1}
+
+  footer{margin-top:18px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center;
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.05em;color:var(--faint)}
+  .flinks{display:flex;gap:8px}
+
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#0F1817; --haze:#172221; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
+      --line:#2C3938; --warm-line:#4A3D23; --brass:#D9A24C; --brass-deep:#E8C481; }
+    #legend i{box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+    #tip{background:rgba(23,34,33,.97)}
+    .seg button{background:var(--haze);color:var(--faint)}
+    .seg button.on{color:var(--brass-deep);background:#2E2616}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="id">
+      <h1>Network</h1>
+      <div class="sub">AKM Chamber Music Festival · <span id="count">…</span></div>
+    </div>
+    <a class="back" href="./index.html">← Today</a>
+  </div>
+
+  <div class="seg" id="seg" role="group" aria-label="View">
+    <button data-v="rings" class="on" type="button">Rings</button>
+    <button data-v="chord" type="button">Chord</button>
+  </div>
+
+  <div id="legend"></div>
+  <div id="chart"></div>
+  <div class="hint" id="hint">you in the centre · each ring = a degree of separation · tap a name</div>
+  <div id="msg" hidden></div>
+
+  <footer>
+    <span>grouped by instrument · faculty &amp; fellows in bold</span>
+    <span class="flinks"><a class="back" href="./roster.html">Roster</a><a class="back" href="./index.html">← Today</a></span>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+<script src="./d3.v7.min.js"></script>
+<script src="./network.js"></script>
+</body>
+</html>

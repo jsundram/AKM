@@ -2,3 +2,7 @@
 
 # source archives (map + roster), not for the public repo
 *.zip
+
+# network diagram previews (bake in participant names — regenerate locally)
+network-preview-*.svg
+network-ego-*.svg
