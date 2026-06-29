@@ -119,12 +119,10 @@ async function weatherRange(){
     const s=di*24, t=H.temperature_2m.slice(s,s+24).map(Math.round);
     const pr=H.precipitation.slice(s,s+24), wc=H.weathercode.slice(s,s+24);
     if(t.length<24) return;
-    let win=0,best=-1; for(let k=0;k<22;k++){const v=pr[k]+pr[k+1]+pr[k+2]; if(v>best){best=v;win=k;}}
     const rainy = pr.map((p,i)=>p>=0.2?i:-1).filter(i=>i>=0);
     const sum = pr.reduce((a,b)=>a+b,0);
     out[dt] = {t, hi:Math.round(D.temperature_2m_max[di]), lo:Math.round(D.temperature_2m_min[di]),
       rise:D.sunrise[di].slice(11,16), set:D.sunset[di].slice(11,16),
-      wet: sum>0 ? `${String(win).padStart(2,"0")}–${String(win+3).padStart(2,"0")}h` : "",
       thunder: wc.some(c=>[95,96,99].includes(c)),
       shower: rainy.length ? [rainy[0], rainy[rainy.length-1]+1] : null,
       drizzle: !rainy.length && sum>0,           // measurable precip below the showers threshold
@@ -148,16 +146,22 @@ function svg(w){
   s+=`<path d="${d} L${R} ${B} L${L} ${B} Z" fill="url(#fg)"/><path d="${d}" fill="none" stroke="url(#tg)" stroke-width="2.2" stroke-linecap="round"/>`;
   s+=`<circle cx="${xat(hi_i).toFixed(1)}" cy="${yat(t[hi_i]).toFixed(1)}" r="2.6" fill="#C5792B"/><text x="${xat(hi_i).toFixed(1)}" y="${(yat(t[hi_i])-6).toFixed(1)}" font-size="9" fill="#C5792B" text-anchor="middle" font-weight="500">H ${w.hi}°</text>`;
   s+=`<circle cx="${xat(lo_i).toFixed(1)}" cy="${yat(t[lo_i]).toFixed(1)}" r="2.6" fill="#7E96A6"/><text x="${xat(lo_i).toFixed(1)}" y="${(yat(t[lo_i])+13).toFixed(1)}" font-size="9" fill="#7E96A6" text-anchor="middle" font-weight="500">L ${w.lo}°</text>`;
-  for(const [h,lab] of [[6,"6a"],[12,"12p"],[18,"6p"]]) s+=`<text x="${xat(h).toFixed(1)}" y="${B+13}" font-size="8" fill="#8A9A9B" text-anchor="middle">${lab}</text>`;
+  // daylight bounds: dotted vertical + sun glyph (top) + time (axis) at sunrise/sunset
+  const hm=t=>{const[a,b]=t.split(":").map(Number);return a+b/60;};
+  const tl=t=>t.replace(/^0/,"");
+  if(w.rise&&w.set) for(const tt of [w.rise,w.set]){ const x=xat(hm(tt));
+    s+=`<line x1="${x.toFixed(1)}" y1="${T+1}" x2="${x.toFixed(1)}" y2="${B+2}" stroke="#C9943A" stroke-width="0.7" stroke-dasharray="1.6 2" opacity="0.5"/>`;
+    s+=`<text x="${x.toFixed(1)}" y="${T+7}" font-size="9" fill="#C9943A" text-anchor="middle">☀︎</text>`;
+    s+=`<text x="${x.toFixed(1)}" y="${B+13}" font-size="8" fill="#C9943A" text-anchor="middle">${tl(tt)}</text>`;
+  }
+  s+=`<text x="${xat(12).toFixed(1)}" y="${B+13}" font-size="8" fill="#8A9A9B" text-anchor="middle">12p</text>`;
   return s+"</svg>";
 }
 function wxcard(w){
   if(!w||!w.ok) return `<div class="wx"><div class="wx-top"><div class="wx-sum"><b>Forecast unavailable.</b><br>schedule below.</div></div></div>`;
   const precip = w.thunder?"Thunderstorms possible":w.shower?"Showers possible":w.drizzle?"Drizzle possible":"";
   const sub = precip ? `${precip} in the afternoon.` : `${w.sky||"Dry"}.`;
-  const foot = w.wet ? `<div class="wx-foot"><span>Wettest <b>≈ ${w.wet}</b></span><span>Sun <b>↑ ${w.rise}</b> · <b>↓ ${w.set}</b></span></div>`
-                     : `<div class="wx-foot"><span>Sun <b>↑ ${w.rise}</b> · <b>↓ ${w.set}</b></span></div>`;
-  return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w)}</div>${foot}</div>`;
+  return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w)}</div></div>`;
 }
 function tline(s,e){ return `<div class="time"><span class="s">${s}</span>${e?`<span class="e">${e}</span>`:""}</div>`; }
 function timeline(day,w){
