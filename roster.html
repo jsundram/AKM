@@ -128,7 +128,7 @@ function colMap(labels){
   const name=at("name"), hotel=at("hotel");
   if(name<0 || hotel<0) return null;
   const num = at("number")>=0 ? at("number") : at("#");
-  const from = ["location","from","home","city"].reduce((a,k)=> a>=0?a:at(k), -1);   // where they're from
+  const from = ["hometown","location","from","home","city"].reduce((a,k)=> a>=0?a:at(k), -1);   // "Hometown" header; aliases as fallback
   return {n: num<0?0:num, name, instrument: at("instr"), type: at("type"), hotel, pieces: at("piece"), notes: at("note"), from};
 }
 const pick = (r,i) => i<0 ? "" : (r[i]||"");
