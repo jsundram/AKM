@@ -6,6 +6,21 @@ const $ = s => document.querySelector(s);
 const NS = "http://www.w3.org/2000/svg";
 const el = (t, c) => { const e = document.createElementNS(NS, t); if (c) e.setAttribute("class", c); return e; };
 const pts = p => { let s = ""; for (let i = 0; i < p.length; i += 2) s += p[i] + "," + p[i + 1] + " "; return s; };
+const XL = "http://www.w3.org/1999/xlink";
+const MINZ = 0.7, MAXZ = 20;                       // zoom clamp, as multiples of the fit-to-extent scale
+
+function roadLabel(o, i) {                          // curved name following the road, flipped to read L→R
+  const p = o.p, rev = p[0] > p[p.length - 2], a = [];
+  for (let j = 0; j < p.length; j += 2) a.push(p[j] + "," + p[j + 1]);
+  if (rev) a.reverse();
+  const id = "rd" + i, path = el("path", "rdpath");
+  path.setAttribute("id", id); path.setAttribute("d", "M" + a.join("L")); scene.appendChild(path);
+  const t = el("text", "glab road"), tp = el("textPath");
+  tp.setAttribute("href", "#" + id); tp.setAttributeNS(XL, "href", "#" + id);
+  const off = o.no == null ? 0.5 : rev ? 1 - o.no : o.no;   // sit on the in-view stretch, flipped if reversed
+  tp.setAttribute("startOffset", (off * 100).toFixed(1) + "%"); tp.textContent = o.name.toUpperCase();
+  t.appendChild(tp); scene.appendChild(t);
+}
 
 const map = $("#map"), scene = $("#scene"), markers = $("#markers");
 let W, H, view = { s: 1, tx: 0, ty: 0 }, fitS = 1, pins = [], raf = 0;
@@ -15,6 +30,17 @@ const sy = y => view.ty + view.s * y;
 
 function drawScene(d) {
   scene.replaceChildren();
+  $("#cliprect").setAttribute("width", d.meta.w);   // clip everything to the bbox for a clean edge
+  $("#cliprect").setAttribute("height", d.meta.h);
+  ["map-relief.jpg map-relief rl", "map-aerial.jpg map-aerial ae"].forEach(spec => {
+    const [src, , cls] = spec.split(" "), e = el("image", cls);   // raster basemaps, behind the vector
+    e.setAttribute("href", "./" + src);
+    e.setAttributeNS("http://www.w3.org/1999/xlink", "href", "./" + src);   // older Safari
+    e.setAttribute("x", 0); e.setAttribute("y", 0);
+    e.setAttribute("width", d.meta.w); e.setAttribute("height", d.meta.h);
+    e.setAttribute("preserveAspectRatio", "none");
+    scene.appendChild(e);
+  });
   const add = (cls, items, tag, attr) => items.forEach(o => {
     const e = el(tag, cls + (o.k ? " " + o.k : ""));
     e.setAttribute(attr, pts(o.p));
@@ -27,7 +53,9 @@ function drawScene(d) {
     e.setAttribute("points", pts(w.p));
     scene.appendChild(e);
   });
-  add("road", d.roads, "polyline", "points");
+  d.roads.forEach(o => {
+    const e = el("polyline", "road " + o.k); e.setAttribute("points", pts(o.p)); scene.appendChild(e);
+  });
   add("bldg", d.buildings, "polygon", "points");
   d.pois.forEach(p => {                            // highlighted footprints under the pins
     if (!p.fp) return;
@@ -36,10 +64,11 @@ function drawScene(d) {
     scene.appendChild(e);
   });
   d.labels.forEach(l => {
-    const t = el("text", "hamlet");
+    const t = el("text", "glab " + (l.k || "hamlet"));
     t.setAttribute("x", l.xy[0]); t.setAttribute("y", l.xy[1]); t.textContent = l.t;
     scene.appendChild(t);
   });
+  d.roads.forEach((o, i) => { if (o.name) roadLabel(o, i); });   // last, so buildings don't cover the road names
 }
 
 function makeMarkers(d) {
@@ -47,18 +76,16 @@ function makeMarkers(d) {
   pins = d.pois.map(p => {
     const mk = document.createElement("div");
     mk.className = "mk cat-" + p.cat + (p.mine ? " mine" : "");
-    mk.innerHTML = `<span class="dot"></span><span class="lab">${p.name}</span>`;
-    const dot = mk.firstChild;
-    dot.addEventListener("pointerdown", e => e.stopPropagation());   // don't start a map drag
-    dot.addEventListener("click", e => {
-      e.stopPropagation();
-      const on = mk.classList.contains("active");
-      pins.forEach(q => q.mk.classList.remove("active"));
-      if (!on) mk.classList.add("active");
-    });
+    mk.innerHTML = `<span class="dot"></span><span class="lab">${p.name.replace(" / ", "<br>")}</span>`;
     markers.appendChild(mk);
     return { mk, p };
   });
+}
+
+function toggleLabel(mk) {                          // flip a pin's label, overriding the auto (zoom/hover/mine) rules
+  const lab = mk.querySelector(".lab"), showing = getComputedStyle(lab).display !== "none";
+  mk.classList.toggle("on", !showing);
+  mk.classList.toggle("off", showing);
 }
 
 function place() {
@@ -96,32 +123,75 @@ function fit() {
 
 function zoom(f, ax, ay) {
   ax = ax == null ? W / 2 : ax; ay = ay == null ? H / 2 : ay;
-  const s = Math.max(fitS * 0.7, Math.min(fitS * 9, view.s * f));
+  const s = Math.max(fitS * MINZ, Math.min(fitS * MAXZ, view.s * f));
   if (s === view.s) return;
   view.tx = ax - (ax - view.tx) * (s / view.s);
   view.ty = ay - (ay - view.ty) * (s / view.s);
   view.s = s; render();
 }
 
-let drag = null;
+// one pointer pans; two pinch-zoom; a still single tap toggles the pin's label (mouse + touch alike)
+const ptrs = new Map();
+let g = null, down = null;
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const rel = e => { const r = map.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+
 map.addEventListener("pointerdown", e => {
-  map.setPointerCapture(e.pointerId);
-  drag = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty };
-  map.classList.add("drag");
+  if (e.target.closest(".tl, .ctl")) return;        // controls keep their own clicks
+  try { map.setPointerCapture(e.pointerId); } catch {}
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ptrs.size === 1) {
+    down = { id: e.pointerId, x: e.clientX, y: e.clientY, t: e.target, moved: false };
+    g = { mode: "pan", tx: view.tx, ty: view.ty, x: e.clientX, y: e.clientY };
+  } else if (ptrs.size === 2) { down = null; pinchStart(); }
 });
+
+function pinchStart() {
+  const [a, b] = [...ptrs.values()], r = map.getBoundingClientRect();
+  g = { mode: "pinch", d: dist(a, b), s: view.s, tx: view.tx, ty: view.ty,
+        cx: (a.x + b.x) / 2 - r.left, cy: (a.y + b.y) / 2 - r.top };
+}
+
 map.addEventListener("pointermove", e => {
-  if (!drag) return;
-  view.tx = drag.tx + (e.clientX - drag.x);
-  view.ty = drag.ty + (e.clientY - drag.y);
-  schedule();
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (g.mode === "pinch" && ptrs.size >= 2) {
+    const [a, b] = [...ptrs.values()];
+    const s = Math.max(fitS * MINZ, Math.min(fitS * MAXZ, g.s * dist(a, b) / g.d));
+    view.s = s;                                     // keep the two-finger midpoint anchored
+    view.tx = g.cx - (g.cx - g.tx) * (s / g.s);
+    view.ty = g.cy - (g.cy - g.ty) * (s / g.s);
+    schedule();
+  } else if (g.mode === "pan") {
+    if (Math.abs(e.clientX - down.x) > 6 || Math.abs(e.clientY - down.y) > 6) down.moved = true;
+    view.tx = g.tx + (e.clientX - g.x);
+    view.ty = g.ty + (e.clientY - g.y);
+    map.classList.add("drag");
+    schedule();
+  }
 });
-const end = () => { drag = null; map.classList.remove("drag"); };
-map.addEventListener("pointerup", end);
-map.addEventListener("pointercancel", end);
+
+function lift(e) {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.delete(e.pointerId);
+  map.classList.remove("drag");
+  if (ptrs.size === 1) {                             // pinch → pan: re-baseline to the finger left down
+    const p = [...ptrs.values()][0];
+    g = { mode: "pan", tx: view.tx, ty: view.ty, x: p.x, y: p.y }; down = null;
+  } else if (ptrs.size === 0) {
+    if (down && !down.moved) {                       // a still tap → toggle the dot's label
+      const dot = down.t.closest && down.t.closest(".dot");
+      if (dot) toggleLabel(dot.parentNode);
+    }
+    g = down = null;
+  }
+}
+map.addEventListener("pointerup", lift);
+map.addEventListener("pointercancel", lift);
 map.addEventListener("wheel", e => {
   e.preventDefault();
-  const r = map.getBoundingClientRect();
-  zoom(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX - r.left, e.clientY - r.top);
+  const p = rel(e);
+  zoom(e.deltaY < 0 ? 1.2 : 1 / 1.2, p.x, p.y);
 }, { passive: false });
 
 $("#in").addEventListener("click", () => zoom(1.4));
@@ -133,8 +203,22 @@ $("#pins").addEventListener("click", e => {
   markers.classList.toggle("off", on);
 });
 
+const ATTR = {
+  map: 'Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+  relief: 'Relief: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a>',
+  aerial: 'Aerial © <a href="https://basemap.at" target="_blank" rel="noopener">basemap.at</a> · CC BY',
+};
+const seg = $("#seg");
+function setMode(m) {
+  map.classList.remove("mode-map", "mode-relief", "mode-aerial");
+  map.classList.add("mode-" + m);
+  seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.m === m));
+  $("#attr").innerHTML = ATTR[m];
+}
+seg.addEventListener("click", e => { const b = e.target.closest("button"); if (b) setMode(b.dataset.m); });
+
 let D;
 fetch("./map-data.json").then(r => r.json()).then(d => {
-  D = d; drawScene(d); makeMarkers(d); fit();
+  D = d; drawScene(d); makeMarkers(d); setMode("map"); fit();
   new ResizeObserver(() => { const r = map.getBoundingClientRect(); W = r.width; H = r.height; render(); }).observe(map);
 });

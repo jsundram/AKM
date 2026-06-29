@@ -18,8 +18,9 @@ restaurants, the church) snap to the tagged feature. © OpenStreetMap contributo
 """
 import json, math, sys, urllib.parse, urllib.request
 
-# bbox: Liesing + Klebas (south, west, north, east)
-S, W, N, E = 46.687, 12.804, 46.698, 12.828
+# bbox: Liesing + Klebas, widened to take in the surrounding peaks (south, west, north, east).
+# scripts/build-terrain.py reads this back from map-data.json's meta so its rasters stay aligned.
+S, W, N, E = 46.679, 12.797, 46.705, 12.835
 OUT = __file__.rsplit("/", 2)[0] + "/map-data.json"
 API = "https://overpass-api.de/api/interpreter"
 
@@ -34,10 +35,10 @@ POIS = [
     {"name": "Haus Lanzinger",          "cat": "lodging", "st": "Liesing", "hn": "21"},
     {"name": "Haus Obernosterer",       "cat": "lodging", "st": "Liesing", "hn": "25"},
     {"name": "Kleines Berghotel",       "cat": "lodging", "st": "Klebas",  "hn": "7"},
-    {"name": "Kultursaal / Volksmusikakademie", "cat": "venue", "st": "Liesing", "hn": "15"},
-    {"name": "Pfarrkirche Hl. Nikolaus",        "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus"},
-    {"name": "Badstubn",          "cat": "food", "osm": "Badstubn"},
-    {"name": "Gasthaus Wilhelmer", "cat": "food", "osm": "Gasthaus Wilhelmer"},
+    {"name": "Kultursaal",               "cat": "venue", "st": "Liesing", "hn": "15"},
+    {"name": "Pfarrkirche Hl. Nikolaus", "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus"},
+    {"name": "Badstubn",     "cat": "food", "osm": "Badstubn"},
+    {"name": "GH Wilhelmer / Mascha Wirt", "cat": "food", "st": "Liesing", "hn": "24"},  # slash → line break in the label
 ]
 
 ROADS = {"primary": "primary", "secondary": "primary", "tertiary": "primary",
@@ -92,25 +93,56 @@ def build(els):
             p["xy"] = xy(hit["lat"], hit["lon"])
         pois.append(p)
 
-    roads, buildings, water, land = [], [], [], []
+    mw, mh = round((E - W) * KX), round((N - S) * KY)
+    def anchor(p):                                           # the on-line vertex nearest map centre, if in frame
+        best, bd = None, 1e18
+        for i in range(0, len(p), 2):
+            d = (p[i] - mw / 2) ** 2 + (p[i + 1] - mh / 2) ** 2
+            if d < bd and 0 <= p[i] <= mw and 0 <= p[i + 1] <= mh: best, bd = [p[i], p[i + 1]], d
+        return best
+
+    def length(p): return sum(math.dist(p[i:i + 2], p[i + 2:i + 4]) for i in range(0, len(p) - 2, 2))
+    def label_pos(p):                                       # (#in-frame vertices, offset at middle of the in-frame run)
+        inf = [i for i in range(0, len(p), 2) if 0 <= p[i] <= mw and 0 <= p[i + 1] <= mh]
+        if not inf: return None
+        mid, tot = inf[len(inf) // 2], length(p) or 1
+        acc = sum(math.dist(p[i - 2:i], p[i:i + 2]) for i in range(2, mid + 1, 2))
+        return len(inf), min(0.85, max(0.15, acc / tot))      # keep off the path ends so glyphs aren't clipped
+
+    roads, buildings, water, land, labels = [], [], [], [], []
+    named = {}                                              # road name → (road index, in-frame coverage, label-offset)
     for w in ways:
         t = w.get("tags", {}); g = w["geometry"]
         if "highway" in t and t["highway"] in ROADS:
-            roads.append({"k": ROADS[t["highway"]], "p": line(g)})
+            k = ROADS[t["highway"]]; p = line(g); roads.append({"k": k, "p": p})
+            nm = t.get("name")
+            if nm and "Zufahrt" in nm or (nm and "brücke" in nm.lower()): nm = None  # skip driveways/bridges
+            lp = label_pos(p) if nm and k in ("primary", "minor") else None
+            if lp and (nm not in named or lp[0] > named[nm][1]):   # keep the segment most in view
+                named[nm] = (len(roads) - 1, lp[0], round(lp[1], 3))
         elif "waterway" in t:
-            water.append({"k": "river" if t["waterway"] == "river" else "stream", "p": line(g)})
+            k = "river" if t["waterway"] == "river" else "stream"
+            p = line(g); water.append({"k": k, "p": p})
+            at = anchor(p)
+            if t.get("name") and at: labels.append({"t": t["name"], "xy": at, "k": "water"})
         elif t.get("natural") == "water":
-            water.append({"k": "body", "p": line(g)})
+            p = line(g); water.append({"k": "body", "p": p})
+            nm = t.get("name") or ("Badeteich" if t.get("sport") == "swimming" else None)
+            if nm: labels.append({"t": nm, "xy": centroid(g), "k": "water"})
         elif t.get("leisure") == "park" or t.get("landuse") in ("cemetery", "grass", "meadow", "village_green"):
             land.append({"k": "green", "p": line(g)})
         elif "building" in t and w["id"] not in poi_ids:
             buildings.append({"p": line(g)})
 
-    labels = [{"t": n["tags"]["name"], **dict(zip("xy", xy(n["lat"], n["lon"])))}
-              for n in nodes if n.get("tags", {}).get("place") == "hamlet" and n["tags"].get("name")]
-    labels = [{"t": l["t"], "xy": [l["x"], l["y"]]} for l in labels]
+    for nm, (i, _, off) in named.items():                   # one label per road name, on its most useful segment
+        roads[i]["name"] = nm; roads[i]["no"] = off
 
-    meta = {"w": round((E - W) * KX), "h": round((N - S) * KY)}
+    for n in nodes:                                          # hamlet names
+        t = n.get("tags", {})
+        if t.get("place") == "hamlet" and t.get("name"):
+            labels.append({"t": t["name"], "xy": xy(n["lat"], n["lon"]), "k": "hamlet"})
+
+    meta = {"w": mw, "h": mh, "bbox": [S, W, N, E]}
     return {"meta": meta, "roads": roads, "buildings": buildings,
             "water": water, "land": land, "labels": labels, "pois": pois}, missed
 

@@ -70,23 +70,42 @@
   #svg .fp-venue{fill:var(--fp-venue);stroke:var(--pin-venue)}
   #svg .fp-food{fill:var(--fp-food);stroke:var(--pin-food)}
   #svg .fp-mine{fill:var(--fp-mine);stroke:var(--brass-deep);stroke-width:2px}
-  #svg .hamlet{fill:var(--muted);font-family:"Fraunces",serif;font-size:17px;letter-spacing:.02em;
-    text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:3px;opacity:.65}
+  #svg .rl,#svg .ae{display:none}
+  #svg image{image-rendering:auto}
+  .mode-relief #svg .rl{display:block}
+  .mode-relief #svg .bldg{fill-opacity:.5}
+  .mode-aerial #svg .ae{display:block}
+  .mode-aerial #svg .green,.mode-aerial #svg .body,.mode-aerial #svg .bldg{display:none}
+  .mode-aerial #svg .road{stroke:rgba(255,255,255,.55)}
+  .mode-aerial #svg .primary{stroke:rgba(255,255,255,.78)}
+  .mode-aerial #svg .stream,.mode-aerial #svg .river{opacity:.8}
+  .mode-aerial #svg .fp{fill:none}
+  .mode-aerial #svg .fp-mine{fill:var(--fp-mine)}
+  #svg .glab{paint-order:stroke;stroke:var(--paper);stroke-width:3px;text-anchor:middle}
+  #svg .glab.hamlet{fill:var(--muted);font-family:"Fraunces",serif;font-size:17px;letter-spacing:.02em;opacity:.7}
+  #svg .glab.water{fill:var(--water-line);font-style:italic;font-size:12px;letter-spacing:.04em;opacity:.9}
+  #svg .glab.road{fill:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;opacity:.82}
+  #svg .rdpath{fill:none;stroke:none}
+  .mode-aerial #svg .glab{fill:#fff;stroke:rgba(0,0,0,.6)}
+  .mode-aerial #svg .glab.water{fill:#cfe9f5}
+  #svg .rl{filter:sepia(.12) saturate(.85) brightness(1.02)}   /* warm the grayscale relief */
 
   .markers{position:absolute;inset:0;pointer-events:none}
   .markers.off{display:none}
   .mk{position:absolute;display:flex;align-items:center;gap:6px;transform:translate(-8px,-8px);white-space:nowrap}
   .mk.rev{flex-direction:row-reverse;transform:translate(calc(-100% + 8px),-8px)}
   .dot{flex:0 0 auto;width:16px;height:16px;border-radius:50%;border:2px solid var(--paper);
-    background:var(--pin-lodge);box-shadow:0 1px 3px rgba(20,30,30,.4);pointer-events:auto;cursor:pointer}
+    background:var(--pin-lodge);box-shadow:0 1px 3px rgba(20,30,30,.4);pointer-events:auto;cursor:pointer;touch-action:none}
   .cat-venue .dot{background:var(--pin-venue)} .cat-food .dot{background:var(--pin-food)}
   .mk.mine .dot{width:18px;height:18px;background:var(--gold);box-shadow:0 0 0 3px var(--valley),0 1px 4px rgba(20,30,30,.45)}
   .lab{display:none;padding:3px 6px 4px;border:1px solid var(--line);border-radius:5px;color:var(--ink);
     background:rgba(249,250,249,.94);box-shadow:0 1px 3px rgba(20,30,30,.14);
-    font-size:11.5px;font-weight:500;line-height:1}
+    font-size:11.5px;font-weight:500;line-height:1.2}
   .mk.mine .lab{display:block;border-color:var(--warm-line);color:var(--brass-deep);background:#F4ECDD}
-  .mk.active .lab,.mk:hover .lab,.markers.zoom .lab{display:block}
-  .mk.active{z-index:3}
+  .mk:hover .lab,.markers.zoom .lab{display:block}
+  .mk.on .lab{display:block!important}    /* tap a pin to force its label on … */
+  .mk.off .lab{display:none!important}    /* … or off, regardless of zoom/hover/mine */
+  .mk.on{z-index:3}
 
   .ctl{position:absolute;z-index:6;top:12px;right:12px;display:grid;overflow:hidden;
     border:1px solid var(--line);border-radius:8px;background:var(--paper);box-shadow:0 2px 8px rgba(20,30,30,.16)}
@@ -94,9 +113,16 @@
     color:var(--ink);font:inherit;font-size:19px;cursor:pointer}
   .ctl button+button{border-top:1px solid var(--line)}
   .ctl button:hover{background:var(--haze)}
-  .pins{position:absolute;z-index:6;top:12px;left:12px;display:inline-flex;align-items:center;gap:7px;
-    height:32px;padding:0 11px;border:1px solid var(--line);border-radius:8px;background:var(--paper);
-    color:var(--ink);font:inherit;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(20,30,30,.12)}
+  .tl{position:absolute;z-index:6;top:12px;left:12px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+  .seg{display:inline-flex;overflow:hidden;border:1px solid var(--line);border-radius:8px;
+    background:var(--paper);box-shadow:0 1px 3px rgba(20,30,30,.12)}
+  .seg button{border:0;background:var(--paper);color:var(--muted);font:inherit;font-size:11px;font-weight:600;
+    letter-spacing:.02em;padding:7px 11px;cursor:pointer}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button.on{color:var(--brass-deep);background:#EFE2C8}
+  .pins{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid var(--line);
+    border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;font-size:12px;font-weight:600;
+    cursor:pointer;box-shadow:0 1px 3px rgba(20,30,30,.12)}
   .pins .pd{width:8px;height:8px;border-radius:50%;background:var(--gold)}
   .pins[aria-pressed="false"]{color:var(--faint)} .pins[aria-pressed="false"] .pd{background:var(--faint)}
   .north{position:absolute;z-index:5;left:14px;bottom:12px;display:grid;justify-items:center;gap:1px;
@@ -122,7 +148,9 @@
       --fp-lodge:rgba(127,166,188,.22); --fp-venue:rgba(92,156,130,.22);
       --fp-food:rgba(200,130,94,.20); --fp-mine:rgba(217,162,76,.26); }
     .lab{background:rgba(23,34,33,.95)} .mk.mine .lab{background:#272015}
-    .pins,.ctl button{background:var(--haze)} .ctl button:hover{background:#202c2b}
+    .pins,.ctl button,.seg button{background:var(--haze)} .ctl button:hover{background:#202c2b}
+    .seg button.on{background:#2E2616} .seg button{color:var(--faint)}
+    #svg .rl{filter:brightness(.52) contrast(1.08) saturate(.8)}   /* dim the relief on a dark page */
   }
 </style>
 </head>
@@ -143,9 +171,16 @@
   </div>
 
   <div id="map" aria-label="Map of Liesing and Klebas">
-    <svg id="svg" aria-hidden="true"><g id="scene"></g></svg>
+    <svg id="svg" aria-hidden="true"><defs><clipPath id="clip"><rect id="cliprect" x="0" y="0"/></clipPath></defs><g id="scene" clip-path="url(#clip)"></g></svg>
     <div class="markers" id="markers"></div>
-    <button class="pins" id="pins" type="button" aria-pressed="true"><span class="pd"></span>Pins</button>
+    <div class="tl">
+      <div class="seg" id="seg" role="group" aria-label="Base layer">
+        <button data-m="map" class="on" type="button">Map</button>
+        <button data-m="relief" type="button">Relief</button>
+        <button data-m="aerial" type="button">Aerial</button>
+      </div>
+      <button class="pins" id="pins" type="button" aria-pressed="true"><span class="pd"></span>Pins</button>
+    </div>
     <div class="ctl">
       <button id="in" type="button" title="Zoom in" aria-label="Zoom in">+</button>
       <button id="out" type="button" title="Zoom out" aria-label="Zoom out">−</button>
@@ -154,7 +189,7 @@
     <div class="north" aria-hidden="true"><i></i>N</div>
     <div class="meta">
       <span id="sl-lab">100 m</span><span class="sl" id="sl"></span>
-      <span>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span>
+      <span id="attr"></span>
     </div>
   </div>
 

@@ -1,5 +1,4 @@
 .DS_Store
 
-# local data, not for the public repo
+# source archives (map + roster), not for the public repo
 *.zip
-AKM-Roster.zip

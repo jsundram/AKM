@@ -1,4 +1,4 @@
-const V = "akm-v18";
+const V = "akm-v19";
 const SHELL = ["./", "./index.html", "./app.js", "./manifest.json",
                "./composer-bank.json", "./roster.html",
                "./map.html", "./map.js", "./map-data.json",
@@ -21,11 +21,26 @@ self.addEventListener("fetch", e => {
     return;
   }
   if (u.origin !== location.origin) return;   // let gviz + open-meteo go straight to network
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
-      const copy = resp.clone();
-      caches.open(V).then(c => c.put(e.request, copy));
-      return resp;
-    }).catch(() => caches.match("./index.html")))
-  );
+
+  // App code/data + page navigations → network-first, so a push is visible on reload without
+  // waiting for a service-worker swap; fall back to cache when offline. Big static assets
+  // (images) stay cache-first for speed — a V bump refreshes those.
+  const live = e.request.mode === "navigate" || u.pathname.endsWith("/") || /\.(html|js|json)$/.test(u.pathname);
+  if (live) {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        const copy = resp.clone();
+        caches.open(V).then(c => c.put(e.request, copy));
+        return resp;
+      }).catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
+    );
+  } else {
+    e.respondWith(
+      caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
+        const copy = resp.clone();
+        caches.open(V).then(c => c.put(e.request, copy));
+        return resp;
+      }))
+    );
+  }
 });
