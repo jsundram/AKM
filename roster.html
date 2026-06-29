@@ -128,7 +128,8 @@ function colMap(labels){
   const name=at("name"), hotel=at("hotel");
   if(name<0 || hotel<0) return null;
   const num = at("number")>=0 ? at("number") : at("#");
-  return {n: num<0?0:num, name, instrument: at("instr"), type: at("type"), hotel, pieces: at("piece"), notes: at("note")};
+  const from = ["location","from","home","city"].reduce((a,k)=> a>=0?a:at(k), -1);   // where they're from
+  return {n: num<0?0:num, name, instrument: at("instr"), type: at("type"), hotel, pieces: at("piece"), notes: at("note"), from};
 }
 const pick = (r,i) => i<0 ? "" : (r[i]||"");
 function parseRoster(gv){
@@ -139,7 +140,7 @@ function parseRoster(gv){
   if(!m) return [];
   return rows
     .map(r => ({n:pick(r,m.n), name:r[m.name], instrument:pick(r,m.instrument), type:pick(r,m.type), hotel:r[m.hotel],
-                pieces:pick(r,m.pieces), notes:pick(r,m.notes)}))
+                pieces:pick(r,m.pieces), notes:pick(r,m.notes), from:pick(r,m.from)}))
     .filter(p => p.name && p.name.toLowerCase()!=="name");
 }
 
@@ -175,7 +176,7 @@ function paint(){
   for(const p of people){
     const fill = HOTEL_COLORS[p.hotel] || DEFAULT_FILL;
     const you = p.name==="Jason Sundram";
-    const exp = !!(p.pieces || p.notes);                       // expandable only if there's more to show
+    const exp = !!(p.pieces || p.notes || p.from);             // expandable only if there's more to show
     const tr=document.createElement("tr");
     tr.style.background = fill;
     tr.className = (you?"you ":"") + (exp?"exp":"");
@@ -189,7 +190,7 @@ function paint(){
       const dr=document.createElement("tr");
       dr.className="detail"; dr.hidden=true; dr.style.background=fill;
       const dl=(k,v)=>v?`<div class="dl"><span class="k">${k}</span><span class="v">${linkify(v)}</span></div>`:"";
-      dr.innerHTML=`<td colspan="5">${dl("Pieces",p.pieces)}${dl("Notes",p.notes)}</td>`;
+      dr.innerHTML=`<td colspan="5">${dl("From",p.from)}${dl("Pieces",p.pieces)}${dl("Notes",p.notes)}</td>`;
       tb.appendChild(dr);
       tr.addEventListener("click", ()=>{ const open=dr.hidden; dr.hidden=!open; tr.classList.toggle("open",open); });
     }
