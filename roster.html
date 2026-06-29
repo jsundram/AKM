@@ -65,6 +65,7 @@
 
   footer{margin-top:20px;display:flex;justify-content:space-between;gap:12px;align-items:center;
     font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.05em;color:var(--faint)}
+  .flinks{display:flex;gap:8px}
   #msg{padding:20px;color:var(--muted);font-size:13px}
 
   @media (prefers-color-scheme: dark){
@@ -87,7 +88,7 @@
     </table>
     <div id="msg" hidden></div>
   </div>
-  <footer><span>where everyone is staying</span><a class="back" href="./index.html">← Schedule</a></footer>
+  <footer><span>where everyone is staying</span><span class="flinks"><a class="back" id="editlink" target="_blank" rel="noopener">Edit sheet ↗</a><a class="back" href="./index.html">← Schedule</a></span></footer>
 </div>
 <script>
 // Roster lives in its own view-only Google Sheet, pulled live (gviz JSONP) and cached for offline —
@@ -207,6 +208,7 @@ async function pull(){
 function boot(){
   document.querySelectorAll("thead th[data-k]").forEach(th=>th.onclick=()=>sortBy(th.dataset.k));
   if(!ROSTER_SID){ msg("Roster sheet not configured yet."); return; }
+  editlink.href = `https://docs.google.com/spreadsheets/d/${ROSTER_SID}/edit${ROSTER_GID?`?gid=${ROSTER_GID}#gid=${ROSTER_GID}`:""}`;
   let cached=null; try{ cached=JSON.parse(localStorage.getItem(RK)); }catch{}
   if(cached && cached.people) render(cached.people);
   else if(navigator.onLine) msg("Loading roster…");
