@@ -30,7 +30,7 @@
 
   .back{display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:11px;
     letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;
-    border:1px solid var(--line);border-radius:7px;padding:5px 10px}
+    white-space:nowrap;border:1px solid var(--line);border-radius:7px;padding:5px 10px}
   .back:hover{color:var(--brass-deep);border-color:var(--warm-line)}
   h1{font-family:"Fraunces",serif;font-weight:500;font-size:30px;letter-spacing:-.015em;margin:16px 0 2px}
   .sub{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.04em;color:var(--faint);margin-bottom:16px}
@@ -63,7 +63,7 @@
     text-transform:uppercase;color:var(--brass-deep);border:1px solid var(--warm-line);border-radius:4px;
     padding:0 4px;margin-left:6px;white-space:nowrap;vertical-align:middle}
 
-  footer{margin-top:20px;display:flex;justify-content:space-between;gap:12px;align-items:center;
+  footer{margin-top:20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center;
     font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.05em;color:var(--faint)}
   .flinks{display:flex;gap:8px}
   #msg{padding:20px;color:var(--muted);font-size:13px}
