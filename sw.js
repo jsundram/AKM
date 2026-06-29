@@ -1,7 +1,8 @@
-const V = "akm-v9";
+const V = "akm-v10";
 const SHELL = ["./", "./index.html", "./app.js", "./manifest.json",
                "./composer-bank.json", "./roster.html",
-               "./map.html", "./map.js", "./map-data.json", "./icon.svg",
+               "./map.html", "./map.js", "./map-data.json",
+               "./map-relief.jpg", "./map-aerial.jpg", "./icon.svg",
                "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

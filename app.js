@@ -107,6 +107,7 @@ function parse(rows){
 const title = s => s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 
 // ---- weather ----
+const skyName = c => c===0?"Clear":c===1?"Mostly clear":c===2?"Partly cloudy":c===3?"Overcast":(c===45||c===48)?"Fog":"Cloudy";
 async function weatherRange(){
   const u = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
     `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,weathercode`+
@@ -120,11 +121,14 @@ async function weatherRange(){
     if(t.length<24) return;
     let win=0,best=-1; for(let k=0;k<22;k++){const v=pr[k]+pr[k+1]+pr[k+2]; if(v>best){best=v;win=k;}}
     const rainy = pr.map((p,i)=>p>=0.2?i:-1).filter(i=>i>=0);
+    const sum = pr.reduce((a,b)=>a+b,0);
     out[dt] = {t, hi:Math.round(D.temperature_2m_max[di]), lo:Math.round(D.temperature_2m_min[di]),
       rise:D.sunrise[di].slice(11,16), set:D.sunset[di].slice(11,16),
-      wet: pr.reduce((a,b)=>a+b,0)>0 ? `${String(win).padStart(2,"0")}–${String(win+3).padStart(2,"0")}h` : "",
+      wet: sum>0 ? `${String(win).padStart(2,"0")}–${String(win+3).padStart(2,"0")}h` : "",
       thunder: wc.some(c=>[95,96,99].includes(c)),
-      shower: rainy.length ? [rainy[0], rainy[rainy.length-1]+1] : null, ok:true};
+      shower: rainy.length ? [rainy[0], rainy[rainy.length-1]+1] : null,
+      drizzle: !rainy.length && sum>0,           // measurable precip below the showers threshold
+      sky: skyName(D.weathercode[di]), ok:true};
   });
   return out;
 }
@@ -149,10 +153,11 @@ function svg(w){
 }
 function wxcard(w){
   if(!w||!w.ok) return `<div class="wx"><div class="wx-top"><div class="wx-sum"><b>Forecast unavailable.</b><br>schedule below.</div></div></div>`;
-  const sub = w.thunder?"Thunderstorms possible":w.shower?"Showers possible":"Dry";
+  const precip = w.thunder?"Thunderstorms possible":w.shower?"Showers possible":w.drizzle?"Drizzle possible":"";
+  const sub = precip ? `${precip} in the afternoon.` : `${w.sky||"Dry"}.`;
   const foot = w.wet ? `<div class="wx-foot"><span>Wettest <b>≈ ${w.wet}</b></span><span>Sun <b>↑ ${w.rise}</b> · <b>↓ ${w.set}</b></span></div>`
                      : `<div class="wx-foot"><span>Sun <b>↑ ${w.rise}</b> · <b>↓ ${w.set}</b></span></div>`;
-  return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub} in the afternoon.</b><br>light wind</div></div><div class="wx-curve">${svg(w)}</div>${foot}</div>`;
+  return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w)}</div>${foot}</div>`;
 }
 function tline(s,e){ return `<div class="time"><span class="s">${s}</span>${e?`<span class="e">${e}</span>`:""}</div>`; }
 function timeline(day,w){
