@@ -144,20 +144,20 @@ function parseRoster(gv){
 
 let PEOPLE=[], sortKey=null, sortDir=1;     // null = sheet order (by number)
 const TYPE_RANK={DIR:0,MGR:1,F:2,AF:3,TF:4,W1:5,W2:6};  // staff first, then faculty/fellows/weeks; blanks last
-const instRank = s => { s=(s||"").trim().toLowerCase();   // score order: V, VA, VC, Bass, Piano, Clar.
-  return !s?99 : s.startsWith("vc")?2 : s.startsWith("va")?1 : s.startsWith("v")?0
-       : s.startsWith("b")?3 : s.startsWith("p")?4 : s.startsWith("c")?5 : 50; };
+// instruments collapse to a fixed set, shown + sorted in this order; nothing else
+const INST_ORDER=["V","V/VA","VA","VC","Bass","Piano","Clar."];
+function instLabel(s){ s=(s||"").trim(); if(!s) return ""; const l=s.toLowerCase();
+  return l==="v/va"?"V/VA" : l.startsWith("vc")?"VC" : l.startsWith("va")?"VA" : l.startsWith("v")?"V"
+       : l.startsWith("b")?"Bass" : l.startsWith("p")?"Piano" : l.startsWith("c")?"Clar." : s; }
+const instRank = s => { const k=instLabel(s), i=INST_ORDER.indexOf(k); return i>=0?i:(k?50:99); };
 function key(p){
   if(sortKey==="n") return parseFloat(p.n)||0;
   if(sortKey==="type") return (p.type in TYPE_RANK) ? TYPE_RANK[p.type] : 8;
   return (p[sortKey]||"~").toLowerCase();    // blanks sort last
 }
 function cmp(a,b){
-  let x,y;
-  if(sortKey==="instrument"){ x=instRank(a.instrument); y=instRank(b.instrument);   // family rank, then plain before "/" combos, then lexical
-    if(x===y){ const sa=a.instrument||"~", sb=b.instrument||"~";
-      x=(sa.includes("/")?"1":"0")+sa.toLowerCase(); y=(sb.includes("/")?"1":"0")+sb.toLowerCase(); } }
-  else { x=key(a); y=key(b); }
+  const x = sortKey==="instrument" ? instRank(a.instrument) : key(a);
+  const y = sortKey==="instrument" ? instRank(b.instrument) : key(b);
   return (x<y?-1:x>y?1:0)*sortDir;
 }
 function sortBy(k){ if(sortKey===k) sortDir=-sortDir; else { sortKey=k; sortDir=1; } paint(); }
@@ -180,7 +180,7 @@ function paint(){
     tr.className = (you?"you ":"") + (exp?"exp":"");
     tr.innerHTML = `<td class="n">${esc(p.n)}</td>`+
       `<td>${esc(p.name)}${you?'<span class="youtag">you</span>':''}</td>`+
-      `<td class="in">${esc(p.instrument)||"·"}</td>`+
+      `<td class="in">${esc(instLabel(p.instrument))||"·"}</td>`+
       `<td class="ty">${esc(p.type)}</td>`+
       `<td class="ht">${esc(p.hotel)}${exp?'<span class="caret">›</span>':''}</td>`;
     tb.appendChild(tr);
