@@ -107,12 +107,20 @@
   .mk.off .lab{display:none!important}    /* … or off, regardless of zoom/hover/mine */
   .mk.on{z-index:3}
 
+  .me{position:absolute;z-index:4;transform:translate(-50%,-50%);pointer-events:none}
+  .me i{display:block;width:15px;height:15px;border-radius:50%;background:#1A73E8;
+    border:2.5px solid #fff;box-shadow:0 0 0 1px rgba(20,30,30,.25),0 1px 5px rgba(20,40,90,.55)}
+  .me::before{content:"";position:absolute;left:50%;top:50%;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;
+    border-radius:50%;background:#1A73E8;opacity:.35;animation:mepulse 2.4s ease-out infinite}
+  @keyframes mepulse{to{transform:scale(3.4);opacity:0}}
+
   .ctl{position:absolute;z-index:6;top:12px;right:12px;display:grid;overflow:hidden;
     border:1px solid var(--line);border-radius:8px;background:var(--paper);box-shadow:0 2px 8px rgba(20,30,30,.16)}
   .ctl button{width:38px;height:38px;display:grid;place-items:center;border:0;background:var(--paper);
     color:var(--ink);font:inherit;font-size:19px;cursor:pointer}
   .ctl button+button{border-top:1px solid var(--line)}
   .ctl button:hover{background:var(--haze)}
+  .ctl button.on{color:#1A73E8}
   .tl{position:absolute;z-index:6;top:12px;left:12px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
   .seg{display:inline-flex;overflow:hidden;border:1px solid var(--line);border-radius:8px;
     background:var(--paper);box-shadow:0 1px 3px rgba(20,30,30,.12)}
@@ -173,6 +181,7 @@
   <div id="map" aria-label="Map of Liesing and Klebas">
     <svg id="svg" aria-hidden="true"><defs><clipPath id="clip"><rect id="cliprect" x="0" y="0"/></clipPath></defs><g id="scene" clip-path="url(#clip)"></g></svg>
     <div class="markers" id="markers"></div>
+    <div class="me" id="me" hidden><i></i></div>
     <div class="tl">
       <div class="seg" id="seg" role="group" aria-label="Base layer">
         <button data-m="map" class="on" type="button">Map</button>
@@ -185,6 +194,7 @@
       <button id="in" type="button" title="Zoom in" aria-label="Zoom in">+</button>
       <button id="out" type="button" title="Zoom out" aria-label="Zoom out">−</button>
       <button id="fit" type="button" title="Reset" aria-label="Reset" style="font-size:15px">⌂</button>
+      <button id="loc" type="button" title="My location" aria-label="My location" style="font-size:17px">◎</button>
     </div>
     <div class="north" aria-hidden="true"><i></i>N</div>
     <div class="meta">

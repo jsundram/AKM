@@ -22,8 +22,8 @@ function roadLabel(o, i) {                          // curved name following the
   t.appendChild(tp); scene.appendChild(t);
 }
 
-const map = $("#map"), scene = $("#scene"), markers = $("#markers");
-let W, H, view = { s: 1, tx: 0, ty: 0 }, fitS = 1, pins = [], raf = 0;
+const map = $("#map"), scene = $("#scene"), markers = $("#markers"), meEl = $("#me");
+let W, H, view = { s: 1, tx: 0, ty: 0 }, fitS = 1, pins = [], raf = 0, me = null, watching = false;
 
 const sx = x => view.tx + view.s * x;            // scene metres → screen px
 const sy = y => view.ty + view.s * y;
@@ -96,6 +96,22 @@ function place() {
     mk.style.top = sy(p.xy[1]) + "px";
     mk.classList.toggle("rev", x > W * 0.62);
   });
+  if (me) { meEl.style.left = sx(me.x) + "px"; meEl.style.top = sy(me.y) + "px"; }
+}
+
+// live "you are here" dot: watchPosition → project lat/lon into scene metres (same equirectangular
+// projection as build-map.py), then place() repositions it in screen space like the pins.
+function onPos(pos) {
+  const b = D.meta.bbox;                                          // [S, W, N, E]
+  const KX = 111320 * Math.cos((b[0] + b[2]) / 2 * Math.PI / 180), KY = 110540;
+  me = { x: (pos.coords.longitude - b[1]) * KX, y: (b[2] - pos.coords.latitude) * KY };
+  meEl.hidden = false; $("#loc").classList.add("on"); schedule();
+}
+function locate() {
+  if (!watching && navigator.geolocation) {
+    watching = true;
+    navigator.geolocation.watchPosition(onPos, () => {}, { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 });
+  }
 }
 
 function render() {
@@ -197,6 +213,14 @@ map.addEventListener("wheel", e => {
 $("#in").addEventListener("click", () => zoom(1.4));
 $("#out").addEventListener("click", () => zoom(1 / 1.4));
 $("#fit").addEventListener("click", fit);
+$("#loc").addEventListener("click", () => {                       // request/centre on my location
+  locate();
+  if (me) {
+    view.s = Math.min(fitS * MAXZ, Math.max(view.s, fitS * 4));
+    view.tx = W / 2 - view.s * me.x; view.ty = H / 2 - view.s * me.y;
+    render();
+  }
+});
 $("#pins").addEventListener("click", e => {
   const b = e.currentTarget, on = b.getAttribute("aria-pressed") === "true";
   b.setAttribute("aria-pressed", String(!on));
@@ -219,6 +243,6 @@ seg.addEventListener("click", e => { const b = e.target.closest("button"); if (b
 
 let D;
 fetch("./map-data.json").then(r => r.json()).then(d => {
-  D = d; drawScene(d); makeMarkers(d); setMode("map"); fit();
+  D = d; drawScene(d); makeMarkers(d); setMode("map"); fit(); locate();
   new ResizeObserver(() => { const r = map.getBoundingClientRect(); W = r.width; H = r.height; render(); }).observe(map);
 });
