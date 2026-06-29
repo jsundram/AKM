@@ -22,7 +22,7 @@ function roadLabel(o, i) {                          // curved name following the
   t.appendChild(tp); scene.appendChild(t);
 }
 
-const map = $("#map"), scene = $("#scene"), markers = $("#markers"), meEl = $("#me");
+const map = $("#map"), scene = $("#scene"), markers = $("#markers"), meEl = $("#me"), accEl = $("#me .acc");
 let W, H, view = { s: 1, tx: 0, ty: 0 }, fitS = 1, pins = [], raf = 0, me = null, watching = false;
 
 const sx = x => view.tx + view.s * x;            // scene metres → screen px
@@ -96,7 +96,11 @@ function place() {
     mk.style.top = sy(p.xy[1]) + "px";
     mk.classList.toggle("rev", x > W * 0.62);
   });
-  if (me) { meEl.style.left = sx(me.x) + "px"; meEl.style.top = sy(me.y) + "px"; }
+  if (me) {
+    meEl.style.left = sx(me.x) + "px"; meEl.style.top = sy(me.y) + "px";
+    const d = 2 * me.acc * view.s;                                // accuracy is metres → screen px scales with zoom
+    accEl.style.width = accEl.style.height = d + "px";
+  }
 }
 
 // live "you are here" dot: watchPosition → project lat/lon into scene metres (same equirectangular
@@ -104,7 +108,7 @@ function place() {
 function onPos(pos) {
   const b = D.meta.bbox;                                          // [S, W, N, E]
   const KX = 111320 * Math.cos((b[0] + b[2]) / 2 * Math.PI / 180), KY = 110540;
-  me = { x: (pos.coords.longitude - b[1]) * KX, y: (b[2] - pos.coords.latitude) * KY };
+  me = { x: (pos.coords.longitude - b[1]) * KX, y: (b[2] - pos.coords.latitude) * KY, acc: pos.coords.accuracy || 0 };
   meEl.hidden = false; $("#loc").classList.add("on"); schedule();
 }
 function locate() {

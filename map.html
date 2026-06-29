@@ -110,6 +110,8 @@
   .me{position:absolute;z-index:4;transform:translate(-50%,-50%);pointer-events:none}
   .me i{display:block;width:15px;height:15px;border-radius:50%;background:#1A73E8;
     border:2.5px solid #fff;box-shadow:0 0 0 1px rgba(20,30,30,.25),0 1px 5px rgba(20,40,90,.55)}
+  .me .acc{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;
+    background:rgba(26,115,232,.1);border:1px solid rgba(26,115,232,.32);pointer-events:none}
   .me::before{content:"";position:absolute;left:50%;top:50%;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;
     border-radius:50%;background:#1A73E8;opacity:.35;animation:mepulse 2.4s ease-out infinite}
   @keyframes mepulse{to{transform:scale(3.4);opacity:0}}
@@ -181,7 +183,7 @@
   <div id="map" aria-label="Map of Liesing and Klebas">
     <svg id="svg" aria-hidden="true"><defs><clipPath id="clip"><rect id="cliprect" x="0" y="0"/></clipPath></defs><g id="scene" clip-path="url(#clip)"></g></svg>
     <div class="markers" id="markers"></div>
-    <div class="me" id="me" hidden><i></i></div>
+    <div class="me" id="me" hidden><span class="acc"></span><i></i></div>
     <div class="tl">
       <div class="seg" id="seg" role="group" aria-label="Base layer">
         <button data-m="map" class="on" type="button">Map</button>
