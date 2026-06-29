@@ -1,17 +1,18 @@
 # AKM — today
 
-A pure-pull briefing for the AKM Chamber Music Festival. Open it and it shows **today**: your rehearsals (room + coach), an hourly weather curve, and a grace note — plus a participant **roster** and an offline village **map**. It fetches the live schedule and forecast itself, in the browser — no server, no scheduled job — and **caches the whole festival week on every online load**, so once you've opened it on wifi in the morning you can browse any day offline all afternoon. Hosted on GitHub Pages, installed to the iPhone home screen.
+A pure-pull briefing for the AKM Chamber Music Festival. Open it and it shows **today**: your rehearsals (room + coach), an hourly weather curve, and a grace note — plus a participant **roster**, an offline village **map**, and a co-performance **network** graph. It fetches the live schedule and forecast itself, in the browser — no server, no scheduled job — and **caches the whole festival week on every online load**, so once you've opened it on wifi in the morning you can browse any day offline all afternoon. Hosted on GitHub Pages, installed to the iPhone home screen.
 
 ## What's in it
 
 - **Today** (`index.html` + `app.js`) — your rehearsals (warm brass cards), the hourly temperature curve with sunrise/sunset and a showers band, meals, the evening practice block, and a sourced grace-note quote. Day chips up top browse any cached day; a "source sheet ↗" footer link opens that day's actual sheet tab.
-- **Roster** (`roster.html`) — everyone, grouped/tinted by hotel, with instrument, role (Type), and lodging. Tap a row to see their pieces/notes; tap any column header to sort. Linked from the footer.
-- **Map** (`map.html`) — a custom offline map of Liesing/Klebas with the festival's lodgings, venues, and food, plus Relief and Aerial layers. Linked from the footer.
+- **Roster** (`roster.html`) — everyone, grouped/tinted by hotel, with instrument, role (Type), and lodging. Tap a row to see their hometown / pieces / notes; tap any column header to sort. A WhatsApp glyph on people you have a number for opens a pre-filled chat. Linked from the footer.
+- **Map** (`map.html`) — a custom offline map of Liesing/Klebas with the festival's lodgings, venues, and food, plus Relief and Aerial layers and a live "you are here" dot. Linked from the footer.
+- **Network** (`network.html`) — a co-performance graph: who shares a piece with whom, as an instrument-coloured chord diagram or an ego-centric "rings" view radiating out from you. Linked from the footer.
 
 ## How it works
 
 - **Schedule**: the live Google Sheet via its gviz endpoint, loaded as JSONP (works for the view-only public sheet without CORS trouble).
-- **Weather**: Open-Meteo hourly for the festival dates (CORS-friendly `fetch`). The summary distinguishes thunderstorms, showers, drizzle, and the sky (clear → overcast).
+- **Weather**: Open-Meteo for the festival dates (CORS-friendly `fetch`), sourced from **GeoSphere Austria's high-resolution alpine model** (AROME, blended with ECMWF for the longer range) and falling back to Open-Meteo's best-match blend if needed; the active source is cited on the card. The summary distinguishes thunderstorms, showers, drizzle, and the sky (clear → overcast).
 - **Roster**: a *separate* view-only Google Sheet, pulled the same way — so participant data lives in the sheet, not the repo. The page is `noindex`.
 - **Map**: a baked vector basemap (no tiles, no map library) plus two baked raster layers, all precached — it works with no network at all.
 - **Type & fonts**: Fraunces / IBM Plex Mono / Inter from Google Fonts (cached by the service worker, since they aren't iOS system fonts).
