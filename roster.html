@@ -144,12 +144,21 @@ function parseRoster(gv){
 
 let PEOPLE=[], sortKey=null, sortDir=1;     // null = sheet order (by number)
 const TYPE_RANK={DIR:0,MGR:1,F:2,AF:3,TF:4,W1:5,W2:6};  // staff first, then faculty/fellows/weeks; blanks last
+const instRank = s => { s=(s||"").trim().toLowerCase();   // score order: V, VA, VC, Bass, Piano, Clar.
+  return !s?99 : s.startsWith("vc")?2 : s.startsWith("va")?1 : s.startsWith("v")?0
+       : s.startsWith("b")?3 : s.startsWith("p")?4 : s.startsWith("c")?5 : 50; };
 function key(p){
   if(sortKey==="n") return parseFloat(p.n)||0;
   if(sortKey==="type") return (p.type in TYPE_RANK) ? TYPE_RANK[p.type] : 8;
   return (p[sortKey]||"~").toLowerCase();    // blanks sort last
 }
-function cmp(a,b){ const x=key(a),y=key(b); return (x<y?-1:x>y?1:0)*sortDir; }
+function cmp(a,b){
+  let x,y;
+  if(sortKey==="instrument"){ x=instRank(a.instrument); y=instRank(b.instrument);   // rank, then lexical within family
+    if(x===y){ x=(a.instrument||"~").toLowerCase(); y=(b.instrument||"~").toLowerCase(); } }
+  else { x=key(a); y=key(b); }
+  return (x<y?-1:x>y?1:0)*sortDir;
+}
 function sortBy(k){ if(sortKey===k) sortDir=-sortDir; else { sortKey=k; sortDir=1; } paint(); }
 function heads(){ document.querySelectorAll("thead th[data-k]").forEach(th=>{
   const on = th.dataset.k===sortKey;
