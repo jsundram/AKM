@@ -154,8 +154,9 @@ function key(p){
 }
 function cmp(a,b){
   let x,y;
-  if(sortKey==="instrument"){ x=instRank(a.instrument); y=instRank(b.instrument);   // rank, then lexical within family
-    if(x===y){ x=(a.instrument||"~").toLowerCase(); y=(b.instrument||"~").toLowerCase(); } }
+  if(sortKey==="instrument"){ x=instRank(a.instrument); y=instRank(b.instrument);   // family rank, then plain before "/" combos, then lexical
+    if(x===y){ const sa=a.instrument||"~", sb=b.instrument||"~";
+      x=(sa.includes("/")?"1":"0")+sa.toLowerCase(); y=(sb.includes("/")?"1":"0")+sb.toLowerCase(); } }
   else { x=key(a); y=key(b); }
   return (x<y?-1:x>y?1:0)*sortDir;
 }
