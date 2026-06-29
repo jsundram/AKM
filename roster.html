@@ -145,7 +145,7 @@ function parseRoster(gv){
 }
 
 let PEOPLE=[], sortKey=null, sortDir=1;     // null = sheet order (by number)
-const TYPE_RANK={DIR:0,MGR:1,F:2,AF:3,TF:4,W1:5,W2:6};  // staff first, then faculty/fellows/weeks; blanks last
+const TYPE_RANK={DIR:0,MGR:1,F:2,AF:3,TF:4,W1:5,W2:6,G:7};  // staff, faculty/fellows/weeks, then guests (G); blanks last
 // instruments collapse to a fixed set, shown + sorted in this order; nothing else
 const INST_ORDER=["V","V/VA","VA","VC","Bass","Piano","Clar."];
 function instLabel(s){ s=(s||"").trim(); if(!s) return ""; const l=s.toLowerCase();
