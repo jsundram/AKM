@@ -1,6 +1,7 @@
-const V = "akm-v4";
+const V = "akm-v6";
 const SHELL = ["./", "./index.html", "./app.js", "./manifest.json",
-               "./composer-bank.json", "./icon.svg",
+               "./composer-bank.json", "./roster.html",
+               "./map.html", "./map.js", "./map-data.json", "./icon.svg",
                "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

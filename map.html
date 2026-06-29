@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#E9EDEC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1817" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>AKM — Map</title>
+<style>
+  :root{
+    --paper:#E9EDEC; --haze:#DFE5E3; --ink:#172526; --muted:#5F7072; --faint:#8C9A9B;
+    --line:#CBD3D1; --warm-line:#E2D2B2; --brass:#9A6B22; --brass-deep:#7C5417;
+    /* map layers — quiet alpine basemap, drawn not tiled */
+    --valley:#E2E7E4; --bldg:#D2D9D6; --bldg-line:#C2CBC8;
+    --road:#AEB8B5; --road-major:#7E8B89; --road-faint:#C3CCC9;
+    --water:#A9CADA; --water-line:#7FA9BE; --green:#CFE0CF;
+    /* POI accents: Jason's base is the only warm/brass one; everything else stays cool */
+    --pin-lodge:#5B7A8C; --pin-venue:#3E6B58; --pin-food:#A65A3C; --gold:#9A6B22;
+    --fp-lodge:rgba(91,122,140,.32); --fp-venue:rgba(62,107,88,.32);
+    --fp-food:rgba(166,90,60,.30); --fp-mine:rgba(154,107,34,.40);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;line-height:1.4;
+    display:flex;flex-direction:column;overflow:hidden;
+    padding:calc(14px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right))
+            calc(10px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
+
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;min-width:0}
+  .id{min-width:0}
+  h1{font-family:"Fraunces",serif;font-weight:500;font-size:24px;letter-spacing:-.015em;line-height:1}
+  .sub{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;color:var(--faint);
+    margin-top:3px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .back{flex:none;display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;
+    font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;
+    border:1px solid var(--line);border-radius:7px;padding:5px 10px}
+  .back:hover{color:var(--brass-deep);border-color:var(--warm-line)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:10px 0 8px;flex:none;
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.03em;color:var(--muted)}
+  .legend b{display:inline-flex;align-items:center;gap:5px;font-weight:400}
+  .legend i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--paper);box-shadow:0 0 0 1px var(--line)}
+  .legend .l-mine{background:var(--gold)} .legend .l-lodge{background:var(--pin-lodge)}
+  .legend .l-venue{background:var(--pin-venue)} .legend .l-food{background:var(--pin-food)}
+
+  #map{position:relative;flex:1;min-height:0;overflow:hidden;border:1px solid var(--line);
+    border-radius:13px;background:var(--valley);cursor:grab;touch-action:none}
+  #map.drag{cursor:grabbing}
+  #svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #svg .bldg{fill:var(--bldg);stroke:var(--bldg-line);stroke-width:.6px;vector-effect:non-scaling-stroke}
+  #svg .green{fill:var(--green);stroke:none}
+  #svg .body{fill:var(--water);stroke:var(--water-line);stroke-width:1px;vector-effect:non-scaling-stroke}
+  #svg .road{fill:none;stroke:var(--road);stroke-width:2px;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+  #svg .primary{stroke:var(--road-major);stroke-width:4px}
+  #svg .minor{stroke-width:2.6px}
+  #svg .service{stroke-width:1.5px;stroke:var(--road-faint)}
+  #svg .track{stroke-width:1.4px;stroke:var(--road-faint);stroke-dasharray:5 4}
+  #svg .path{stroke-width:1.2px;stroke:var(--faint);stroke-dasharray:1.5 4}
+  #svg .river{fill:none;stroke:var(--water);stroke-width:5px;stroke-linecap:round;vector-effect:non-scaling-stroke}
+  #svg .stream{fill:none;stroke:var(--water-line);stroke-width:2px;stroke-linecap:round;vector-effect:non-scaling-stroke}
+  #svg .fp{stroke-width:1.4px;vector-effect:non-scaling-stroke}
+  #svg .fp-lodge{fill:var(--fp-lodge);stroke:var(--pin-lodge)}
+  #svg .fp-venue{fill:var(--fp-venue);stroke:var(--pin-venue)}
+  #svg .fp-food{fill:var(--fp-food);stroke:var(--pin-food)}
+  #svg .fp-mine{fill:var(--fp-mine);stroke:var(--brass-deep);stroke-width:2px}
+  #svg .hamlet{fill:var(--muted);font-family:"Fraunces",serif;font-size:17px;letter-spacing:.02em;
+    text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:3px;opacity:.65}
+
+  .markers{position:absolute;inset:0;pointer-events:none}
+  .markers.off{display:none}
+  .mk{position:absolute;display:flex;align-items:center;gap:6px;transform:translate(-8px,-8px);white-space:nowrap}
+  .mk.rev{flex-direction:row-reverse;transform:translate(calc(-100% + 8px),-8px)}
+  .dot{flex:0 0 auto;width:16px;height:16px;border-radius:50%;border:2px solid var(--paper);
+    background:var(--pin-lodge);box-shadow:0 1px 3px rgba(20,30,30,.4);pointer-events:auto;cursor:pointer}
+  .cat-venue .dot{background:var(--pin-venue)} .cat-food .dot{background:var(--pin-food)}
+  .mk.mine .dot{width:18px;height:18px;background:var(--gold);box-shadow:0 0 0 3px var(--valley),0 1px 4px rgba(20,30,30,.45)}
+  .lab{display:none;padding:3px 6px 4px;border:1px solid var(--line);border-radius:5px;color:var(--ink);
+    background:rgba(249,250,249,.94);box-shadow:0 1px 3px rgba(20,30,30,.14);
+    font-size:11.5px;font-weight:500;line-height:1}
+  .mk.mine .lab{display:block;border-color:var(--warm-line);color:var(--brass-deep);background:#F4ECDD}
+  .mk.active .lab,.mk:hover .lab,.markers.zoom .lab{display:block}
+  .mk.active{z-index:3}
+
+  .ctl{position:absolute;z-index:6;top:12px;right:12px;display:grid;overflow:hidden;
+    border:1px solid var(--line);border-radius:8px;background:var(--paper);box-shadow:0 2px 8px rgba(20,30,30,.16)}
+  .ctl button{width:38px;height:38px;display:grid;place-items:center;border:0;background:var(--paper);
+    color:var(--ink);font:inherit;font-size:19px;cursor:pointer}
+  .ctl button+button{border-top:1px solid var(--line)}
+  .ctl button:hover{background:var(--haze)}
+  .pins{position:absolute;z-index:6;top:12px;left:12px;display:inline-flex;align-items:center;gap:7px;
+    height:32px;padding:0 11px;border:1px solid var(--line);border-radius:8px;background:var(--paper);
+    color:var(--ink);font:inherit;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(20,30,30,.12)}
+  .pins .pd{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+  .pins[aria-pressed="false"]{color:var(--faint)} .pins[aria-pressed="false"] .pd{background:var(--faint)}
+  .north{position:absolute;z-index:5;left:14px;bottom:12px;display:grid;justify-items:center;gap:1px;
+    color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:10px;pointer-events:none;
+    text-shadow:0 1px 0 var(--paper)}
+  .north i{width:0;height:0;border-right:5px solid transparent;border-left:5px solid transparent;
+    border-bottom:17px solid var(--muted)}
+  .meta{position:absolute;z-index:5;right:12px;bottom:11px;display:grid;justify-items:end;gap:4px;
+    font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--muted);text-shadow:0 1px 0 var(--paper)}
+  .meta .sl{height:5px;border:solid var(--muted);border-width:0 1px 1px}
+  .meta a{color:inherit}
+
+  footer{flex:none;margin-top:8px;display:flex;justify-content:space-between;gap:12px;align-items:center;
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em;color:var(--faint)}
+
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#0F1817; --haze:#172221; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
+      --line:#2C3938; --warm-line:#4A3D23; --brass:#D9A24C; --brass-deep:#E8C481;
+      --valley:#141E1D; --bldg:#26302F; --bldg-line:#313D3C;
+      --road:#52605E; --road-major:#7D8E8C; --road-faint:#3A4644;
+      --water:#3A6276; --water-line:#5C8AA1; --green:#1C2A23;
+      --pin-lodge:#7FA6BC; --pin-venue:#5C9C82; --pin-food:#C8825E; --gold:#D9A24C;
+      --fp-lodge:rgba(127,166,188,.22); --fp-venue:rgba(92,156,130,.22);
+      --fp-food:rgba(200,130,94,.20); --fp-mine:rgba(217,162,76,.26); }
+    .lab{background:rgba(23,34,33,.95)} .mk.mine .lab{background:#272015}
+    .pins,.ctl button{background:var(--haze)} .ctl button:hover{background:#202c2b}
+  }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="id">
+      <h1>Liesing &amp; Klebas</h1>
+      <div class="sub">AKM festival · lodgings · venues · food</div>
+    </div>
+    <a class="back" href="./index.html">← Today</a>
+  </div>
+
+  <div class="legend">
+    <b><i class="l-mine"></i>your base</b>
+    <b><i class="l-lodge"></i>lodging</b>
+    <b><i class="l-venue"></i>venue</b>
+    <b><i class="l-food"></i>food</b>
+  </div>
+
+  <div id="map" aria-label="Map of Liesing and Klebas">
+    <svg id="svg" aria-hidden="true"><g id="scene"></g></svg>
+    <div class="markers" id="markers"></div>
+    <button class="pins" id="pins" type="button" aria-pressed="true"><span class="pd"></span>Pins</button>
+    <div class="ctl">
+      <button id="in" type="button" title="Zoom in" aria-label="Zoom in">+</button>
+      <button id="out" type="button" title="Zoom out" aria-label="Zoom out">−</button>
+      <button id="fit" type="button" title="Reset" aria-label="Reset" style="font-size:15px">⌂</button>
+    </div>
+    <div class="north" aria-hidden="true"><i></i>N</div>
+    <div class="meta">
+      <span id="sl-lab">100 m</span><span class="sl" id="sl"></span>
+      <span>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span>
+    </div>
+  </div>
+
+  <footer><span>find your way around the village · works offline</span><a class="back" href="./index.html">← Today</a></footer>
+<script src="./map.js"></script>
+</body>
+</html>

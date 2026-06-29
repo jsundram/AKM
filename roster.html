@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#E9EDEC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1817" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>AKM — Roster</title>
+<style>
+  :root{
+    --paper:#E9EDEC; --ink:#172526; --muted:#5F7072; --faint:#8C9A9B;
+    --line:#CBD3D1; --warm-line:#E2D2B2; --brass:#9A6B22; --brass-deep:#7C5417;
+    /* the table is a "printed sheet" — fixed light colors in both themes so the hotel pastels read */
+    --doc:#FCFDFD; --doc-ink:#17212B; --doc-line:#CAD2D9; --doc-box:#82909C; --doc-head:#3E556B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;line-height:1.4;
+    display:flex;justify-content:center;
+    padding:calc(20px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
+            calc(40px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+  .sheet{width:100%;max-width:560px}
+
+  .back{display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:11px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;
+    border:1px solid var(--line);border-radius:7px;padding:5px 10px}
+  .back:hover{color:var(--brass-deep);border-color:var(--warm-line)}
+  h1{font-family:"Fraunces",serif;font-weight:500;font-size:30px;letter-spacing:-.015em;margin:16px 0 2px}
+  .sub{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.04em;color:var(--faint);margin-bottom:16px}
+
+  .doc{background:var(--doc);color:var(--doc-ink);border:1px solid var(--doc-box);border-radius:10px;overflow:hidden}
+  table{width:100%;border-collapse:collapse;table-layout:fixed}
+  thead th{background:var(--doc-head);color:#fff;font-weight:600;font-size:11px;letter-spacing:.02em;
+    text-align:left;padding:8px 10px}
+  col.c-n{width:9%} col.c-nm{width:43%} col.c-in{width:16%} col.c-ht{width:32%}
+  th.n,td.n{text-align:right;font-family:"IBM Plex Mono",monospace}
+  td{padding:6px 10px;font-size:12.5px;border-top:1px solid var(--doc-line);vertical-align:top;color:var(--doc-ink);
+    overflow-wrap:break-word}
+  td.n{color:#56636E;font-size:11px}
+  td.in{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#3A4650}
+  td.ht{font-size:11.5px;color:#3A4650}
+  tr.exp{cursor:pointer}
+  .caret{float:right;color:var(--doc-box);transition:transform .15s ease;font-size:13px;line-height:1;margin-left:6px}
+  tr.open .caret{transform:rotate(90deg)}
+  tr.detail td{border-top:0;padding:1px 12px 9px}
+  .dl{display:flex;gap:9px;font-size:11.5px;line-height:1.45;margin-top:4px}
+  .dl .k{flex:none;width:50px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:#7A8794;padding-top:2px}
+  .dl .v{color:var(--doc-ink)}
+  tr.you td{font-weight:600}
+  tr.you td.n{box-shadow:inset 3px 0 var(--brass)}
+  tr.you .youtag{font-family:"IBM Plex Mono",monospace;font-size:8.5px;font-weight:500;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--brass-deep);border:1px solid var(--warm-line);border-radius:4px;
+    padding:0 4px;margin-left:6px;white-space:nowrap;vertical-align:middle}
+
+  footer{margin-top:20px;display:flex;justify-content:space-between;gap:12px;align-items:center;
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.05em;color:var(--faint)}
+  #msg{padding:20px;color:var(--muted);font-size:13px}
+
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#0F1817; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
+      --line:#2C3938; --warm-line:#4A3D23; --brass:#D9A24C; --brass-deep:#E8C481; }
+    .doc{border-color:#0a0f0e}   /* keep the light document distinct on the dark page */
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <a class="back" href="./index.html">← Schedule</a>
+  <h1>Hotel Roster</h1>
+  <div class="sub">AKM Chamber Music Festival · <span id="count">…</span></div>
+  <div class="doc">
+    <table>
+      <colgroup><col class="c-n"><col class="c-nm"><col class="c-in"><col class="c-ht"></colgroup>
+      <thead><tr><th class="n">#</th><th>Name</th><th>Instr.</th><th>Hotel</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="msg" hidden></div>
+  </div>
+  <footer><span>where everyone is staying</span><a class="back" href="./index.html">← Schedule</a></footer>
+</div>
+<script>
+// Roster lives in its own view-only Google Sheet, pulled live (gviz JSONP) and cached for offline —
+// nothing is checked into the repo. Set ROSTER_SID to the spreadsheet id once it's shared link-viewable;
+// leave ROSTER_TAB "" to read the first tab. Edit the sheet to update; the page re-pulls on open.
+const ROSTER_SID = "1j__RMUvFWQlX9UuT-Uxkw7BkqWHCQkbR_hKsTyNwiyo";
+const ROSTER_GID = "593625276";   // specific tab; falls back to ROSTER_TAB / first sheet if blank
+const ROSTER_TAB = "";
+const RK = "akm-roster";
+const DEFAULT_FILL = "#F2F4F6";
+const HOTEL_COLORS = {
+  "Lesachtalerhof":"#E7F0F7","Ferienwohnung Wilhelmer":"#EEEAF7","Musikhof Lexer":"#E3F2EC",
+  "Haus Anita":"#F7F0DF","Gästehaus Ortner":"#F9E8DF","Haus Simona":"#DFF1F1",
+  "Haus Salcher":"#F8F3D9","Haus Lanzinger":"#E8F2DF","Obermosterer AirBNB":"#F7E4E8",
+  "Kultursaal Apartment":"#E1F1F6","Kleines Berghotel":"#ECEEF1","Obermosterer Apartment":"#EEE6F1",
+};
+const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const $ = s => document.querySelector(s);
+
+function jsonp(){
+  return new Promise((res,rej)=>{
+    const cb="__r"+Math.random().toString(36).slice(2);
+    const s=document.createElement("script");
+    const to=setTimeout(()=>{cleanup();rej(new Error("timeout"))},15000);
+    function cleanup(){clearTimeout(to);delete window[cb];s.remove();}
+    window[cb]=d=>{cleanup();res(d);};
+    s.onerror=()=>{cleanup();rej(new Error("script"));};
+    const q = ROSTER_GID ? `gid=${ROSTER_GID}&` : ROSTER_TAB ? `sheet=${encodeURIComponent(ROSTER_TAB)}&` : "";
+    s.src=`https://docs.google.com/spreadsheets/d/${ROSTER_SID}/gviz/tq?${q}tqx=out:json;responseHandler:${cb}`;
+    document.head.appendChild(s);
+  });
+}
+// map Number/Name/Instrument/Hotel by header — works whether gviz put the header in cols or row 0
+function colMap(labels){
+  const at = k => labels.findIndex(x => x.includes(k));
+  const name=at("name"), hotel=at("hotel");
+  if(name<0 || hotel<0) return null;
+  const num = at("number")>=0 ? at("number") : at("#");
+  return {n: num<0?0:num, name, instrument: at("instr"), hotel, pieces: at("piece"), notes: at("note")};
+}
+const pick = (r,i) => i<0 ? "" : (r[i]||"");
+function parseRoster(gv){
+  const t = gv && gv.table; if(!t) return [];
+  let rows = (t.rows||[]).map(r => (r.c||[]).map(c => c ? String(c.v ?? c.f ?? "").trim() : ""));
+  let m = colMap((t.cols||[]).map(c => (c.label||"").toLowerCase().trim()));
+  if(!m && rows.length){ m = colMap(rows[0].map(x => x.toLowerCase())); rows = rows.slice(1); }
+  if(!m) return [];
+  return rows
+    .map(r => ({n:pick(r,m.n), name:r[m.name], instrument:pick(r,m.instrument), hotel:r[m.hotel],
+                pieces:pick(r,m.pieces), notes:pick(r,m.notes)}))
+    .filter(p => p.name && p.name.toLowerCase()!=="name");
+}
+
+function render(people){
+  const tb=$("#rows"); tb.innerHTML="";
+  $("#msg").hidden=true;
+  for(const p of people){
+    const fill = HOTEL_COLORS[p.hotel] || DEFAULT_FILL;
+    const you = p.name==="Jason Sundram";
+    const exp = !!(p.pieces || p.notes);                       // expandable only if there's more to show
+    const tr=document.createElement("tr");
+    tr.style.background = fill;
+    tr.className = (you?"you ":"") + (exp?"exp":"");
+    tr.innerHTML = `<td class="n">${esc(p.n)}</td>`+
+      `<td>${esc(p.name)}${you?'<span class="youtag">you</span>':''}</td>`+
+      `<td class="in">${esc(p.instrument)||"·"}</td>`+
+      `<td class="ht">${esc(p.hotel)}${exp?'<span class="caret">›</span>':''}</td>`;
+    tb.appendChild(tr);
+    if(exp){
+      const dr=document.createElement("tr");
+      dr.className="detail"; dr.hidden=true; dr.style.background=fill;
+      const dl=(k,v)=>v?`<div class="dl"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`:"";
+      dr.innerHTML=`<td colspan="4">${dl("Pieces",p.pieces)}${dl("Notes",p.notes)}</td>`;
+      tb.appendChild(dr);
+      tr.addEventListener("click", ()=>{ const open=dr.hidden; dr.hidden=!open; tr.classList.toggle("open",open); });
+    }
+  }
+  $("#count").textContent = `${people.length} participants`;
+}
+function msg(text){ $("#rows").innerHTML=""; $("#count").textContent=""; const m=$("#msg"); m.textContent=text; m.hidden=false; }
+
+async function pull(){
+  if(navigator.onLine===false) return;
+  try{
+    const people=parseRoster(await jsonp());
+    if(people.length){ localStorage.setItem(RK, JSON.stringify({people})); render(people); }
+  }catch(e){ if(!localStorage.getItem(RK)) msg("Roster unavailable — open once on wifi to cache it."); }
+}
+function boot(){
+  if(!ROSTER_SID){ msg("Roster sheet not configured yet."); return; }
+  let cached=null; try{ cached=JSON.parse(localStorage.getItem(RK)); }catch{}
+  if(cached && cached.people) render(cached.people);
+  else if(navigator.onLine) msg("Loading roster…");
+  else msg("Offline — open once on wifi to load the roster.");
+  pull();
+  addEventListener("visibilitychange", ()=>{ if(!document.hidden) pull(); });   // re-pull when reopened
+}
+boot();
+</script>
+</body>
+</html>

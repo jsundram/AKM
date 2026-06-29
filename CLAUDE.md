@@ -19,10 +19,13 @@ Static files only. Nothing server-side.
 - `sw.js` — service worker; precaches the shell for offline, cache-first for Google Fonts (so the type survives offline), passes cross-origin *data* calls (gviz, open-meteo) through to network. Bump `V` when the shell changes.
 - `manifest.json` + `icon-*.png` — installable/standalone. Icons are rasterized from `icon.svg` (the source of truth) via `scripts/make-icons.sh`; edit the SVG, rerun the script, don't hand-edit the PNGs. `icon.svg` doubles as the in-browser favicon.
 - `composer-bank.json` — vetted quotes + facts, provenance-tiered.
+- `roster.html` — standalone **noindex** participant roster (linked from the footer; "← Schedule" back). Pulls its *own* view-only Google Sheet via gviz JSONP and caches it in `localStorage` (`akm-roster`), offline-first like the schedule. Set `ROSTER_SID` (+ optional `ROSTER_TAB`) at the top; the hotel→fill palette is inline, mirroring the PDF tool, and Jason's own row gets the brass "you" marker. **Roster data is deliberately not in the repo** (PII) — edit the sheet to update.
+- `map.html` + `map.js` + `map-data.json` — standalone village map of Liesing/Klebas (linked from the footer; "← Today" back). A **baked OSM vector basemap** drawn as a custom SVG in the alpine palette — no tiles, no map libs, **fully offline** (all three files are SW-precached). `map.js` loads `map-data.json` (geometry in integer metres), paints layers (land/water/roads/buildings), highlights the festival POIs (lodging/venue/food footprints + pins), and does its own pan/zoom (transform on `#scene`, markers repositioned in screen space). Lodging names mirror `roster.html`; **Musikhof Lexer is Jason's base → the one warm-brass POI**. Regenerate `map-data.json` with `scripts/build-map.py` (see *map data* below). This **supersedes** the `AKM-Map.zip` prototype (live `tile.openstreetmap.org` tiles — not offline, not custom, pins only).
 
 Data sources:
 - **Schedule** — the public, view-only Google Sheet via its **gviz endpoint as JSONP** (`tqx=out:json;responseHandler:cb`). JSONP is deliberate: a plain `fetch` hits CORS, and we only have *view* access so we can't "Publish to web." Don't switch it to `fetch`.
 - **Weather** — Open-Meteo hourly (`temperature_2m`, `precipitation`, `weathercode`, daily max/min/sun). CORS-friendly, normal `fetch`.
+- **Roster** — a *separate* view-only sheet (`ROSTER_SID` in `roster.html`), gviz JSONP, cached offline. Kept out of git on purpose (names + lodging); the page is `noindex` but, like the schedule, still public to anyone with the URL (gviz needs the sheet link-viewable).
 - **Offline** — `app.js` stores each day's parsed schedule + weather in `localStorage` (key `akm-cache`), renders instantly from it on open (stale-while-revalidate), then refreshes if online. Every successful online load re-caches the **whole week**, so a morning open on wifi covers the afternoon offline. Day chips browse cached days.
 
 ## Constants (top of app.js)
@@ -66,6 +69,18 @@ git config core.hooksPath .githooks
 ```
 
 Run it by hand anytime: `python3 scripts/update-gids.py`. gids are stable across tab rename/reorder; only a from-scratch rebuild of the sheet changes them.
+
+## map data (baked, hand-run)
+
+`scripts/build-map.py` (stdlib-only, PEP 723) fetches the Liesing/Klebas bbox from the Overpass API, slims it to roads/buildings/water/land + the festival POIs, projects lat/lon → integer metres, and writes `map-data.json`. It's network-tolerant like the gid script: on fetch failure it leaves the existing file untouched and exits 0.
+
+The **`POIS` list at the top of the script is the single source of truth** for the highlighted places — address entries (`hn`+`st`) snap to a real building footprint via `addr:housenumber`/`addr:street`; OSM-named entries (the restaurants, the church) snap to the tagged feature. This is what resolved the prototype's "accepted addresses awaiting OSM anchors." Edit `POIS` (or to refresh geometry), then rerun:
+
+```
+python3 scripts/build-map.py    # prints feature + POI counts; WARNs on any unresolved POI
+```
+
+**Not** in the pre-commit hook (network + slow; town geometry is ~static). `map-data.json` is committed. **Attribution is required** — `map.html` shows "© OpenStreetMap" (ODbL); keep it.
 
 ## Gotchas
 
