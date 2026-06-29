@@ -108,17 +108,24 @@ const title = s => s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 
 // ---- weather ----
 const skyName = c => c===0?"Clear":c===1?"Mostly clear":c===2?"Partly cloudy":c===3?"Overcast":(c===45||c===48)?"Fog":"Cloudy";
-async function weatherRange(){
+// Forecast source: GeoSphere Austria's seamless model (AROME 2.5km for the first ~60h, ECMWF IFS
+// beyond) resolves this Alpine valley far better than a coarse global model, and covers the whole
+// festival. Fall back to Open-Meteo's best-match blend if it's ever unavailable. The active source
+// is tagged per day (w.src) and cited in the weather card.
+const WX_SRC = { geosphere: "GeoSphere Austria · AROME + ECMWF", default: "Open-Meteo · best match" };
+async function fetchWx(models){
   const u = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
     `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,weathercode`+
     `&hourly=temperature_2m,precipitation,weathercode&temperature_unit=fahrenheit`+
-    `&timezone=${encodeURIComponent(TZ)}&start_date=${FEST[0]}&end_date=${FEST[1]}`;
+    `&timezone=${encodeURIComponent(TZ)}&start_date=${FEST[0]}&end_date=${FEST[1]}`+
+    (models?`&models=${models}`:``);
   const j = await (await fetch(u)).json();
+  if(j.error) throw new Error(j.reason||"open-meteo error");
   const out={}, H=j.hourly, D=j.daily;
   D.time.forEach((dt,di)=>{
-    const s=di*24, t=H.temperature_2m.slice(s,s+24).map(Math.round);
-    const pr=H.precipitation.slice(s,s+24), wc=H.weathercode.slice(s,s+24);
-    if(t.length<24) return;
+    const s=di*24, raw=H.temperature_2m.slice(s,s+24);
+    if(raw.length<24 || raw.some(v=>v==null)) return;       // skip incomplete days (e.g. past a model's horizon)
+    const t=raw.map(Math.round), pr=H.precipitation.slice(s,s+24), wc=H.weathercode.slice(s,s+24);
     const rainy = pr.map((p,i)=>p>=0.2?i:-1).filter(i=>i>=0);
     const sum = pr.reduce((a,b)=>a+b,0);
     out[dt] = {t, hi:Math.round(D.temperature_2m_max[di]), lo:Math.round(D.temperature_2m_min[di]),
@@ -129,6 +136,14 @@ async function weatherRange(){
       sky: skyName(D.weathercode[di]), ok:true};
   });
   return out;
+}
+async function weatherRange(){
+  for(const [m,key] of [["geosphere_seamless","geosphere"],["","default"]]){
+    try{ const days=await fetchWx(m);
+      if(Object.keys(days).length){ for(const k in days) days[k].src=WX_SRC[key]; return days; }
+    }catch(e){ /* fall through to the next source */ }
+  }
+  return {};
 }
 
 // ---- render (mirrors the template markup) ----
@@ -161,7 +176,8 @@ function wxcard(w){
   if(!w||!w.ok) return `<div class="wx"><div class="wx-top"><div class="wx-sum"><b>Forecast unavailable.</b><br>schedule below.</div></div></div>`;
   const precip = w.thunder?"Thunderstorms possible":w.shower?"Showers possible":w.drizzle?"Drizzle possible":"";
   const sub = precip ? `${precip} in the afternoon.` : `${w.sky||"Dry"}.`;
-  return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w)}</div></div>`;
+  const src = w.src ? `<div class="wx-src">forecast via ${w.src}</div>` : "";
+  return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w)}</div>${src}</div>`;
 }
 function tline(s,e){ return `<div class="time"><span class="s">${s}</span>${e?`<span class="e">${e}</span>`:""}</div>`; }
 function timeline(day,w){
