@@ -169,7 +169,7 @@ function timeline(day,w){
   for(const [s,e,piece] of day.allhands)
     ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}</div></div></div>`]);
   for(const [s,e,piece,room,coach,tag] of day.mine){
-    const pc = tag==="P"?"Perform":tag==="C"?"Coach":"";
+    const pc = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
     const chip = room?`<span class="roomchip">${esc(room)}</span>`:"";
     const cw = coach?`<span class="coach">with <b>${esc(coach)}</b></span>`:"";
     ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your rehearsal</span><span class="pc">${pc}</span></div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
