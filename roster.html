@@ -56,6 +56,7 @@
   .dl .k{flex:none;width:50px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.1em;
     text-transform:uppercase;color:#7A8794;padding-top:2px}
   .dl .v{color:var(--doc-ink)}
+  .dl .v a{color:#2A6F97;text-decoration:underline;word-break:break-all}
   tr.you td{font-weight:600}
   tr.you td.n{box-shadow:inset 3px 0 var(--brass)}
   tr.you .youtag{font-family:"IBM Plex Mono",monospace;font-size:8.5px;font-weight:500;letter-spacing:.1em;
@@ -104,6 +105,7 @@ const HOTEL_COLORS = {
   "Kultursaal Apartment":"#E1F1F6","Kleines Berghotel":"#ECEEF1","Obermosterer Apartment":"#EEE6F1",
 };
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const linkify = s => esc(s).replace(/(https?:\/\/[^\s]+)/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
 const $ = s => document.querySelector(s);
 
 function jsonp(){
@@ -175,7 +177,7 @@ function paint(){
     if(exp){
       const dr=document.createElement("tr");
       dr.className="detail"; dr.hidden=true; dr.style.background=fill;
-      const dl=(k,v)=>v?`<div class="dl"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`:"";
+      const dl=(k,v)=>v?`<div class="dl"><span class="k">${k}</span><span class="v">${linkify(v)}</span></div>`:"";
       dr.innerHTML=`<td colspan="5">${dl("Pieces",p.pieces)}${dl("Notes",p.notes)}</td>`;
       tb.appendChild(dr);
       tr.addEventListener("click", ()=>{ const open=dr.hidden; dr.hidden=!open; tr.classList.toggle("open",open); });
@@ -193,6 +195,7 @@ async function pull(){
   }catch(e){ if(!localStorage.getItem(RK)) msg("Roster unavailable — open once on wifi to cache it."); }
 }
 function boot(){
+  document.querySelectorAll("thead th[data-k]").forEach(th=>th.onclick=()=>sortBy(th.dataset.k));
   if(!ROSTER_SID){ msg("Roster sheet not configured yet."); return; }
   let cached=null; try{ cached=JSON.parse(localStorage.getItem(RK)); }catch{}
   if(cached && cached.people) render(cached.people);
