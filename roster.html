@@ -38,19 +38,21 @@
   .doc{background:var(--doc);color:var(--doc-ink);border:1px solid var(--doc-box);border-radius:10px;overflow:hidden}
   table{width:100%;border-collapse:collapse;table-layout:fixed}
   thead th{background:var(--doc-head);color:#fff;font-weight:600;font-size:11px;letter-spacing:.02em;
-    text-align:left;padding:8px 10px}
-  col.c-n{width:9%} col.c-nm{width:43%} col.c-in{width:16%} col.c-ht{width:32%}
-  th.n,td.n{text-align:right;font-family:"IBM Plex Mono",monospace}
-  td{padding:6px 10px;font-size:12.5px;border-top:1px solid var(--doc-line);vertical-align:top;color:var(--doc-ink);
-    overflow-wrap:break-word}
+    text-align:left;padding:6px 10px;cursor:pointer;user-select:none;white-space:nowrap}
+  thead th .ar{font-size:8px;margin-left:3px;color:#AEBDC9}
+  col.c-n{width:11%} col.c-nm{width:32%} col.c-in{width:16%} col.c-ty{width:13%} col.c-ht{width:28%}
+  th.n,td.n{text-align:right;font-family:"IBM Plex Mono",monospace;white-space:nowrap;padding-left:5px;padding-right:6px}
+  td.ty{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:.04em;color:#4A5763}
+  td{padding:3.5px 10px;font-size:12.5px;line-height:1.3;border-top:1px solid var(--doc-line);
+    vertical-align:top;color:var(--doc-ink);overflow-wrap:break-word}
   td.n{color:#56636E;font-size:11px}
-  td.in{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#3A4650}
+  td.in{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#3A4650;white-space:nowrap}
   td.ht{font-size:11.5px;color:#3A4650}
   tr.exp{cursor:pointer}
   .caret{float:right;color:var(--doc-box);transition:transform .15s ease;font-size:13px;line-height:1;margin-left:6px}
   tr.open .caret{transform:rotate(90deg)}
-  tr.detail td{border-top:0;padding:1px 12px 9px}
-  .dl{display:flex;gap:9px;font-size:11.5px;line-height:1.45;margin-top:4px}
+  tr.detail td{border-top:0;padding:0 12px 6px}
+  .dl{display:flex;gap:9px;font-size:11.5px;line-height:1.35;margin-top:3px}
   .dl .k{flex:none;width:50px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.1em;
     text-transform:uppercase;color:#7A8794;padding-top:2px}
   .dl .v{color:var(--doc-ink)}
@@ -78,8 +80,8 @@
   <div class="sub">AKM Chamber Music Festival · <span id="count">…</span></div>
   <div class="doc">
     <table>
-      <colgroup><col class="c-n"><col class="c-nm"><col class="c-in"><col class="c-ht"></colgroup>
-      <thead><tr><th class="n">#</th><th>Name</th><th>Instr.</th><th>Hotel</th></tr></thead>
+      <colgroup><col class="c-n"><col class="c-nm"><col class="c-in"><col class="c-ty"><col class="c-ht"></colgroup>
+      <thead><tr><th class="n" data-k="n">#<span class="ar"></span></th><th data-k="name">Name<span class="ar"></span></th><th data-k="instrument">Instr.<span class="ar"></span></th><th data-k="type">Type<span class="ar"></span></th><th data-k="hotel">Hotel<span class="ar"></span></th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
     <div id="msg" hidden></div>
@@ -123,7 +125,7 @@ function colMap(labels){
   const name=at("name"), hotel=at("hotel");
   if(name<0 || hotel<0) return null;
   const num = at("number")>=0 ? at("number") : at("#");
-  return {n: num<0?0:num, name, instrument: at("instr"), hotel, pieces: at("piece"), notes: at("note")};
+  return {n: num<0?0:num, name, instrument: at("instr"), type: at("type"), hotel, pieces: at("piece"), notes: at("note")};
 }
 const pick = (r,i) => i<0 ? "" : (r[i]||"");
 function parseRoster(gv){
@@ -133,14 +135,30 @@ function parseRoster(gv){
   if(!m && rows.length){ m = colMap(rows[0].map(x => x.toLowerCase())); rows = rows.slice(1); }
   if(!m) return [];
   return rows
-    .map(r => ({n:pick(r,m.n), name:r[m.name], instrument:pick(r,m.instrument), hotel:r[m.hotel],
+    .map(r => ({n:pick(r,m.n), name:r[m.name], instrument:pick(r,m.instrument), type:pick(r,m.type), hotel:r[m.hotel],
                 pieces:pick(r,m.pieces), notes:pick(r,m.notes)}))
     .filter(p => p.name && p.name.toLowerCase()!=="name");
 }
 
-function render(people){
+let PEOPLE=[], sortKey=null, sortDir=1;     // null = sheet order (by number)
+const TYPE_RANK={F:0,AF:1,TF:2,W1:3,W2:4};  // role order, not alphabetical; blanks last
+function key(p){
+  if(sortKey==="n") return parseFloat(p.n)||0;
+  if(sortKey==="type") return (p.type in TYPE_RANK) ? TYPE_RANK[p.type] : 8;
+  return (p[sortKey]||"~").toLowerCase();    // blanks sort last
+}
+function cmp(a,b){ const x=key(a),y=key(b); return (x<y?-1:x>y?1:0)*sortDir; }
+function sortBy(k){ if(sortKey===k) sortDir=-sortDir; else { sortKey=k; sortDir=1; } paint(); }
+function heads(){ document.querySelectorAll("thead th[data-k]").forEach(th=>{
+  const on = th.dataset.k===sortKey;
+  th.querySelector(".ar").textContent = on ? (sortDir>0?"▲":"▼") : "";
+}); }
+function render(people){ PEOPLE=people; paint(); }
+function paint(){
   const tb=$("#rows"); tb.innerHTML="";
   $("#msg").hidden=true;
+  heads();
+  const people = sortKey ? [...PEOPLE].sort(cmp) : PEOPLE;
   for(const p of people){
     const fill = HOTEL_COLORS[p.hotel] || DEFAULT_FILL;
     const you = p.name==="Jason Sundram";
@@ -151,13 +169,14 @@ function render(people){
     tr.innerHTML = `<td class="n">${esc(p.n)}</td>`+
       `<td>${esc(p.name)}${you?'<span class="youtag">you</span>':''}</td>`+
       `<td class="in">${esc(p.instrument)||"·"}</td>`+
+      `<td class="ty">${esc(p.type)}</td>`+
       `<td class="ht">${esc(p.hotel)}${exp?'<span class="caret">›</span>':''}</td>`;
     tb.appendChild(tr);
     if(exp){
       const dr=document.createElement("tr");
       dr.className="detail"; dr.hidden=true; dr.style.background=fill;
       const dl=(k,v)=>v?`<div class="dl"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`:"";
-      dr.innerHTML=`<td colspan="4">${dl("Pieces",p.pieces)}${dl("Notes",p.notes)}</td>`;
+      dr.innerHTML=`<td colspan="5">${dl("Pieces",p.pieces)}${dl("Notes",p.notes)}</td>`;
       tb.appendChild(dr);
       tr.addEventListener("click", ()=>{ const open=dr.hidden; dr.hidden=!open; tr.classList.toggle("open",open); });
     }
