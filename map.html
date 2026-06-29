@@ -92,6 +92,14 @@
 
   .markers{position:absolute;inset:0;pointer-events:none}
   .markers.off{display:none}
+  #svg .bldg.has{cursor:pointer}
+  #svg .bldg.has:hover{fill:var(--bldg-line);stroke:var(--muted);stroke-width:1.1px}   /* addressed → tappable */
+  #binfo{position:absolute;z-index:7;transform:translate(-50%,calc(-100% - 11px));pointer-events:none;
+    max-width:220px;padding:5px 9px;border:1px solid var(--line);border-radius:7px;
+    background:rgba(249,250,249,.97);box-shadow:0 2px 8px rgba(20,30,30,.2);
+    font-size:11.5px;line-height:1.3;color:var(--ink);white-space:nowrap}
+  #binfo b{display:block;font-weight:600}
+  #binfo span{color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.02em}
   .mk{position:absolute;display:flex;align-items:center;gap:6px;transform:translate(-8px,-8px);white-space:nowrap}
   .mk.rev{flex-direction:row-reverse;transform:translate(calc(-100% + 8px),-8px)}
   .dot{flex:0 0 auto;width:16px;height:16px;border-radius:50%;border:2px solid var(--paper);
@@ -160,6 +168,7 @@
       --fp-lodge:rgba(127,166,188,.22); --fp-venue:rgba(92,156,130,.22);
       --fp-food:rgba(200,130,94,.20); --fp-mine:rgba(217,162,76,.26); }
     .lab{background:rgba(23,34,33,.95)} .mk.mine .lab{background:#272015}
+    #binfo{background:rgba(23,34,33,.96)}
     .pins,.ctl button,.seg button{background:var(--haze)} .ctl button:hover{background:#202c2b}
     .seg button.on{background:#2E2616} .seg button{color:var(--faint)}
     #svg .rl{filter:brightness(.52) contrast(1.08) saturate(.8)}   /* dim the relief on a dark page */
@@ -185,6 +194,7 @@
   <div id="map" aria-label="Map of Liesing and Klebas">
     <svg id="svg" aria-hidden="true"><defs><clipPath id="clip"><rect id="cliprect" x="0" y="0"/></clipPath></defs><g id="scene" clip-path="url(#clip)"></g></svg>
     <div class="markers" id="markers"></div>
+    <div id="binfo" hidden></div>
     <div class="me" id="me" hidden><span class="acc"></span><i></i></div>
     <div class="tl">
       <div class="seg" id="seg" role="group" aria-label="Base layer">

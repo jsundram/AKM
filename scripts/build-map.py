@@ -134,7 +134,11 @@ def build(els):
         elif t.get("leisure") == "park" or t.get("landuse") in ("cemetery", "grass", "meadow", "village_green"):
             land.append({"k": "green", "p": line(g)})
         elif "building" in t and w["id"] not in poi_ids:
-            buildings.append({"p": line(g)})
+            b = {"p": line(g)}
+            hn, st = t.get("addr:housenumber"), t.get("addr:street")
+            if hn: b["a"] = f"{st} {hn}" if st else hn        # "Liesing 24" → shown on tap
+            if t.get("name"): b["n"] = t["name"]
+            buildings.append(b)
 
     for nm, (i, _, off) in named.items():                   # one label per road name, on its most useful segment
         roads[i]["name"] = nm; roads[i]["no"] = off

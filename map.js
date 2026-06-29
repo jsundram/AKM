@@ -8,6 +8,7 @@ const el = (t, c) => { const e = document.createElementNS(NS, t); if (c) e.setAt
 const pts = p => { let s = ""; for (let i = 0; i < p.length; i += 2) s += p[i] + "," + p[i + 1] + " "; return s; };
 const XL = "http://www.w3.org/1999/xlink";
 const MINZ = 0.7, MAXZ = 20;                       // zoom clamp, as multiples of the fit-to-extent scale
+const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
 function roadLabel(o, i) {                          // curved name following the road, flipped to read L→R
   const p = o.p, rev = p[0] > p[p.length - 2], a = [];
@@ -56,7 +57,12 @@ function drawScene(d) {
   d.roads.forEach(o => {
     const e = el("polyline", "road " + o.k); e.setAttribute("points", pts(o.p)); scene.appendChild(e);
   });
-  add("bldg", d.buildings, "polygon", "points");
+  d.buildings.forEach(o => {
+    const e = el("polygon", "bldg" + (o.a || o.n ? " has" : ""));
+    e.setAttribute("points", pts(o.p));
+    if (o.a || o.n) e.__info = o;                  // address/name shown on tap
+    scene.appendChild(e);
+  });
   d.pois.forEach(p => {                            // highlighted footprints under the pins
     if (!p.fp) return;
     const e = el("polygon", "fp fp-" + (p.mine ? "mine" : p.cat));
@@ -88,6 +94,16 @@ function toggleLabel(mk) {                          // flip a pin's label, overr
   mk.classList.toggle("on", !showing);
   mk.classList.toggle("off", showing);
 }
+
+const binfo = $("#binfo");
+function showInfo(o, cx, cy) {                      // tap a building → its OSM name/address, above the tap point
+  const r = map.getBoundingClientRect();
+  binfo.innerHTML = (o.n ? `<b>${esc(o.n)}</b>` : "") + (o.a ? `<span>${esc(o.a)}</span>` : "");
+  binfo.style.left = cx - r.left + "px";
+  binfo.style.top = cy - r.top + "px";
+  binfo.hidden = false;
+}
+const hideInfo = () => { binfo.hidden = true; };
 
 function place() {
   markers.classList.toggle("zoom", view.s > fitS * 2.1);
@@ -159,6 +175,7 @@ const rel = e => { const r = map.getBoundingClientRect(); return { x: e.clientX 
 
 map.addEventListener("pointerdown", e => {
   if (e.target.closest(".tl, .ctl")) return;        // controls keep their own clicks
+  hideInfo();                                       // any new gesture dismisses an open building chip
   try { map.setPointerCapture(e.pointerId); } catch {}
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (ptrs.size === 1) {
@@ -200,9 +217,10 @@ function lift(e) {
     const p = [...ptrs.values()][0];
     g = { mode: "pan", tx: view.tx, ty: view.ty, x: p.x, y: p.y }; down = null;
   } else if (ptrs.size === 0) {
-    if (down && !down.moved) {                       // a still tap → toggle the dot's label
+    if (down && !down.moved) {                       // a still tap
       const dot = down.t.closest && down.t.closest(".dot");
-      if (dot) toggleLabel(dot.parentNode);
+      if (dot) toggleLabel(dot.parentNode);          // pin → toggle its label
+      else if (down.t.__info) showInfo(down.t.__info, down.x, down.y);   // building → its name/address
     }
     g = down = null;
   }
