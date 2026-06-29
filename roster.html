@@ -143,7 +143,7 @@ function parseRoster(gv){
 }
 
 let PEOPLE=[], sortKey=null, sortDir=1;     // null = sheet order (by number)
-const TYPE_RANK={F:0,AF:1,TF:2,W1:3,W2:4};  // role order, not alphabetical; blanks last
+const TYPE_RANK={DIR:0,MGR:1,F:2,AF:3,TF:4,W1:5,W2:6};  // staff first, then faculty/fellows/weeks; blanks last
 function key(p){
   if(sortKey==="n") return parseFloat(p.n)||0;
   if(sortKey==="type") return (p.type in TYPE_RANK) ? TYPE_RANK[p.type] : 8;
