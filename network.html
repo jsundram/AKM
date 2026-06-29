@@ -45,8 +45,11 @@
   .arc{cursor:pointer}
   .clab{font-family:"Inter",sans-serif;fill:var(--ink);pointer-events:none;paint-order:stroke;
     stroke:var(--paper);stroke-width:2.4px}
-  .hint{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em;
-    color:var(--faint);margin-top:2px}
+  /* fixed single-line detail strip — locked height + nowrap so hover never reflows the graph */
+  #info{height:30px;line-height:30px;text-align:center;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;margin:8px 0 2px;padding:0 10px;font-size:12.5px;color:var(--ink)}
+  #info b{font-weight:600}
+  #info .ih{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em;color:var(--faint)}
   #msg{padding:30px 10px;text-align:center;color:var(--muted);font-size:13px}
 
   .seg{display:inline-flex;overflow:hidden;border:1px solid var(--line);border-radius:8px;
@@ -65,12 +68,6 @@
   #chart .nlab{font-family:"Inter",sans-serif;fill:var(--ink);pointer-events:none;paint-order:stroke;
     stroke:var(--paper);stroke-width:2.4px}
 
-  #tip{position:absolute;z-index:9;max-width:240px;padding:7px 11px 8px;border:1px solid var(--line);
-    border-radius:8px;background:rgba(249,250,249,.98);box-shadow:0 3px 12px rgba(20,30,30,.22);
-    font-size:12.5px;line-height:1.4;color:var(--ink)}
-  #tip b{font-weight:600}
-  #tip .x{float:right;margin:-2px -4px 0 8px;color:var(--faint);cursor:pointer;font-size:15px;line-height:1}
-
   footer{margin-top:18px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center;
     font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.05em;color:var(--faint)}
   .flinks{display:flex;gap:8px}
@@ -79,7 +76,6 @@
     :root{ --paper:#0F1817; --haze:#172221; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
       --line:#2C3938; --warm-line:#4A3D23; --brass:#D9A24C; --brass-deep:#E8C481; }
     #legend i{box-shadow:0 0 0 1px rgba(255,255,255,.12)}
-    #tip{background:rgba(23,34,33,.97)}
     .seg button{background:var(--haze);color:var(--faint)}
     .seg button.on{color:var(--brass-deep);background:#2E2616}
   }
@@ -101,8 +97,8 @@
   </div>
 
   <div id="legend"></div>
+  <div id="info"></div>
   <div id="chart"></div>
-  <div class="hint" id="hint">you in the centre · each ring = a degree of separation · tap a name</div>
   <div id="msg" hidden></div>
 
   <footer>
@@ -110,7 +106,6 @@
     <span class="flinks"><a class="back" href="./roster.html">Roster</a><a class="back" href="./index.html">← Today</a></span>
   </footer>
 </div>
-<div id="tip" hidden></div>
 <script src="./d3.v7.min.js"></script>
 <script src="./network.js"></script>
 </body>
