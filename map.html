@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<link rel="stylesheet" href="./nav.css">
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <title>AKM — Map</title>
@@ -180,12 +181,15 @@
 </style>
 </head>
 <body>
+  <header class="apphead">
+    <a class="wordmark" href="https://alpenkammermusik.com" target="_blank" rel="noopener" aria-label="AlpenKammerMusik"><span class="full">AlpenKammerMusik</span><span class="abbr">AKM</span></a>
+    <nav><a href="./index.html">Today</a><span aria-current="page">Map</span><a href="./roster.html">Roster</a><a href="./network.html">Network</a></nav>
+  </header>
   <div class="top">
     <div class="id">
       <h1>Liesing &amp; Klebas</h1>
-      <div class="sub">AKM festival · lodgings · venues · food</div>
+      <div class="sub">lodgings · venues · food</div>
     </div>
-    <a class="back" href="./index.html">← Today</a>
   </div>
 
   <div class="legend">
@@ -221,7 +225,7 @@
     </div>
   </div>
 
-  <footer><span>find your way around the village · works offline</span><a class="back" href="./index.html">← Today</a></footer>
+  <footer><span>find your way around the village</span></footer>
 <script src="./map.js"></script>
 </body>
 </html>

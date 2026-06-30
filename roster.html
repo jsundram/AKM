@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<link rel="stylesheet" href="./nav.css">
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <title>AKM — Roster</title>
@@ -33,7 +34,9 @@
     white-space:nowrap;border:1px solid var(--line);border-radius:7px;padding:5px 10px}
   .back:hover{color:var(--brass-deep);border-color:var(--warm-line)}
   h1{font-family:"Fraunces",serif;font-weight:500;font-size:30px;letter-spacing:-.015em;margin:16px 0 2px}
-  .sub{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.04em;color:var(--faint);margin-bottom:16px}
+  .sub{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.04em;color:var(--faint);margin-bottom:16px}
+  .sub .src{color:var(--muted);text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line);white-space:nowrap}
 
   .doc{background:var(--doc);color:var(--doc-ink);border:1px solid var(--doc-box);border-radius:10px;overflow:hidden}
   table{width:100%;border-collapse:collapse;table-layout:fixed}
@@ -73,9 +76,6 @@
     text-transform:uppercase;color:var(--brass-deep);border:1px solid var(--warm-line);border-radius:4px;
     padding:0 4px;margin-left:6px;white-space:nowrap;vertical-align:middle}
 
-  footer{margin-top:20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center;
-    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.05em;color:var(--faint)}
-  .flinks{display:flex;gap:8px}
   #msg{padding:20px;color:var(--muted);font-size:13px}
 
   @media (prefers-color-scheme: dark){
@@ -87,9 +87,12 @@
 </head>
 <body>
 <div class="sheet">
-  <a class="back" href="./index.html">← Schedule</a>
+  <header class="apphead">
+    <a class="wordmark" href="https://alpenkammermusik.com" target="_blank" rel="noopener" aria-label="AlpenKammerMusik"><span class="full">AlpenKammerMusik</span><span class="abbr">AKM</span></a>
+    <nav><a href="./index.html">Today</a><a href="./map.html">Map</a><span aria-current="page">Roster</span><a href="./network.html">Network</a></nav>
+  </header>
   <h1>Roster</h1>
-  <div class="sub">AKM Chamber Music Festival · <span id="count">…</span></div>
+  <div class="sub"><span id="count">…</span><a class="src" id="editlink" target="_blank" rel="noopener">source sheet ↗</a></div>
   <div class="doc">
     <table>
       <colgroup><col class="c-n"><col class="c-nm"><col class="c-wa"><col class="c-in"><col class="c-ty"><col class="c-ht"></colgroup>
@@ -98,7 +101,6 @@
     </table>
     <div id="msg" hidden></div>
   </div>
-  <footer><span>where everyone is staying</span><span class="flinks"><a class="back" href="./network.html">Network</a><a class="back" id="editlink" target="_blank" rel="noopener">Edit sheet ↗</a><a class="back" href="./index.html">← Schedule</a></span></footer>
 </div>
 <script src="./roster-data.js"></script>
 <script>
