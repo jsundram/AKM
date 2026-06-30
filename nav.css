@@ -1,0 +1,20 @@
+/* Shared top nav across the four AKM pages — wordmark + page links, current page marked.
+   Uses each page's own palette tokens (--ink/--muted/--line/--brass-deep/--warm-line), so it
+   themes (incl. dark) without redefining them. Markup is static per page; only this file styles it. */
+.apphead{display:flex;align-items:baseline;justify-content:space-between;gap:10px 14px;
+  flex-wrap:wrap;flex:none;margin:0 0 18px;padding-bottom:11px;border-bottom:1px solid var(--line)}
+.apphead .wordmark{font-family:"Fraunces",serif;font-weight:500;font-size:16px;
+  letter-spacing:-.01em;color:var(--ink);text-decoration:none}
+.apphead .wordmark:hover{color:var(--brass-deep)}
+.apphead .wordmark .abbr{display:none}
+/* collapse the wordmark to "AKM" before it would wrap onto a second line with the nav */
+@media (max-width:430px){
+  .apphead .wordmark .full{display:none}
+  .apphead .wordmark .abbr{display:inline}
+}
+.apphead nav{display:flex;gap:5px;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.02em}
+.apphead nav a,.apphead nav [aria-current]{padding:3px 8px;border-radius:6px;border:1px solid transparent;
+  color:var(--muted);text-decoration:none;white-space:nowrap}
+.apphead nav a:hover{color:var(--brass-deep);border-color:var(--warm-line)}
+.apphead nav [aria-current]{color:var(--brass-deep);background:#EFE2C8;border-color:var(--warm-line)}
+@media (prefers-color-scheme:dark){ .apphead nav [aria-current]{background:#2E2616} }

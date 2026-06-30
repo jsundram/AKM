@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Inter:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="./nav.css">
 <meta name="theme-color" content="#E9EDEC" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0F1817" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -37,7 +38,6 @@
     letter-spacing:-.015em;margin:10px 0 2px}
   .date .dow{display:block;font-size:15px;font-weight:500;letter-spacing:.04em;
     text-transform:uppercase;color:var(--muted);margin-bottom:4px}
-  .fest{font-size:12.5px;color:var(--faint)}
 
   .wx{margin:20px 0 26px;border:1px solid var(--line);border-radius:13px;
     background:linear-gradient(180deg,#F2F5F4,#E7ECEA);overflow:hidden}
@@ -64,6 +64,15 @@
     font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em;color:var(--muted)}
   .wx-foot b{color:var(--ink);font-weight:500}
 
+  .tl-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    margin:0 0 16px;padding-top:16px;border-top:1px solid var(--line)}
+  .tl-title{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--muted)}
+  .tl-meta{display:flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;
+    font-size:10px;letter-spacing:.04em;color:var(--faint);white-space:nowrap}
+  .tl-meta a{color:var(--muted);text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line)}
+  .tl-empty{font-size:13px;color:var(--muted);line-height:1.4;padding:2px 0 4px}
+  .tl-empty b{color:var(--ink);font-weight:500}
   .tl{position:relative}
   .row{display:grid;grid-template-columns:54px 1fr;gap:16px;padding:0 0 4px;position:relative}
   .row::before{content:"";position:absolute;left:62px;top:7px;bottom:-4px;width:1px;background:var(--line)}
@@ -145,14 +154,9 @@
   .fact b{color:var(--ink);font-weight:500}
   .fact .fsrc{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.02em;color:var(--faint);white-space:nowrap}
 
-  footer{margin-top:28px;padding-top:13px;border-top:1px solid var(--line);
-    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.05em;color:var(--faint);
-    display:flex;justify-content:space-between;gap:12px}
-  footer a{color:var(--muted);text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line)}
-  footer .flinks{flex:none;white-space:nowrap}
 
   @media (prefers-reduced-motion:no-preference){
-    .row,.wx,.masthead{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+    .row,.wx,.masthead,.tl-head{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
     .wx{animation-delay:.05s}
     .tl .row:nth-child(1){animation-delay:.10s}
     .tl .row:nth-child(2){animation-delay:.15s}
@@ -183,7 +187,6 @@
     border:1px solid var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap;cursor:pointer;background:none}
   .chip.on{color:var(--brass-deep);border-color:var(--warm-line);background:#EFE2C8}
   .chip.empty{opacity:.45}
-  .stat{display:flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--faint);white-space:nowrap;flex:none}
   .netdot{width:7px;height:7px;border-radius:50%;background:#6E9A6B;flex:none}
   .netdot.off{background:#B07A3A}
   .stale{color:#B07A3A}
@@ -200,12 +203,14 @@
 <body>
 <div id="ptr"></div>
 <div class="sheet">
+  <header class="apphead">
+    <a class="wordmark" href="https://alpenkammermusik.com" target="_blank" rel="noopener" aria-label="AlpenKammerMusik"><span class="full">AlpenKammerMusik</span><span class="abbr">AKM</span></a>
+    <nav><span aria-current="page">Today</span><a href="./map.html">Map</a><a href="./roster.html">Roster</a><a href="./network.html">Network</a></nav>
+  </header>
   <div class="bar">
     <div class="days" id="days"></div>
-    <div class="stat"><span class="netdot" id="netdot"></span><span id="asof">loading…</span></div>
   </div>
   <main id="app"></main>
-  <footer><span>AKM Chamber Music Festival · works offline once loaded</span><span class="flinks"><a href="./map.html">Map</a> · <a href="./roster.html">Roster</a> · <a href="./network.html">Network</a> · <a id="src" target="_blank" rel="noopener">source sheet ↗</a></span></footer>
 </div>
 <script src="./roster-data.js"></script>
 <script src="./app.js"></script>

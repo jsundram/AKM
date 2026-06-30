@@ -348,7 +348,21 @@ function masthead(isoStr,eyebrow){
   const dd=d.getDate(), mon=d.toLocaleDateString("en-US",{month:"long"});
   const n=Math.round((d-new Date(FEST[0]+"T12:00:00"))/864e5)+1;
   const eb = eyebrow ? (n>=1?`${eyebrow} · Day ${n}`:eyebrow) : "";
-  return `<div class="masthead"><div class="eyebrow"><span>Daily Briefing</span><span>${esc(eb)}</span></div><h1 class="date"><span class="dow">${dow}</span>${dd} ${mon}</h1><div class="fest">AKM Chamber Music Festival</div></div>`;
+  return `<div class="masthead"><div class="eyebrow"><span>Daily Briefing</span><span>${esc(eb)}</span></div><h1 class="date"><span class="dow">${dow}</span>${dd} ${mon}</h1></div>`;
+}
+
+// freshness line for the schedule section: cache timestamp (festival time), online dot, stale flag
+function asofText(c){
+  if(!c.ts) return navigator.onLine ? "loading…" : "no data yet";
+  const ts=new Date(c.ts), stale=Date.now()-ts.getTime()>6*3600e3;
+  return `as of ${ts.toLocaleString("en-GB",{timeZone:TZ,weekday:"short",hour:"2-digit",minute:"2-digit"})}${stale?' · <span class="stale">stale</span>':''}`;
+}
+// schedule section header: rule + label, with the freshness/online dot/source link in context
+function schedHead(c){
+  return `<div class="tl-head"><span class="tl-title">Schedule</span><span class="tl-meta">`
+    + `<span class="netdot${navigator.onLine?'':' off'}" id="netdot"></span>`
+    + `<span id="asof">${asofText(c)}</span> · `
+    + `<a href="${sheetUrl(sel)}" target="_blank" rel="noopener">source sheet ↗</a></span></div>`;
 }
 
 // ---- cache + state ----
@@ -364,23 +378,18 @@ function render(){
     && Math.abs(now - (+w.curAt.slice(11,13) + +w.curAt.slice(14,16)/60)) < 1.5) ? w.cur : null;
   COACHES = coachMap(Roster.cached());
   const app=$("#app");
-  $("#src").href = sheetUrl(sel);
   if(!day){
     const fetching = navigator.onLine && !c.ts;       // first load, refresh still in flight
     const head = fetching ? "<b>Loading today's schedule…</b><br>fetching the live sheet."
-      : navigator.onLine ? `<b>Schedule not posted yet for this day.</b><br>${w?"forecast below.":"check back later."}`
+      : navigator.onLine ? `<b>Schedule not posted yet for this day.</b><br>${w?"forecast above.":"check back later."}`
       : `<b>You're offline.</b><br>${w?"showing cached forecast.":"reconnect to load this day."}`;
-    app.innerHTML = masthead(sel,"") + `<div class="wx"><div class="wx-top"><div class="wx-sum">${head}</div></div></div>` + (w?wxcard(w,now,cur):"");
+    app.innerHTML = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + `<div class="tl-empty">${head}</div>`;
     chips();
-    $("#asof").innerHTML = fetching ? "loading…" : c.ts ? `as of ${new Date(c.ts).toLocaleString("en-GB",{timeZone:TZ,weekday:"short",hour:"2-digit",minute:"2-digit"})}` : "no data yet";
     return;
   }
   const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
-  app.innerHTML = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + `<div class="tl">${timeline(day,w||{})}</div>` + coda(day,BANK,dnum);
+  app.innerHTML = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>` + coda(day,BANK,dnum);
   chips();
-  const ts=c.ts?new Date(c.ts):null;
-  const stale = ts && (Date.now()-ts.getTime() > 6*3600e3);
-  $("#asof").innerHTML = ts ? `as of ${ts.toLocaleString("en-GB",{timeZone:TZ,weekday:"short",hour:"2-digit",minute:"2-digit"})}${stale?' · <span class="stale">stale</span>':''}` : "no data yet";
 }
 function chips(){
   const c=load(), box=$("#days"); box.innerHTML="";
@@ -393,7 +402,7 @@ function chips(){
     box.appendChild(el);
   }
 }
-function net(on){ const d=$("#netdot"); d.classList.toggle("off",!on); }
+function net(on){ const d=$("#netdot"); if(d) d.classList.toggle("off",!on); }   // #netdot lives in the rendered schedule header
 
 // pull-to-refresh — standalone iOS (home-screen card) has no browser reload
 function setupPTR(){
