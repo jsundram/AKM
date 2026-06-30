@@ -40,6 +40,7 @@ POIS = [
     {"name": "Pfarrkirche Hl. Nikolaus", "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus"},
     {"name": "Badstubn",     "cat": "food", "osm": "Badstubn", "aliases": ["KS"]},   # KS = the Konzertsaal in this building
     {"name": "GH Wilhelmer / Mascha Wirt", "cat": "food", "st": "Liesing", "hn": "24"},  # slash → line break in the label
+    {"name": "Steineckenalm",            "cat": "food", "way": 438758257},  # Jausenstation up the Steinecken-Weg; OSM names it only as a node, so anchor the footprint by way id
 ]
 
 ROADS = {"primary": "primary", "secondary": "primary", "tertiary": "primary",
@@ -72,7 +73,11 @@ def build(els):
     poi_ids, pois, missed = set(), [], []
     for poi in POIS:
         hit = geom = None
-        if "hn" in poi:
+        if "way" in poi:                                    # explicit OSM way id, for footprints OSM names only on a node
+            for w in ways:
+                if w["id"] == poi["way"]:
+                    hit, geom = w, w["geometry"]; poi_ids.add(w["id"]); break
+        elif "hn" in poi:
             for w in ways:
                 t = w.get("tags", {})
                 if t.get("addr:housenumber") == poi["hn"] and t.get("addr:street") == poi["st"]:
