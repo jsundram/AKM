@@ -206,7 +206,7 @@ function svg(w,now,cur){
     s+=`<rect x="${a.toFixed(1)}" y="${T}" width="${(b-a).toFixed(1)}" height="${B-T}" fill="#6E7D84" opacity="0.13"/><text x="${((a+b)/2).toFixed(1)}" y="${T+9}" font-size="7.5" fill="#6E7D84" text-anchor="middle" letter-spacing="0.5">SHOWERS</text>`;}
   s+=`<path d="${d} L${R} ${B} L${L} ${B} Z" fill="url(#fg)"/><path d="${d}" fill="none" stroke="url(#tg)" stroke-width="2.2" stroke-linecap="round"/>`;
   s+=`<circle cx="${xat(hi_i).toFixed(1)}" cy="${yat(t[hi_i]).toFixed(1)}" r="2.6" fill="#C5792B"/><text x="${xat(hi_i).toFixed(1)}" y="${(yat(t[hi_i])-6).toFixed(1)}" font-size="9" fill="#C5792B" text-anchor="middle" font-weight="500">H ${w.hi}°</text>`;
-  s+=`<circle cx="${xat(lo_i).toFixed(1)}" cy="${yat(t[lo_i]).toFixed(1)}" r="2.6" fill="#7E96A6"/><text x="${xat(lo_i).toFixed(1)}" y="${(yat(t[lo_i])+13).toFixed(1)}" font-size="9" fill="#7E96A6" text-anchor="middle" font-weight="500">L ${w.lo}°</text>`;
+  s+=`<circle cx="${xat(lo_i).toFixed(1)}" cy="${yat(t[lo_i]).toFixed(1)}" r="2.6" fill="#7E96A6"/><text x="${xat(lo_i).toFixed(1)}" y="${(yat(t[lo_i])-6).toFixed(1)}" font-size="9" fill="#7E96A6" text-anchor="middle" font-weight="500">L ${w.lo}°</text>`;
   // daylight bounds: dotted vertical + sun glyph (top) + time (axis) at sunrise/sunset
   const hm=t=>{const[a,b]=t.split(":").map(Number);return a+b/60;};
   const tl=t=>t.replace(/^0/,"");
