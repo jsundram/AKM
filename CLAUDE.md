@@ -37,7 +37,7 @@ Data sources:
 - `SID` — sheet id. Tab naming convention is **`Ddd M/D`**, no leading zeros (e.g. `Mon 6/29`). Confirmed against the live sheet.
 - `GID` — tab name → numeric gid, so the footer "source sheet ↗" link can deep-link to the day's actual tab (`/edit?gid=…#gid=…`). gids can't be fetched cross-origin at runtime, so they're baked in and **auto-maintained** — don't hand-edit (see *gid map* below).
 - `FEST = ["2026-06-29","2026-07-12"]` — drives day chips + the weather range. Day 1 = 6/29.
-- `LAT/LON` default to `46.692/12.816` and are refined at runtime to the **map centre** — `loadPlaces` reads `map-data.json`'s `meta.bbox` and uses its midpoint, so the forecast point tracks the map. That centre sits ~96 m from the **Kultursaal** venue (well within a 100 m tolerance), so it stands in for it. `TZ = Europe/Vienna`. The laptop is in the Alps, so local = festival time (no timezone math anywhere).
+- `LAT/LON` default to `46.6928/12.8166` (the **Kultursaal** venue) and are refined at runtime from the Kultursaal POI in `map-data.json` — `loadPlaces` inverts its `xy` through `meta.bbox`, so the forecast point tracks the mapped venue (the map centre is ~96 m away, within tolerance, but we pin the named venue for explainability). `TZ = Europe/Vienna`. The laptop is in the Alps, so local = festival time (no timezone math anywhere).
 - `MINE` — Jason's pieces → composer key: Dvořák Quartet→dvorak, Bruch Octet→bruch, Brahms Piano Quartet→brahms, Fauré Piano Quartet→faure. A rehearsal is "his" only on an exact phrase match (so "Dvořák Piano Quintet" and "Brahms String Quartet" correctly do **not** match).
 
 ## Conventions

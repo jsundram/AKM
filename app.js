@@ -8,7 +8,7 @@ const GID = {"Mon 6/29":"1079055190","Tue 6/30":"385081621","Wed 7/1":"123110692
   "Thu 7/2":"140636796","Fri 7/3":"1941915385","Sat 7/4":"1201647531",
   "Mon 7/6":"1017105753","Tue 7/7":"839058497","Wed 7/8":"600713019",
   "Thu 7/9":"636626947","Fri 7/10":"1243481570","Sat 7/11":"1506438549"};
-let LAT = 46.692, LON = 12.816;          // forecast point: map centre (~96 m from the Kultursaal venue, within tolerance); refined from map-data bbox in loadPlaces
+let LAT = 46.6928, LON = 12.8166;        // forecast point: the Kultursaal venue; refined from its map-data POI in loadPlaces
 const TZ = "Europe/Vienna";
 const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusive
 const ROOMS = new Set(["A1","A2","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
@@ -231,7 +231,8 @@ let PLACES = new Set();
 async function loadPlaces(){
   try{ const d=await (await fetch("./map-data.json")).json();
     for(const p of d.pois){ PLACES.add(p.name.toLowerCase()); (p.aliases||[]).forEach(a=>PLACES.add(a.toLowerCase())); }
-    const b=d.meta&&d.meta.bbox; if(b){ LAT=(b[0]+b[2])/2; LON=(b[1]+b[3])/2; }   // forecast at the map's centre (within 100 m of Kultursaal)
+    const m=d.meta||{}, b=m.bbox, k=d.pois.find(p=>p.name==="Kultursaal");   // forecast at the Kultursaal venue: invert its POI xy → lat/lon
+    if(b&&k){ LAT=b[2]-(k.xy[1]/m.h)*(b[2]-b[0]); LON=b[1]+(k.xy[0]/m.w)*(b[3]-b[1]); }
   }catch{ /* offline + uncached: links just won't render until the map data is around */ }
 }
 const PIN = '<svg class="pin" viewBox="0 0 24 24" width="9" height="9" aria-hidden="true"><path fill="currentColor" d="M12 2C8.1 2 5 5.1 5 9c0 5 7 13 7 13s7-8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
