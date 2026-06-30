@@ -237,8 +237,9 @@ function timeline(day,w){
     ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind} · ${esc(venue)}</div></div></div>`]);
   for(const b of evblocks(day)){
     const items = b.items.map(({room,piece})=>{
-      let flag = /quartet|langsamer satz/i.test(piece) ? `<span class="flag">String Quartet</span>` : "";
-      if(Object.keys(MINE).some(k=>norm(piece).includes(k))) flag = `<span class="flag">Your piece</span>`;
+      // descriptive only — never tag a faculty reading "Your piece": faculty play repertoire that
+      // overlaps the participants' by name without being his exact piece (e.g. the faculty Fauré).
+      const flag = /quartet|langsamer satz/i.test(piece) ? `<span class="flag">String Quartet</span>` : "";
       return `<div class="mh-item"><span class="rm">${esc(room)}</span><span class="pl"><b>${esc(piece)}</b> <span class="who">· faculty</span></span>${flag}</div>`;
     });
     const mh = items.length?`<div class="meanwhile"><div class="mh-lab">Worth sitting in on</div>${items.join("")}</div>`:"";
