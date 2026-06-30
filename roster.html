@@ -100,14 +100,11 @@
   </div>
   <footer><span>where everyone is staying</span><span class="flinks"><a class="back" href="./network.html">Network</a><a class="back" id="editlink" target="_blank" rel="noopener">Edit sheet ↗</a><a class="back" href="./index.html">← Schedule</a></span></footer>
 </div>
+<script src="./roster-data.js"></script>
 <script>
-// Roster lives in its own view-only Google Sheet, pulled live (gviz JSONP) and cached for offline —
-// nothing is checked into the repo. Set ROSTER_SID to the spreadsheet id once it's shared link-viewable;
-// leave ROSTER_TAB "" to read the first tab. Edit the sheet to update; the page re-pulls on open.
-const ROSTER_SID = "1j__RMUvFWQlX9UuT-Uxkw7BkqWHCQkbR_hKsTyNwiyo";
-const ROSTER_GID = "800090339";   // specific tab; falls back to ROSTER_TAB / first sheet if blank
-const ROSTER_TAB = "";
-const RK = "akm-roster";
+// The roster's fetch + parse + offline cache live in roster-data.js (shared with the schedule page,
+// which primes the same akm-roster cache); this script just sorts + paints the table. Edit the sheet
+// to update — nothing roster is in the repo (PII); the page re-pulls on open.
 const DEFAULT_FILL = "#F2F4F6";
 const HOTEL_COLORS = {
   "Lesachtalerhof":"#E7F0F7","Ferienwohnung Wilhelmer":"#EEEAF7","Musikhof Lexer":"#E3F2EC",
@@ -139,42 +136,6 @@ const mapTarget = hotel => { const c = HOTEL_ALIAS[(hotel||"").toLowerCase()] ||
   return PLACES.has((c||"").toLowerCase()) ? c : null; };
 const mapLink = hotel => { const t = mapTarget(hotel);   // link to the canonical POI, keep the printed name
   return t ? `<a class="maplink" href="./map.html#${encodeURIComponent(t)}" onclick="event.stopPropagation()">${esc(hotel)}${PIN}</a>` : esc(hotel); };
-
-function jsonp(){
-  return new Promise((res,rej)=>{
-    const cb="__r"+Math.random().toString(36).slice(2);
-    const s=document.createElement("script");
-    const to=setTimeout(()=>{cleanup();rej(new Error("timeout"))},15000);
-    function cleanup(){clearTimeout(to);delete window[cb];s.remove();}
-    window[cb]=d=>{cleanup();res(d);};
-    s.onerror=()=>{cleanup();rej(new Error("script"));};
-    const q = ROSTER_GID ? `gid=${ROSTER_GID}&` : ROSTER_TAB ? `sheet=${encodeURIComponent(ROSTER_TAB)}&` : "";
-    s.src=`https://docs.google.com/spreadsheets/d/${ROSTER_SID}/gviz/tq?${q}tqx=out:json;responseHandler:${cb}`;
-    document.head.appendChild(s);
-  });
-}
-// map Number/Name/Instrument/Hotel by header — works whether gviz put the header in cols or row 0
-function colMap(labels){
-  const at = k => labels.findIndex(x => x.includes(k));
-  const name=at("name"), hotel=at("hotel");
-  if(name<0 || hotel<0) return null;
-  const num = at("number")>=0 ? at("number") : at("#");
-  const from = ["hometown","location","from","home","city"].reduce((a,k)=> a>=0?a:at(k), -1);   // "Hometown" header; aliases as fallback
-  const whatsapp = at("whatsapp")>=0 ? at("whatsapp") : at("phone");
-  return {n: num<0?0:num, name, instrument: at("instr"), type: at("type"), hotel, pieces: at("piece"), notes: at("note"), from, whatsapp};
-}
-const pick = (r,i) => i<0 ? "" : (r[i]||"");
-function parseRoster(gv){
-  const t = gv && gv.table; if(!t) return [];
-  let rows = (t.rows||[]).map(r => (r.c||[]).map(c => c ? String(c.v ?? c.f ?? "").trim() : ""));
-  let m = colMap((t.cols||[]).map(c => (c.label||"").toLowerCase().trim()));
-  if(!m && rows.length){ m = colMap(rows[0].map(x => x.toLowerCase())); rows = rows.slice(1); }
-  if(!m) return [];
-  return rows
-    .map(r => ({n:pick(r,m.n), name:r[m.name], instrument:pick(r,m.instrument), type:pick(r,m.type), hotel:r[m.hotel],
-                pieces:pick(r,m.pieces), notes:pick(r,m.notes), from:pick(r,m.from), whatsapp:pick(r,m.whatsapp)}))
-    .filter(p => p.name && p.name.toLowerCase()!=="name");
-}
 
 // click the WhatsApp glyph → open a chat (app on phone) pre-filled with this greeting ({first} = first name)
 const WA_MSG = "Hi {first}, it's Jason from AKM ";
@@ -247,17 +208,16 @@ function msg(text){ $("#rows").innerHTML=""; $("#count").textContent=""; const m
 async function pull(){
   if(navigator.onLine===false) return;
   try{
-    const people=parseRoster(await jsonp());
-    if(people.length){ localStorage.setItem(RK, JSON.stringify({people})); render(people); }
-  }catch(e){ if(!localStorage.getItem(RK)) msg("Roster unavailable — open once on wifi to cache it."); }
+    const people=await Roster.pull();
+    if(people.length) render(people);
+  }catch(e){ if(!Roster.cached()) msg("Roster unavailable — open once on wifi to cache it."); }
 }
 function boot(){
   $("#wah").innerHTML = WA_SVG;     // the WhatsApp column's header is the icon itself, no text
   document.querySelectorAll("thead th[data-k]").forEach(th=>th.onclick=()=>sortBy(th.dataset.k));
-  if(!ROSTER_SID){ msg("Roster sheet not configured yet."); return; }
-  editlink.href = `https://docs.google.com/spreadsheets/d/${ROSTER_SID}/edit${ROSTER_GID?`?gid=${ROSTER_GID}#gid=${ROSTER_GID}`:""}`;
-  let cached=null; try{ cached=JSON.parse(localStorage.getItem(RK)); }catch{}
-  if(cached && cached.people) render(cached.people);
+  editlink.href = `https://docs.google.com/spreadsheets/d/${Roster.SID}/edit?gid=${Roster.GID}#gid=${Roster.GID}`;
+  const cached = Roster.cached();
+  if(cached) render(cached);
   else if(navigator.onLine) msg("Loading roster…");
   else msg("Offline — open once on wifi to load the roster.");
   loadPlaces().then(()=>{ if(PEOPLE.length) paint(); });   // re-paint once we know which hotels map
