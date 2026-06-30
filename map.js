@@ -232,7 +232,7 @@ function lift(e) {
   } else if (ptrs.size === 0) {
     if (down && !down.moved) {                       // a still tap
       const dot = down.t.closest && down.t.closest(".dot");
-      if (dot) toggleLabel(dot.parentNode);          // pin → toggle its label
+      if (dot) { dot.parentNode.classList.remove("focus"); toggleLabel(dot.parentNode); }   // pin → stop its pulse + toggle label
       else if (down.t.__info) showInfo(down.t.__info, down.x, down.y);   // building → its name/address
     }
     g = down = null;
