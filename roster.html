@@ -124,9 +124,16 @@ async function loadPlaces(){
   }catch{ /* offline + uncached: links just won't render until the map data is around */ }
 }
 const PIN = '<svg class="pin" viewBox="0 0 24 24" width="9" height="9" aria-hidden="true"><path fill="currentColor" d="M12 2C8.1 2 5 5.1 5 9c0 5 7 13 7 13s7-8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
-const mapLink = hotel => PLACES.has((hotel||"").toLowerCase())
-  ? `<a class="maplink" href="./map.html#${encodeURIComponent(hotel)}" onclick="event.stopPropagation()">${esc(hotel)}${PIN}</a>`
-  : esc(hotel);
+// a few roster names don't match a map POI verbatim: both "Obermosterer …" entries are Haus
+// Obernosterer (OCR drift, m→n), and the Kultursaal apartment sits at the Kultursaal venue.
+const HOTEL_ALIAS = {
+  "obermosterer airbnb":"Haus Obernosterer", "obermosterer apartment":"Haus Obernosterer",
+  "kultursaal apartment":"Kultursaal",
+};
+const mapTarget = hotel => { const c = HOTEL_ALIAS[(hotel||"").toLowerCase()] || hotel;
+  return PLACES.has((c||"").toLowerCase()) ? c : null; };
+const mapLink = hotel => { const t = mapTarget(hotel);   // link to the canonical POI, keep the printed name
+  return t ? `<a class="maplink" href="./map.html#${encodeURIComponent(t)}" onclick="event.stopPropagation()">${esc(hotel)}${PIN}</a>` : esc(hotel); };
 
 function jsonp(){
   return new Promise((res,rej)=>{
