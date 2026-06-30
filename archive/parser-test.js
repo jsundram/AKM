@@ -9,8 +9,11 @@ const gv = { table: { rows: [
   R(N, "9:00 - 9:30", "New Participant Tour\nMeet Matt at the fountain. All welcome!"),
   R(N, "9:30 - 10:20", "Full Festival Informational Meeting\n(Lesachtalerhof Terrace)"),
   R(N, N, "A1", "A2", "AH", "KS", "BAND\nROOM", "THEATRE", "CHAPEL", "WERNER"),
-  R(N, "9:00 - 10:15\nGroup B", "Schubert Cello Quintet\nYoanna - P", "Grieg Quartet\nClaudia - C", "Prokofiev Quintet\nEmi - P", "Casarrubios Piano Trio\nSteve - C", "Schubert Piano Trio\nTanya - C", "Schumann Piano Trio\nNathan - P", "Shostakovich Quartet no. 9\nGijs - C", "Dvorak Quartet\nYoojin - C"),
-  R(N, "10:25 - 11:40\nGroup C", "Beethoven String Trio\nIlinca - P", "Korngold Suite\nYoanna - P", "Mozart Clarinet Quintet\nJesus - P", "Faure Piano Quartet\nClaudia - P", "Schumann Piano Quartet\nSteve - C", "Ravel Piano Trio\nJames - P", "Jacob Oboe Quartet\nChad - C", "Haydn Quartet\nEmi - C"),
+  // Group B carries someone else's private-lessons block (no Jason) — must NOT surface
+  R(N, "9:00 - 10:15\nGroup B", "Schubert Cello Quintet\nYoanna - P", "Grieg Quartet\nClaudia - C", "Prokofiev Quintet\nEmi - P", "Casarrubios Piano Trio\nSteve - C", "Schubert Piano Trio\nTanya - C", "Schumann Piano Trio\nNathan - P", "Shostakovich Quartet no. 9\nGijs - C", "Dvorak Quartet\nYoojin - C", "Claudia\nPrivate Lessons\n9:00 - Korn\n9:30 - Chia"),
+  // Group C: Jason's block is shoved into the WERNER column (no LESSONS column here) — must surface his
+  // 10:55 (not Maya's 10:25) and report WERNER as the room he reports to
+  R(N, "10:25 - 11:40\nGroup C", "Beethoven String Trio\nIlinca - P", "Korngold Suite\nYoanna - P", "Mozart Clarinet Quintet\nJesus - P", "Faure Piano Quartet\nClaudia - P", "Schumann Piano Quartet\nSteve - C", "Ravel Piano Trio\nJames - P", "Jacob Oboe Quartet\nChad - C", "Jesus\nPrivate Lessons\n10:25 - Maya\n10:55 - Jason"),
   R(N, "1 3 : 0 0 - 1 4 : 3 0\nL U N C H @ Mascha Wirt"),
   R(N, N, "A1", "A2", "AH", "KS", "BAND ROOM", "THEATRE", "CHAPEL", "WERNER"),
   R(N, "14:30 - 15:45\nGroup E", "Beethoven Piano Trio\nJesus - P", "Brahms Clarinet Quintet\nChad/Ilinca - P", "Dvorak Piano Quintet\nJames - P", "Bruch Octet\nGijs/Nathan - P", "Loeffler Two Rhapsodies\nTanya - C", "Reinecke Trio", "Debussy Quartet\nClaudia - P"),
@@ -31,6 +34,8 @@ const checks = [
   ["evening Webern + Faure faculty", day.evening.filter(e => e[4]).length === 2],
   ["morning all-hands above grid", day.allhands.length === 2],
   ["all-hands times chronological", day.allhands.map(e => e[0]).join(",") === "9:00,9:30"],
+  ["only his private lesson surfaces", day.lessons.length === 1],
+  ["lesson 10:55–11:25 with Jesus in WERNER", day.lessons[0].join("|") === "10:55|11:25|Jesus|WERNER"],
 ];
 let pass = 0;
 for (const [n, r] of checks) { console.log((r ? "PASS" : "FAIL") + "  " + n); pass += r ? 1 : 0; }

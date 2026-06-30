@@ -13,6 +13,7 @@ const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusi
 const ROOMS = new Set(["A1","A2","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
 const MINE = {"dvorak quartet":"dvorak","bruch octet":"bruch",
               "brahms piano quartet":"brahms","faure piano quartet":"faure"};
+const ME = /\bjason\b/i;     // his name in a private-lessons slot → surface it, emphasized
 const MEET = /Participant Tour|Info Meeting|Informational Meeting|Festival Meeting|Festival Informational/;
 const CK = "akm-cache";
 
@@ -21,6 +22,7 @@ const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&g
 const norm = s => s.toLowerCase().replace(/ř/g,"r").replace(/á/g,"a").replace(/é/g,"e").replace(/\s+/g," ").trim();
 const despace = s => s.replace(/(?<!\S)(\S(?: \S){2,})(?!\S)/g, m => m.replace(/ /g,""));
 const mins = t => { const [h,m]=t.split(":"); return +h*60 + +m; };
+const hhmm = m => `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`;
 const iso = d => d.toISOString().slice(0,10);
 
 function viennaToday(){
@@ -62,7 +64,7 @@ function rowsFrom(gv){
 
 // ---- parse one day's grid ----
 function parse(rows){
-  let cols = {}; const day = {eyebrow:"", mine:[], meals:[], allhands:[], evening:[]};
+  let cols = {}; const day = {eyebrow:"", mine:[], meals:[], allhands:[], evening:[], lessons:[]};
   for(const raw of rows){
     const cells = raw.map(c => (c||"").trim());
     const joined = despace(cells.join(" "));
@@ -71,6 +73,18 @@ function parse(rows){
     }
     const hits = cells.map((c,i)=>ROOMS.has(c)?i:-1).filter(i=>i>=0);
     if(hits.length>=3){ cols={}; hits.forEach(i=>cols[i]=cells[i]); continue; }
+    // private-lessons blocks: a coach + half-hour slots ("HH:MM - Student"). The block sits in the
+    // dedicated LESSONS column some rows, but gets shoved into an unused room column (e.g. WERNER)
+    // others — so match by content, not position. Usually not his; but when his name is in a slot
+    // it's a focused commitment, so pull just those out, emphasized.
+    cells.forEach((cell,ci)=>{
+      if(!/private\s+lesson/i.test(cell)) return;
+      const ll = cell.split("\n").map(x=>x.trim()).filter(Boolean);
+      const coach = ll.find(x=>!/private\s+lesson/i.test(x) && !/^\d{1,2}:\d{2}/.test(x)) || "";
+      const room = cols[ci] || "";   // the room it's parked in (WERNER, etc.) — where to actually show up
+      for(const line of ll){ const m=line.match(/^(\d{1,2}:\d{2})\s*-\s*(.+)$/);
+        if(m && ME.test(m[2])) day.lessons.push([m[1], hhmm(mins(m[1])+30), coach, room]); }
+    });
     let li=-1, lab="";
     for(let i=0;i<cells.length;i++){ const dl=despace(cells[i]); if(/\d{1,2}:\d{2}/.test(dl)){ li=i; lab=dl; break; } }
     if(li<0) continue;
@@ -101,7 +115,8 @@ function parse(rows){
     }
   }
   const byT = a => mins(a[0]);
-  day.mine.sort((a,b)=>byT(a)-byT(b)); day.meals.sort((a,b)=>byT(a)-byT(b)); day.allhands.sort((a,b)=>byT(a)-byT(b));
+  day.mine.sort((a,b)=>byT(a)-byT(b)); day.meals.sort((a,b)=>byT(a)-byT(b));
+  day.allhands.sort((a,b)=>byT(a)-byT(b)); day.lessons.sort((a,b)=>byT(a)-byT(b));
   return day;
 }
 const title = s => s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
@@ -189,6 +204,11 @@ function timeline(day,w){
     const chip = room?`<span class="roomchip">${esc(room)}</span>`:"";
     const cw = coach?`<span class="coach">with <b>${esc(coach)}</b></span>`:"";
     ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your rehearsal</span><span class="pc">${pc}</span></div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
+  }
+  for(const [s,e,coach,room] of day.lessons||[]){
+    const cw = coach?`<span class="coach">with <b>${esc(coach)}</b></span>`:"";
+    const chip = `<span class="roomchip">${esc(room||"LESSONS")}</span>`;
+    ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your private lesson</span><span class="pc">be ready</span></div><div class="piece">Private lesson</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
   }
   for(const [s,e,kind,venue] of day.meals)
     ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind} · ${esc(venue)}</div></div></div>`]);
@@ -311,7 +331,7 @@ async function refresh(){
   try{ const wx=await weatherRange(); Object.assign(c.wx,wx); }catch(e){ /* keep old wx */ }
   for(const day of festDays()){
     try{ const rows=rowsFrom(await jsonp(day)); const p=parse(rows);
-         if(p.mine.length||p.meals.length||p.allhands.length||p.evening.length) c.sched[day]=p; }
+         if(p.mine.length||p.meals.length||p.allhands.length||p.evening.length||p.lessons.length) c.sched[day]=p; }
     catch(e){ /* keep old day */ }
   }
   c.ts=new Date().toISOString(); save(c); render();

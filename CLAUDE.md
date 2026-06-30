@@ -53,10 +53,10 @@ Alpine palette; Fraunces (display) / IBM Plex Mono (data) / Inter (body) — **l
 The parser has a Node harness (pure functions are exported when `app.js` is required outside a browser):
 
 ```
-node archive/parser-test.js   # passes 10/10 on the real Tuesday grid (incl. morning all-hands above the room grid)
+node archive/parser-test.js   # passes 12/12 on the real Tuesday grid (incl. morning all-hands above the room grid + a private lesson)
 ```
 
-`app.js` exports `{parse, rowsFrom, mins, norm, despace}` under Node and only calls `boot()` in a browser, so it's safe to `require`. Build a gviz-JSON fixture (`{table:{rows:[{c:[{v},…]}]}}`) and assert on `parse(rowsFrom(fixture))`. Verified behaviors to preserve: chronological sort by clock time (not string — "9:00" must precede "14:30"); meal venue spacing intact ("Mascha Wirt"); `despace` collapses only letter-spaced runs ("L U N C H"→"LUNCH"); evening faculty readings flagged, string quartets and Jason's own pieces specially tagged.
+`app.js` exports `{parse, rowsFrom, mins, norm, despace}` under Node and only calls `boot()` in a browser, so it's safe to `require`. Build a gviz-JSON fixture (`{table:{rows:[{c:[{v},…]}]}}`) and assert on `parse(rowsFrom(fixture))`. Verified behaviors to preserve: chronological sort by clock time (not string — "9:00" must precede "14:30"); meal venue spacing intact ("Mascha Wirt"); `despace` collapses only letter-spaced runs ("L U N C H"→"LUNCH"); evening faculty readings flagged, string quartets and Jason's own pieces specially tagged; **private-lessons** blocks are matched by content (`"Private Lessons"`), not column — they sit in the dedicated LESSONS column some rows but get shoved into an unused room column (e.g. WERNER) others — and only the slots where **Jason's** name (`ME`) appears surface, rendered as an emphasized brass card ("Your private lesson · be ready", inferred 30-min slot). The room chip shows the **actual column the block is parked in** (`cols[ci]` → WERNER, where he reports), falling back to "LESSONS" when it's in the dedicated column.
 
 ## Deploy (browser or laptop)
 
