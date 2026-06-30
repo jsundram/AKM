@@ -40,7 +40,11 @@
   thead th{background:var(--doc-head);color:#fff;font-weight:600;font-size:11px;letter-spacing:.02em;
     text-align:left;padding:6px 10px;cursor:pointer;user-select:none;white-space:nowrap}
   thead th .ar{font-size:8px;margin-left:3px;color:#AEBDC9}
-  col.c-n{width:11%} col.c-nm{width:32%} col.c-in{width:16%} col.c-ty{width:13%} col.c-ht{width:28%}
+  col.c-n{width:6%} col.c-nm{width:33%} col.c-wa{width:7%} col.c-in{width:15%} col.c-ty{width:12%} col.c-ht{width:27%}
+  th.wa-h{cursor:default;text-align:center;padding-left:0;padding-right:0}
+  th.wa-h svg{display:block;margin:0 auto}
+  td.wa-cell{text-align:center;padding-left:0;padding-right:0}
+  .nl{color:#2A6F97;text-decoration:underline;text-decoration-thickness:.6px;text-underline-offset:1.5px}
   th.n,td.n{text-align:right;font-family:"IBM Plex Mono",monospace;white-space:nowrap;padding-left:5px;padding-right:6px}
   td.ty{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:.04em;color:#4A5763}
   td{padding:3.5px 10px;font-size:12.5px;line-height:1.3;border-top:1px solid var(--doc-line);
@@ -60,7 +64,7 @@
     text-transform:uppercase;color:#7A8794;padding-top:2px}
   .dl .v{color:var(--doc-ink)}
   .dl .v a{color:#2A6F97;text-decoration:underline;word-break:break-all}
-  .wa{display:inline-flex;vertical-align:middle;margin-left:6px;opacity:.9;line-height:0}
+  .wa{display:inline-flex;vertical-align:middle;opacity:.9;line-height:0}
   .wa:hover{opacity:1}
   .wa svg{display:block}
   tr.you td{font-weight:600}
@@ -84,12 +88,12 @@
 <body>
 <div class="sheet">
   <a class="back" href="./index.html">← Schedule</a>
-  <h1>Hotel Roster</h1>
+  <h1>Roster</h1>
   <div class="sub">AKM Chamber Music Festival · <span id="count">…</span></div>
   <div class="doc">
     <table>
-      <colgroup><col class="c-n"><col class="c-nm"><col class="c-in"><col class="c-ty"><col class="c-ht"></colgroup>
-      <thead><tr><th class="n" data-k="n">#<span class="ar"></span></th><th data-k="name">Name<span class="ar"></span></th><th data-k="instrument">Instr.<span class="ar"></span></th><th data-k="type">Type<span class="ar"></span></th><th data-k="hotel">Hotel<span class="ar"></span></th></tr></thead>
+      <colgroup><col class="c-n"><col class="c-nm"><col class="c-wa"><col class="c-in"><col class="c-ty"><col class="c-ht"></colgroup>
+      <thead><tr><th class="n" data-k="n">#<span class="ar"></span></th><th data-k="name">Name<span class="ar"></span></th><th class="wa-h" id="wah" aria-label="WhatsApp"></th><th data-k="instrument">Instr.<span class="ar"></span></th><th data-k="type">Type<span class="ar"></span></th><th data-k="hotel">Hotel<span class="ar"></span></th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
     <div id="msg" hidden></div>
@@ -113,6 +117,7 @@ const HOTEL_COLORS = {
 };
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const linkify = s => esc(s).replace(/(https?:\/\/[^\s]+)/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+const noteUrl = s => { const m=(s||"").match(/https?:\/\/[^\s]+/); return m ? m[0].replace(/[),.]+$/,"") : ""; };  // first URL in Notes → link the name
 const $ = s => document.querySelector(s);
 
 // hotels that exist on the offline map (by POI name) become "→ map" links; same source the map uses.
@@ -217,8 +222,11 @@ function paint(){
     const tr=document.createElement("tr");
     tr.style.background = fill;
     tr.className = (you?"you ":"") + (exp?"exp":"");
+    const url = noteUrl(p.notes);
+    const nm = url ? `<a class="nl" href="${esc(url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(p.name)}</a>` : esc(p.name);
     tr.innerHTML = `<td class="n">${esc(p.n)}</td>`+
-      `<td>${esc(p.name)}${you?'<span class="youtag">you</span>':''}${waLink(p)}</td>`+
+      `<td>${nm}${you?'<span class="youtag">you</span>':''}</td>`+
+      `<td class="wa-cell">${waLink(p)}</td>`+
       `<td class="in">${esc(instLabel(p.instrument))||"·"}</td>`+
       `<td class="ty">${esc(p.type)}</td>`+
       `<td class="ht">${mapLink(p.hotel)}${exp?'<span class="caret">›</span>':''}</td>`;
@@ -227,7 +235,7 @@ function paint(){
       const dr=document.createElement("tr");
       dr.className="detail"; dr.hidden=true; dr.style.background=fill;
       const dl=(k,v)=>v?`<div class="dl"><span class="k">${k}</span><span class="v">${linkify(v)}</span></div>`:"";
-      dr.innerHTML=`<td colspan="5">${dl("From",p.from)}${dl("Pieces",p.pieces)}${dl("Notes",p.notes)}</td>`;
+      dr.innerHTML=`<td colspan="6">${dl("From",p.from)}${dl("Pieces",p.pieces)}${dl("Notes",p.notes)}</td>`;
       tb.appendChild(dr);
       tr.addEventListener("click", ()=>{ const open=dr.hidden; dr.hidden=!open; tr.classList.toggle("open",open); });
     }
@@ -244,6 +252,7 @@ async function pull(){
   }catch(e){ if(!localStorage.getItem(RK)) msg("Roster unavailable — open once on wifi to cache it."); }
 }
 function boot(){
+  $("#wah").innerHTML = WA_SVG;     // the WhatsApp column's header is the icon itself, no text
   document.querySelectorAll("thead th[data-k]").forEach(th=>th.onclick=()=>sortBy(th.dataset.k));
   if(!ROSTER_SID){ msg("Roster sheet not configured yet."); return; }
   editlink.href = `https://docs.google.com/spreadsheets/d/${ROSTER_SID}/edit${ROSTER_GID?`?gid=${ROSTER_GID}#gid=${ROSTER_GID}`:""}`;

@@ -17,6 +17,8 @@ const MINE = {"dvorak quartet":"dvorak","bruch octet":"bruch",
 const ME = /\bjason\b/i;     // his name in a private-lessons slot → surface it, emphasized
 const MEET = /Participant Tour|Info Meeting|Informational Meeting|Festival Meeting|Festival Informational/;
 const CK = "akm-cache";
+const RSID = "1j__RMUvFWQlX9UuT-Uxkw7BkqWHCQkbR_hKsTyNwiyo";   // roster sheet (separate) — coach name → bio URL
+const RGID = "800090339";
 
 const $ = s => document.querySelector(s);
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
@@ -68,6 +70,39 @@ function jsonp(isoStr){
 function rowsFrom(gv){
   const t = gv && gv.table; if(!t) return [];
   return t.rows.map(r => (r.c||[]).map(c => c ? String(c.v ?? c.f ?? "") : ""));
+}
+
+// Pull just each roster person's Notes-URL keyed by first name, so the schedule's coach names can
+// link to a bio. Faculty (the only URL-holders) don't share a first name, so first-name match is safe.
+function rosterJsonp(){
+  return new Promise((res,rej)=>{
+    const cb = "__rg"+Math.random().toString(36).slice(2);
+    const s = document.createElement("script");
+    const to = setTimeout(()=>{cleanup(); rej(new Error("timeout"));}, 15000);
+    function cleanup(){ clearTimeout(to); delete window[cb]; s.remove(); }
+    window[cb] = d => { cleanup(); res(d); };
+    s.onerror = () => { cleanup(); rej(new Error("script")); };
+    s.src = `https://docs.google.com/spreadsheets/d/${RSID}/gviz/tq?gid=${RGID}&tqx=out:json;responseHandler:${cb}`;
+    document.head.appendChild(s);
+  });
+}
+function coachUrls(gv){
+  const t = gv && gv.table; if(!t) return {};
+  let rows = (t.rows||[]).map(r => (r.c||[]).map(c => c ? String(c.v ?? c.f ?? "") : ""));
+  const find = labels => { const lc = labels.map(x => (x||"").toLowerCase());
+    return [lc.findIndex(x=>x.includes("name")), lc.findIndex(x=>x.includes("note"))]; };
+  // gviz header detection is flaky here — sometimes it labels the cols, sometimes it dumps the header
+  // into row 0 (cols come back blank). Try labels, else treat row 0 as the header (mirrors roster.html).
+  let [ni,noti] = find((t.cols||[]).map(c => c.label));
+  if((ni<0 || noti<0) && rows.length){ [ni,noti] = find(rows[0]); rows = rows.slice(1); }
+  if(ni<0 || noti<0) return {};
+  const out = {};
+  for(const r of rows){
+    const name = (r[ni]||"").trim(), notes = r[noti]||"";
+    const u = (notes.match(/https?:\/\/[^\s]+/)||[])[0]; if(!name || !u) continue;
+    out[name.split(/[\s,]/)[0].toLowerCase()] = u.replace(/[),.]+$/,"");
+  }
+  return out;
 }
 
 // ---- parse one day's grid ----
@@ -245,6 +280,16 @@ const placeText = label => mapped(label)
   ? `<a class="maplink" href="${mapHref(label)}">${esc(label)}${PIN}</a>` : esc(label);
 
 function tline(s,e){ return `<div class="time"><span class="s">${s}</span>${e?`<span class="e">${e}</span>`:""}</div>`; }
+// a coach with a bio URL in the roster → link the name, so you can get a refresher on who's coaching
+// you. A slot can name two coaches ("Gijs/Nathan", "Smith & Jones") — link each one independently.
+function coachLink(coach){
+  const html = (coach||"").split(/(\s*[\/&,]\s*|\s+and\s+)/).map(tok => {
+    if(!tok.trim() || /^(\s*[\/&,]\s*|\s+and\s+)$/.test(tok)) return esc(tok);   // separator, kept verbatim
+    const u = COACHES[tok.trim().split(/\s+/)[0].toLowerCase()];
+    return u ? `<a class="coachlink" href="${u}" target="_blank" rel="noopener">${esc(tok)}</a>` : esc(tok);
+  }).join("");
+  return `<b>${html}</b>`;
+}
 // group evening practice/reading rows into per-block sections (pre- and post-dinner differ in what's
 // booked) — each with its faculty "worth sitting in on" items and the rooms left unbooked
 function evblocks(day){
@@ -270,11 +315,11 @@ function timeline(day,w){
   for(const [s,e,piece,room,coach,tag] of day.mine){
     const pc = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
     const chip = room?placeChip(room):"";
-    const cw = coach?`<span class="coach">with <b>${esc(coach)}</b></span>`:"";
+    const cw = coach?`<span class="coach">with ${coachLink(coach)}</span>`:"";
     ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your rehearsal</span><span class="pc">${pc}</span></div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
   }
   for(const [s,e,coach,room] of day.lessons||[]){
-    const cw = coach?`<span class="coach">with <b>${esc(coach)}</b></span>`:"";
+    const cw = coach?`<span class="coach">with ${coachLink(coach)}</span>`:"";
     const chip = placeChip(room||"LESSONS");
     ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your private lesson</span><span class="pc">be ready</span></div><div class="piece">Private lesson</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
   }
@@ -332,7 +377,7 @@ function masthead(isoStr,eyebrow){
 }
 
 // ---- cache + state ----
-let BANK={}, sel=viennaToday();
+let BANK={}, COACHES={}, sel=viennaToday();
 const load = () => { try{return JSON.parse(localStorage.getItem(CK))||{}}catch{return {}} };
 const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
 
@@ -342,6 +387,7 @@ function render(){
   // prefer the live "current" reading for the now-dot, but only while it's actually current
   const cur = (now!=null && w && w.cur!=null && w.curAt && w.curAt.slice(0,10)===sel
     && Math.abs(now - (+w.curAt.slice(11,13) + +w.curAt.slice(14,16)/60)) < 1.5) ? w.cur : null;
+  COACHES = c.coaches || {};
   const app=$("#app");
   $("#src").href = sheetUrl(sel);
   if(!day){
@@ -399,6 +445,7 @@ async function refresh(){
   if(!navigator.onLine) return;
   const c=load(); c.sched=c.sched||{}; c.wx=c.wx||{};
   try{ const wx=await weatherRange(); Object.assign(c.wx,wx); }catch(e){ /* keep old wx */ }
+  try{ const cu=coachUrls(await rosterJsonp()); if(Object.keys(cu).length) c.coaches=cu; }catch(e){ /* keep old coaches */ }
   for(const day of festDays()){
     try{ const rows=rowsFrom(await jsonp(day)); const p=parse(rows);
          if(p.mine.length||p.meals.length||p.allhands.length||p.evening.length||p.lessons.length) c.sched[day]=p; }
