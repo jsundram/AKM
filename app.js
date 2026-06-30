@@ -249,7 +249,6 @@ function svg(w,now,cur){
     s+=`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${x.toFixed(1)}" y2="${B}" stroke="#566069" stroke-width="1" opacity="0.55"/>`;
     s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#566069" stroke="#fff" stroke-width="1.4"/>`;
     s+=`<text x="${x.toFixed(1)}" y="${Math.max(y-7,9).toFixed(1)}" font-size="9" fill="#566069" text-anchor="middle" font-weight="600">${Math.round(temp)}°</text>`;
-    s+=`<text x="${x.toFixed(1)}" y="${B+13}" font-size="8" fill="#566069" text-anchor="middle" font-weight="600">now</text>`;
   }
   return s+"</svg>";
 }
