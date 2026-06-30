@@ -7,7 +7,7 @@ const NS = "http://www.w3.org/2000/svg";
 const el = (t, c) => { const e = document.createElementNS(NS, t); if (c) e.setAttribute("class", c); return e; };
 const pts = p => { let s = ""; for (let i = 0; i < p.length; i += 2) s += p[i] + "," + p[i + 1] + " "; return s; };
 const XL = "http://www.w3.org/1999/xlink";
-const MINZ = 0.7, MAXZ = 20;                       // zoom clamp, as multiples of the fit-to-extent scale
+const MINZ = 1, MAXZ = 20;                          // zoom clamp ×fitS: out-floor is fit-to-extent (edges touch), in only from there
 const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
 function roadLabel(o, i) {                          // curved name following the road, flipped to read L→R
@@ -166,7 +166,7 @@ function scale() {
 
 function fit() {
   const r = map.getBoundingClientRect(); W = r.width; H = r.height;
-  fitS = Math.min(W / D.meta.w, H / D.meta.h) * 0.94;
+  fitS = Math.min(W / D.meta.w, H / D.meta.h);       // contain: binding axis fills the area (edges touch); the rest of the bbox stays visible
   view = { s: fitS, tx: (W - fitS * D.meta.w) / 2, ty: (H - fitS * D.meta.h) / 2 };
   render();
 }
