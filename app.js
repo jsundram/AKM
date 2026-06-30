@@ -143,7 +143,7 @@ const WX_SRC = { geosphere: "GeoSphere Austria · AROME + ECMWF", default: "Open
 async function fetchWx(models){
   const u = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
     `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,weathercode`+
-    `&hourly=temperature_2m,precipitation,weathercode&temperature_unit=fahrenheit`+
+    `&hourly=temperature_2m,precipitation,weathercode&current=temperature_2m&temperature_unit=fahrenheit`+
     `&timezone=${encodeURIComponent(TZ)}&start_date=${FEST[0]}&end_date=${FEST[1]}`+
     (models?`&models=${models}`:``);
   const j = await (await fetch(u)).json();
@@ -162,6 +162,11 @@ async function fetchWx(models){
       drizzle: !rainy.length && sum>0,           // measurable precip below the showers threshold
       sky: skyName(D.weathercode[di]), ok:true};
   });
+  // live "current" reading (one value for now); pin it to today so the now-marker can prefer it
+  const C=j.current;
+  if(C && C.temperature_2m!=null && out[C.time.slice(0,10)]){
+    Object.assign(out[C.time.slice(0,10)], {cur:Math.round(C.temperature_2m), curAt:C.time});
+  }
   return out;
 }
 async function weatherRange(){
@@ -174,8 +179,10 @@ async function weatherRange(){
 }
 
 // ---- render (mirrors the template markup) ----
-function svg(w,now){
-  const t=w.t, W=340,H=86,L=12,R=328,T=12,B=60, lo=Math.min(...t)-3, hi=Math.max(...t)+4;
+function svg(w,now,cur){
+  const t=w.t, W=340,H=86,L=12,R=328,T=12,B=60;
+  const dom = cur!=null ? t.concat(cur) : t;   // keep an off-curve live dot in frame
+  const lo=Math.min(...dom)-3, hi=Math.max(...dom)+4;
   const xat=h=>L+h/23*(R-L), yat=v=>B-(v-lo)/(hi-lo)*(B-T);
   const P=t.map((v,i)=>[xat(i),yat(v)]);
   let d=`M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
@@ -199,20 +206,23 @@ function svg(w,now){
   s+=`<text x="${xat(12).toFixed(1)}" y="${B+13}" font-size="8" fill="#8A9A9B" text-anchor="middle">12p</text>`;
   // "now" marker: vertical guide + a dot on the curve at the current festival hour (today only)
   if(now!=null && now>=0 && now<=23){ const x=xat(now);
-    const i=Math.floor(now), f=now-i, tv=t[i]+((t[Math.min(i+1,23)]-t[i])*f), y=yat(tv);
+    const i=Math.floor(now), f=now-i, tv=t[i]+((t[Math.min(i+1,23)]-t[i])*f);
+    const temp = cur!=null ? cur : tv, y=yat(temp);   // live reading if fresh, else the curve
+    if(cur!=null && Math.abs(cur-tv)>=1)              // faint tick where the hourly forecast sits, for contrast
+      s+=`<circle cx="${x.toFixed(1)}" cy="${yat(tv).toFixed(1)}" r="2" fill="none" stroke="#566069" stroke-width="1" opacity="0.4"/>`;
     s+=`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${x.toFixed(1)}" y2="${B}" stroke="#566069" stroke-width="1" opacity="0.55"/>`;
     s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#566069" stroke="#fff" stroke-width="1.4"/>`;
-    s+=`<text x="${x.toFixed(1)}" y="${Math.max(y-7,9).toFixed(1)}" font-size="9" fill="#566069" text-anchor="middle" font-weight="600">${Math.round(tv)}°</text>`;
+    s+=`<text x="${x.toFixed(1)}" y="${Math.max(y-7,9).toFixed(1)}" font-size="9" fill="#566069" text-anchor="middle" font-weight="600">${Math.round(temp)}°</text>`;
     s+=`<text x="${x.toFixed(1)}" y="${B+13}" font-size="8" fill="#566069" text-anchor="middle" font-weight="600">now</text>`;
   }
   return s+"</svg>";
 }
-function wxcard(w,now){
+function wxcard(w,now,cur){
   if(!w||!w.ok) return `<div class="wx"><div class="wx-top"><div class="wx-sum"><b>Forecast unavailable.</b><br>schedule below.</div></div></div>`;
   const precip = w.thunder?"Thunderstorms possible":w.shower?"Showers possible":w.drizzle?"Drizzle possible":"";
   const sub = precip ? `${precip} in the afternoon.` : `${w.sky||"Dry"}.`;
   const src = w.src ? `<div class="wx-src">forecast via ${w.src}</div>` : "";
-  return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w,now)}</div>${src}</div>`;
+  return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w,now,cur)}</div>${src}</div>`;
 }
 // places that exist on the offline map (POI names + room-code aliases, from map-data.json) become
 // "→ map" links; everything else stays plain text. Same source of truth the map itself uses.
@@ -326,6 +336,9 @@ const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
 function render(){
   const c=load(), day=c.sched&&c.sched[sel], w=c.wx&&c.wx[sel];
   const now = sel===viennaToday() ? viennaNowH() : null;   // "now" marker on today's curve only
+  // prefer the live "current" reading for the now-dot, but only while it's actually current
+  const cur = (now!=null && w && w.cur!=null && w.curAt && w.curAt.slice(0,10)===sel
+    && Math.abs(now - (+w.curAt.slice(11,13) + +w.curAt.slice(14,16)/60)) < 1.5) ? w.cur : null;
   const app=$("#app");
   $("#src").href = sheetUrl(sel);
   if(!day){
@@ -333,13 +346,13 @@ function render(){
     const head = fetching ? "<b>Loading today's schedule…</b><br>fetching the live sheet."
       : navigator.onLine ? `<b>Schedule not posted yet for this day.</b><br>${w?"forecast below.":"check back later."}`
       : `<b>You're offline.</b><br>${w?"showing cached forecast.":"reconnect to load this day."}`;
-    app.innerHTML = masthead(sel,"") + `<div class="wx"><div class="wx-top"><div class="wx-sum">${head}</div></div></div>` + (w?wxcard(w,now):"");
+    app.innerHTML = masthead(sel,"") + `<div class="wx"><div class="wx-top"><div class="wx-sum">${head}</div></div></div>` + (w?wxcard(w,now,cur):"");
     chips();
     $("#asof").innerHTML = fetching ? "loading…" : c.ts ? `as of ${new Date(c.ts).toLocaleString("en-GB",{timeZone:TZ,weekday:"short",hour:"2-digit",minute:"2-digit"})}` : "no data yet";
     return;
   }
   const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
-  app.innerHTML = masthead(sel,day.eyebrow) + wxcard(w,now) + `<div class="tl">${timeline(day,w||{})}</div>` + coda(day,BANK,dnum);
+  app.innerHTML = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + `<div class="tl">${timeline(day,w||{})}</div>` + coda(day,BANK,dnum);
   chips();
   const ts=c.ts?new Date(c.ts):null;
   const stale = ts && (Date.now()-ts.getTime() > 6*3600e3);
