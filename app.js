@@ -64,7 +64,7 @@ function rowsFrom(gv){
 
 // ---- parse one day's grid ----
 function parse(rows){
-  let cols = {}; const day = {eyebrow:"", mine:[], meals:[], allhands:[], evening:[], lessons:[]};
+  let cols = {}; const day = {eyebrow:"", mine:[], meals:[], allhands:[], evening:[], lessons:[], rooms:[], evLabels:{}};
   for(const raw of rows){
     const cells = raw.map(c => (c||"").trim());
     const joined = despace(cells.join(" "));
@@ -72,7 +72,8 @@ function parse(rows){
       const m = joined.toUpperCase().match(/WEEK\s+\w+/); if(m) day.eyebrow = title(m[0].replace(/\s+/g," "));
     }
     const hits = cells.map((c,i)=>ROOMS.has(c)?i:-1).filter(i=>i>=0);
-    if(hits.length>=3){ cols={}; hits.forEach(i=>cols[i]=cells[i]); continue; }
+    // keep the most complete header's room list as the practice-room universe (free-room calc)
+    if(hits.length>=3){ cols={}; hits.forEach(i=>cols[i]=cells[i]); if(hits.length>day.rooms.length) day.rooms=hits.map(i=>cells[i]); continue; }
     // private-lessons blocks: a coach + half-hour slots ("HH:MM - Student"). The block sits in the
     // dedicated LESSONS column some rows, but gets shoved into an unused room column (e.g. WERNER)
     // others — so match by content, not position. Usually not his; but when his name is in a slot
@@ -97,6 +98,7 @@ function parse(rows){
       day.meals.push([start,end,kind,venue]); continue;
     }
     const evening = U.includes("PRACTICE BLOCK") || U.includes("FREE READING");
+    if(evening) day.evLabels[start] = lab.split("\n").slice(1).join(" ").trim();
     // all-hands meetings can sit above the first room grid (cols still empty), so match per-row
     const meet = cells.slice(li+1).filter(c => MEET.test(c));
     if(meet.length){ for(const c of meet) day.allhands.push([start,end,c.split("\n").map(x=>x.trim()).filter(Boolean).join(" "),""]); continue; }
@@ -110,7 +112,10 @@ function parse(rows){
       const mt = lines.length ? lines[lines.length-1].match(/^(.*?)\s*[-–]\s*([PC])\b/) : null;
       if(mt && !fac){ coach=mt[1].trim(); tag=mt[2]; piece=lines.slice(0,-1).join(" ").trim()||piece; }
       const key = Object.keys(MINE).find(k => norm(piece).includes(k));
-      if(fac || evening){ day.evening.push([start,end,piece,cols[i],fac]); continue; }
+      if(fac || evening){
+        const kind = fac ? "faculty" : /private\s+lesson/i.test(text) ? "lessons" : /closed/i.test(piece) ? "closed" : "other";
+        day.evening.push([start,end,piece,cols[i],kind]); continue;
+      }
       if(key && !fac) day.mine.push([start,end,piece,cols[i],coach,tag,MINE[key]]);
     }
   }
@@ -195,6 +200,24 @@ function wxcard(w){
   return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w)}</div>${src}</div>`;
 }
 function tline(s,e){ return `<div class="time"><span class="s">${s}</span>${e?`<span class="e">${e}</span>`:""}</div>`; }
+// group evening practice/reading rows into per-block sections (pre- and post-dinner differ in what's
+// booked) — each with its faculty "worth sitting in on" items and the rooms left unbooked
+function evblocks(day){
+  const map=new Map();
+  for(const e of day.evening){ const s=e[0]; if(!map.has(s)) map.set(s,[]); map.get(s).push(e); }
+  return [...map].sort((a,b)=>mins(a[0])-mins(b[0])).map(([s,entries])=>{
+    const items=[], booked=new Set(), closed=new Set();
+    for(const [,, piece, room, kind] of entries){
+      const fac = kind===true || kind==="faculty";          // tolerate pre-kind cached days (5th was a bool)
+      if(kind==="closed" || /closed/i.test(piece)){ closed.add(room); continue; }
+      if(kind==="lessons"){ booked.add(room); continue; }   // a coach's private lessons — room's taken, not a draw
+      if(!piece) continue;
+      booked.add(room); if(fac) items.push({room,piece});
+    }
+    const free=(day.rooms||[]).filter(r=>!booked.has(r) && !closed.has(r));
+    return {s, e:entries[0][1], label:(day.evLabels||{})[s]||"Practice Block / Free Reading", items, free, closed:[...closed]};
+  });
+}
 function timeline(day,w){
   const ev=[];
   for(const [s,e,piece] of day.allhands)
@@ -212,22 +235,19 @@ function timeline(day,w){
   }
   for(const [s,e,kind,venue] of day.meals)
     ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind} · ${esc(venue)}</div></div></div>`]);
-  if(day.evening.length){
-    const s0 = day.evening.map(x=>x[0]).sort((a,b)=>mins(a)-mins(b))[0];
-    const items=[], occ=[];
-    for(const [s,e,piece,room,fac] of [...day.evening].sort((a,b)=>mins(a[0])-mins(b[0]))){
-      if(/closed/i.test(piece)){ occ.push([room,"closed"]); continue; }
-      if(!piece) continue;
+  for(const b of evblocks(day)){
+    const items = b.items.map(({room,piece})=>{
       let flag = /quartet|langsamer satz/i.test(piece) ? `<span class="flag">String Quartet</span>` : "";
       if(Object.keys(MINE).some(k=>norm(piece).includes(k))) flag = `<span class="flag">Your piece</span>`;
-      items.push(`<div class="mh-item"><span class="rm">${esc(room)}</span><span class="pl"><b>${esc(piece)}</b> <span class="who">· faculty</span></span>${flag}</div>`);
-      occ.push([room,"faculty"]);
-    }
-    const taken = occ.filter(o=>o[1]==="faculty").map(o=>`<b>${o[0]}</b>`).join(" and ");
-    const closed = occ.filter(o=>o[1]==="closed").map(o=>`<b>${o[0]}</b>`).join(", ");
-    let note="Practice rooms open"; if(taken) note+=` except ${taken} (faculty)`; if(closed) note+=` and the ${closed} (closed)`; note+=" — sign up in the Akademie.";
+      return `<div class="mh-item"><span class="rm">${esc(room)}</span><span class="pl"><b>${esc(piece)}</b> <span class="who">· faculty</span></span>${flag}</div>`;
+    });
     const mh = items.length?`<div class="meanwhile"><div class="mh-lab">Worth sitting in on</div>${items.join("")}</div>`:"";
-    ev.push([s0,`<div class="row"><div class="time"><span class="s">${s0}</span></div><div class="body ev"><span class="dot"></span><div class="tag">Evening · your time</div><div class="what">Practice Block / Free Reading</div>${mh}<div class="roomnote">${note}</div></div></div>`]);
+    // (day.rooms is absent only on a pre-upgrade cached day — skip the room tally until the refresh lands)
+    let note = !(day.rooms||[]).length ? "Practice rooms"
+      : b.free.length ? `<b>Free rooms:</b> ${b.free.map(r=>esc(r)).join(", ")}` : "All rooms booked";
+    if(b.closed.length) note += ` · ${b.closed.map(r=>esc(r)).join(", ")} closed`;
+    note += " — sign up in the Akademie.";
+    ev.push([b.s,`<div class="row"><div class="time"><span class="s">${b.s}</span></div><div class="body ev"><span class="dot"></span><div class="tag">Evening · your time</div><div class="what">${esc(b.label)}</div>${mh}<div class="roomnote">${note}</div></div></div>`]);
   }
   ev.sort((a,b)=>mins(a[0])-mins(b[0]));
   let out = ev.map(x=>x[1]);
@@ -352,4 +372,4 @@ async function boot(){
   if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
 }
 if (typeof document !== "undefined") boot();
-if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace };
+if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks };
