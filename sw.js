@@ -1,4 +1,4 @@
-const V = "akm-v30";
+const V = "akm-v31";
 const SHELL = ["./", "./index.html", "./app.js", "./manifest.json",
                "./composer-bank.json", "./roster.html",
                "./network.html", "./network.js", "./d3.v7.min.js",

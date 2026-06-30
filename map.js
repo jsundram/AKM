@@ -89,6 +89,19 @@ function makeMarkers(d) {
   });
 }
 
+// arrive from a "→ map" link elsewhere (#<place>, by POI name or room-code alias): centre on it,
+// force its label on, and pulse the pin so it's easy to spot among the others.
+function focusPoi(key) {
+  if (!key) return;
+  const k = key.trim().toLowerCase();
+  const hit = pins.find(({ p }) => p.name.toLowerCase() === k || (p.aliases || []).some(a => a.toLowerCase() === k));
+  if (!hit) return;
+  hit.mk.classList.add("on", "focus");
+  view.s = Math.min(fitS * MAXZ, fitS * 5);
+  view.tx = W / 2 - view.s * hit.p.xy[0]; view.ty = H / 2 - view.s * hit.p.xy[1];
+  render();
+}
+
 function toggleLabel(mk) {                          // flip a pin's label, overriding the auto (zoom/hover/mine) rules
   const lab = mk.querySelector(".lab"), showing = getComputedStyle(lab).display !== "none";
   mk.classList.toggle("on", !showing);
@@ -266,6 +279,8 @@ seg.addEventListener("click", e => { const b = e.target.closest("button"); if (b
 
 let D;
 fetch("./map-data.json").then(r => r.json()).then(d => {
-  D = d; drawScene(d); makeMarkers(d); setMode("map"); fit(); locate();
+  D = d; drawScene(d); makeMarkers(d); setMode("map"); fit();
+  let at = ""; try { at = decodeURIComponent(location.hash.slice(1)); } catch {}
+  focusPoi(at); locate();
   new ResizeObserver(() => { const r = map.getBoundingClientRect(); W = r.width; H = r.height; render(); }).observe(map);
 });

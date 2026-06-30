@@ -48,6 +48,9 @@
   td.n{color:#56636E;font-size:11px}
   td.in{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#3A4650;white-space:nowrap}
   td.ht{font-size:11.5px;color:#3A4650}
+  td.ht a.maplink{color:#2A6F97;text-decoration:none;cursor:pointer;display:inline-flex;align-items:baseline;gap:3px}
+  td.ht a.maplink:hover{text-decoration:underline}
+  td.ht a.maplink .pin{flex:none;opacity:.7;transform:translateY(1px)}
   tr.exp{cursor:pointer}
   .caret{float:right;color:var(--doc-box);transition:transform .15s ease;font-size:13px;line-height:1;margin-left:6px}
   tr.open .caret{transform:rotate(90deg)}
@@ -111,6 +114,19 @@ const HOTEL_COLORS = {
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const linkify = s => esc(s).replace(/(https?:\/\/[^\s]+)/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
 const $ = s => document.querySelector(s);
+
+// hotels that exist on the offline map (by POI name) become "→ map" links; same source the map uses.
+// stopPropagation so tapping the link opens the map instead of toggling the row's detail strip.
+let PLACES = new Set();
+async function loadPlaces(){
+  try{ const d=await (await fetch("./map-data.json")).json();
+    for(const p of d.pois) PLACES.add(p.name.toLowerCase());
+  }catch{ /* offline + uncached: links just won't render until the map data is around */ }
+}
+const PIN = '<svg class="pin" viewBox="0 0 24 24" width="9" height="9" aria-hidden="true"><path fill="currentColor" d="M12 2C8.1 2 5 5.1 5 9c0 5 7 13 7 13s7-8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
+const mapLink = hotel => PLACES.has((hotel||"").toLowerCase())
+  ? `<a class="maplink" href="./map.html#${encodeURIComponent(hotel)}" onclick="event.stopPropagation()">${esc(hotel)}${PIN}</a>`
+  : esc(hotel);
 
 function jsonp(){
   return new Promise((res,rej)=>{
@@ -198,7 +214,7 @@ function paint(){
       `<td>${esc(p.name)}${you?'<span class="youtag">you</span>':''}${waLink(p)}</td>`+
       `<td class="in">${esc(instLabel(p.instrument))||"·"}</td>`+
       `<td class="ty">${esc(p.type)}</td>`+
-      `<td class="ht">${esc(p.hotel)}${exp?'<span class="caret">›</span>':''}</td>`;
+      `<td class="ht">${mapLink(p.hotel)}${exp?'<span class="caret">›</span>':''}</td>`;
     tb.appendChild(tr);
     if(exp){
       const dr=document.createElement("tr");
@@ -228,6 +244,7 @@ function boot(){
   if(cached && cached.people) render(cached.people);
   else if(navigator.onLine) msg("Loading roster…");
   else msg("Offline — open once on wifi to load the roster.");
+  loadPlaces().then(()=>{ if(PEOPLE.length) paint(); });   // re-paint once we know which hotels map
   pull();
   addEventListener("visibilitychange", ()=>{ if(!document.hidden) pull(); });   // re-pull when reopened
 }

@@ -199,6 +199,23 @@ function wxcard(w){
   const src = w.src ? `<div class="wx-src">forecast via ${w.src}</div>` : "";
   return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w)}</div>${src}</div>`;
 }
+// places that exist on the offline map (POI names + room-code aliases, from map-data.json) become
+// "→ map" links; everything else stays plain text. Same source of truth the map itself uses.
+let PLACES = new Set();
+async function loadPlaces(){
+  try{ const d=await (await fetch("./map-data.json")).json();
+    for(const p of d.pois){ PLACES.add(p.name.toLowerCase()); (p.aliases||[]).forEach(a=>PLACES.add(a.toLowerCase())); }
+  }catch{ /* offline + uncached: links just won't render until the map data is around */ }
+}
+const PIN = '<svg class="pin" viewBox="0 0 24 24" width="9" height="9" aria-hidden="true"><path fill="currentColor" d="M12 2C8.1 2 5 5.1 5 9c0 5 7 13 7 13s7-8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
+const mapped = label => PLACES.has((label||"").toLowerCase());
+const mapHref = label => `./map.html#${encodeURIComponent(label)}`;
+const placeChip = (room,cls="roomchip") => mapped(room)
+  ? `<a class="${cls} maplink" href="${mapHref(room)}">${esc(room)}${PIN}</a>`
+  : `<span class="${cls}">${esc(room)}</span>`;
+const placeText = label => mapped(label)
+  ? `<a class="maplink" href="${mapHref(label)}">${esc(label)}${PIN}</a>` : esc(label);
+
 function tline(s,e){ return `<div class="time"><span class="s">${s}</span>${e?`<span class="e">${e}</span>`:""}</div>`; }
 // group evening practice/reading rows into per-block sections (pre- and post-dinner differ in what's
 // booked) — each with its faculty "worth sitting in on" items and the rooms left unbooked
@@ -224,23 +241,23 @@ function timeline(day,w){
     ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}</div></div></div>`]);
   for(const [s,e,piece,room,coach,tag] of day.mine){
     const pc = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
-    const chip = room?`<span class="roomchip">${esc(room)}</span>`:"";
+    const chip = room?placeChip(room):"";
     const cw = coach?`<span class="coach">with <b>${esc(coach)}</b></span>`:"";
     ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your rehearsal</span><span class="pc">${pc}</span></div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
   }
   for(const [s,e,coach,room] of day.lessons||[]){
     const cw = coach?`<span class="coach">with <b>${esc(coach)}</b></span>`:"";
-    const chip = `<span class="roomchip">${esc(room||"LESSONS")}</span>`;
+    const chip = placeChip(room||"LESSONS");
     ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your private lesson</span><span class="pc">be ready</span></div><div class="piece">Private lesson</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
   }
   for(const [s,e,kind,venue] of day.meals)
-    ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind} · ${esc(venue)}</div></div></div>`]);
+    ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind} · ${placeText(venue)}</div></div></div>`]);
   for(const b of evblocks(day)){
     const items = b.items.map(({room,piece})=>{
       // descriptive only — never tag a faculty reading "Your piece": faculty play repertoire that
       // overlaps the participants' by name without being his exact piece (e.g. the faculty Fauré).
       const flag = /quartet|langsamer satz/i.test(piece) ? `<span class="flag">String Quartet</span>` : "";
-      return `<div class="mh-item"><span class="rm">${esc(room)}</span><span class="pl"><b>${esc(piece)}</b> <span class="who">· faculty</span></span>${flag}</div>`;
+      return `<div class="mh-item">${placeChip(room,"rm")}<span class="pl"><b>${esc(piece)}</b> <span class="who">· faculty</span></span>${flag}</div>`;
     });
     const mh = items.length?`<div class="meanwhile"><div class="mh-lab">Worth sitting in on</div>${items.join("")}</div>`:"";
     // (day.rooms is absent only on a pre-upgrade cached day — skip the room tally until the refresh lands)
@@ -361,6 +378,7 @@ async function refresh(){
 // ---- boot ----
 async function boot(){
   try{ BANK = await (await fetch("./composer-bank.json")).json(); }catch{ BANK={}; }
+  await loadPlaces();       // map-data is SW-precached, so this is local + fast
   render();                 // instant from cache (offline-safe)
   addEventListener("online", ()=>{net(true);refresh();});
   addEventListener("offline", ()=>net(false));

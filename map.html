@@ -116,6 +116,10 @@
   .mk.on .lab{display:block!important}    /* tap a pin to force its label on … */
   .mk.off .lab{display:none!important}    /* … or off, regardless of zoom/hover/mine */
   .mk.on{z-index:3}
+  .mk.focus{z-index:5}                    /* arrived via a "→ map" link: pulse the dot to find it */
+  .mk.focus .dot{animation:pinfocus 1.3s ease-out 3}
+  @keyframes pinfocus{from{box-shadow:0 0 0 0 rgba(154,107,34,.5),0 1px 3px rgba(20,30,30,.4)}
+    to{box-shadow:0 0 0 15px rgba(154,107,34,0),0 1px 3px rgba(20,30,30,.4)}}
 
   .me{position:absolute;z-index:4;transform:translate(-50%,-50%);pointer-events:none}
   .me i{display:block;width:15px;height:15px;border-radius:50%;background:#1A73E8;
