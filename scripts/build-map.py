@@ -163,6 +163,9 @@ def main():
         els = fetch()
     except Exception as e:
         print(f"offline / fetch failed ({e}); keeping existing map-data.json", file=sys.stderr)
+        print("  note: alias edits and address-anchored POIs can be hand-applied to map-data.json "
+              "without Overpass — the footprints are already baked (see CLAUDE.md 'map data').",
+              file=sys.stderr)
         return
     data, missed = build(els)
     with open(OUT, "w") as f:

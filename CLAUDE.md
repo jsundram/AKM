@@ -85,6 +85,8 @@ The **`POIS` list at the top of the script is the single source of truth** for t
 python3 scripts/build-map.py    # prints feature + POI counts; WARNs on any unresolved POI
 ```
 
+**Overpass-blocked?** A full rebuild needs the network, but a *POI-only* edit usually doesn't: alias changes are pure metadata on POIs that already have geometry, and a new **address-anchored** POI can be promoted straight from `map-data.json` — every building is baked with its `a` (e.g. `"Liesing 20"`), so copy that footprint into a POI (`xy` = its centroid, `fp` = the footprint) and drop it from `buildings`. Hand-apply that to `map-data.json` and edit `POIS` to match (so the next real rebuild agrees), then bump `sw.js` `V` since `map-data.json` is precached. Only `osm`/`way`-anchored POIs genuinely need an Overpass run.
+
 `scripts/build-terrain.py` (uv + PEP 723: Pillow + numpy) bakes the two raster layers, reading the bbox **back from `map-data.json`'s `meta`** so they register pixel-for-pixel with the vector — so always run it *after* `build-map.py`:
 
 ```
