@@ -366,7 +366,7 @@ function schedHead(c){
 }
 
 // ---- cache + state ----
-let BANK={}, COACHES={}, sel=viennaToday();
+let BANK={}, COACHES={}, today=viennaToday(), sel=today;
 const load = () => { try{return JSON.parse(localStorage.getItem(CK))||{}}catch{return {}} };
 const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
 
@@ -447,6 +447,8 @@ async function boot(){
   addEventListener("offline", ()=>net(false));
   // reopening the home-screen card may resume from suspension (no reload) — refresh on foreground
   addEventListener("visibilitychange", ()=>{ if(document.hidden) return;
+    const nt=viennaToday();                                    // may have rolled past midnight while suspended
+    if(nt!==today){ if(sel===today){ sel=nt; render(); } today=nt; }   // advance the view if we were on "today"
     const c=load(), age=c.ts?Date.now()-new Date(c.ts).getTime():Infinity;
     if(age>60e3) refresh(); });
   setupPTR();
