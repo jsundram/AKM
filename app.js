@@ -19,6 +19,9 @@ const MEET = /Participant Tour|Info Meeting|Informational Meeting|Festival Meeti
 const CK = "akm-cache";
 
 const $ = s => document.querySelector(s);
+// only touch the DOM when the HTML actually changed. A redundant innerHTML write blanks + repaints and
+// re-triggers the `rise` entrance animation — the flicker after refresh() re-renders identical cached content.
+const paint = (el,html) => { if(el.__html===html) return; el.__html=html; el.innerHTML=html; };
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const norm = s => s.toLowerCase().replace(/ř/g,"r").replace(/á/g,"a").replace(/é/g,"e").replace(/\s+/g," ").trim();
 const despace = s => s.replace(/(?<!\S)(\S(?: \S){2,})(?!\S)/g, m => m.replace(/ /g,""));
@@ -377,23 +380,26 @@ function render(){
   const cur = (now!=null && w && w.cur!=null && w.curAt && w.curAt.slice(0,10)===sel
     && Math.abs(now - (+w.curAt.slice(11,13) + +w.curAt.slice(14,16)/60)) < 1.5) ? w.cur : null;
   COACHES = coachMap(Roster.cached());
-  const app=$("#app");
+  let html;
   if(!day){
     const fetching = navigator.onLine && !c.ts;       // first load, refresh still in flight
     const head = fetching ? "<b>Loading today's schedule…</b><br>fetching the live sheet."
       : navigator.onLine ? `<b>Schedule not posted yet for this day.</b><br>${w?"forecast above.":"check back later."}`
       : `<b>You're offline.</b><br>${w?"showing cached forecast.":"reconnect to load this day."}`;
-    app.innerHTML = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + `<div class="tl-empty">${head}</div>`;
-    chips();
-    return;
+    html = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + `<div class="tl-empty">${head}</div>`;
+  } else {
+    const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
+    html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>` + coda(day,BANK,dnum);
   }
-  const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
-  app.innerHTML = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>` + coda(day,BANK,dnum);
+  paint($("#app"), html);
   chips();
 }
 function chips(){
-  const c=load(), box=$("#days"); box.innerHTML="";
-  for(const day of festDays()){
+  const c=load(), box=$("#days"), days=festDays();
+  const sig=sel+"|"+days.map(d=>c.sched&&c.sched[d]?1:0).join("");   // only the selection + which days have data drive the chips
+  if(box.__sig===sig) return; box.__sig=sig;
+  box.innerHTML="";
+  for(const day of days){
     const d=new Date(day+"T12:00:00"), has=c.sched&&c.sched[day];
     const el=document.createElement("button");
     el.className="chip"+(day===sel?" on":"")+(has?"":" empty");
