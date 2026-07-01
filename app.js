@@ -323,7 +323,7 @@ function timeline(day,w){
   if(w&&w.ok&&(w.thunder||w.shower)){
     const aft = day.mine.filter(e=>mins(e[0])>=840);
     if(aft.length){
-      const note=`<div class="wxnote">Showers${w.thunder?", maybe thunder,":","} building through the afternoon — umbrella, and a cloth for the violin.</div>`;
+      const note=`<div class="wxnote">Showers${w.thunder?", maybe thunder,":","} building through the afternoon — bring an umbrella and a jacket.</div>`;
       const piece=aft[aft.length-1][2];
       for(let i=0;i<out.length;i++){ if(out[i].includes('class="row mine"') && out[i].includes(esc(piece))){ out.splice(i,0,note); break; } }
     }
