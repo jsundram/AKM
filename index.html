@@ -135,12 +135,15 @@
 
   /* coda — the grace note */
   .coda{margin-top:28px;padding-top:18px;border-top:1px solid var(--line)}
-  .coda-lab{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.18em;
-    text-transform:uppercase;color:var(--brass);margin-bottom:11px}
+  .coda-lab{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--brass);margin-bottom:11px;text-decoration:none;width:fit-content}
+  a.coda-lab:hover{color:var(--brass-deep)}
   .quote{font-family:"Fraunces",serif;font-style:italic;font-weight:400;font-size:20px;
     line-height:1.32;color:var(--ink);letter-spacing:-.005em}
   .quote .by{display:block;font-family:"Inter",sans-serif;font-style:normal;font-size:12px;
-    color:var(--muted);margin-top:8px}
+    color:var(--muted);margin-top:8px;width:fit-content}
+  a.by{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
+  a.by:hover{color:var(--ink)}
   .quote .by::before{content:"— "}
   .quote .prov{display:block;font-family:"IBM Plex Mono",monospace;font-style:normal;font-size:10px;
     letter-spacing:.02em;color:var(--faint);margin-top:6px;line-height:1.4}
@@ -150,7 +153,8 @@
   .fact{display:flex;gap:9px;font-size:12px;color:var(--muted);line-height:1.45}
   .fact .ftag{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.08em;
     color:var(--brass-deep);background:#EFE2C8;border:1px solid var(--warm-line);border-radius:4px;
-    padding:2px 6px;height:fit-content;flex:none;white-space:nowrap}
+    padding:2px 6px;height:fit-content;flex:none;white-space:nowrap;text-decoration:none}
+  a.ftag:hover{border-color:var(--brass)}
   .fact b{color:var(--ink);font-weight:500}
   .fact .fsrc{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.02em;color:var(--faint);white-space:nowrap}
 
@@ -205,7 +209,7 @@
 <div class="sheet">
   <header class="apphead">
     <a class="wordmark" href="https://alpenkammermusik.com" target="_blank" rel="noopener" aria-label="AlpenKammerMusik"><span class="full">AlpenKammerMusik</span><span class="abbr">AKM</span></a>
-    <nav><span aria-current="page">Today</span><a href="./map.html">Map</a><a href="./roster.html">Roster</a><a href="./network.html">Network</a></nav>
+    <nav><span aria-current="page">Today</span><a href="./map.html">Map</a><a href="./roster.html">Roster</a><a href="./network.html">Network</a><a href="./notes.html">Notes</a></nav>
   </header>
   <div class="bar">
     <div class="days" id="days"></div>

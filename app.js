@@ -335,13 +335,13 @@ function coda(day,bank,dnum){
   const order=(arr)=>[...arr].sort((a,b)=>(a.tier==="sourced"?0:1)-(b.tier==="sourced"?0:1));
   const qc=keys[0], qs=order(bank[qc]?.quotes||[]);
   const q = qs.length ? qs[dnum % qs.length] : null;
-  let out=`<div class="coda"><div class="coda-lab">Grace note</div>`;
-  if(q) out+=`<div class="quote">${esc(q.text)}<span class="by">${esc(bank[qc].name)}</span><span class="prov">${esc(q.src)}</span></div>`;
+  let out=`<div class="coda"><a class="coda-lab" href="./notes.html">Grace note</a>`;
+  if(q) out+=`<div class="quote">${esc(q.text)}<a class="by" href="./notes.html#${qc}">${esc(bank[qc].name)}</a><span class="prov">${esc(q.src)}</span></div>`;
   out+=`<div class="facts">`;
   for(const c of (keys.slice(1).length?keys.slice(1):keys)){
     const fs=order(bank[c]?.facts||[]); if(!fs.length) continue;
     const f=fs[dnum % fs.length];
-    out+=`<div class="fact"><span class="ftag">${c.toUpperCase()}</span><span>${esc(f.text)} <span class="fsrc">${esc(f.src.split(";")[0])}</span></span></div>`;
+    out+=`<div class="fact"><a class="ftag" href="./notes.html#${c}">${c.toUpperCase()}</a><span>${esc(f.text)} <span class="fsrc">${esc(f.src.split(";")[0])}</span></span></div>`;
   }
   return out+"</div></div>";
 }
