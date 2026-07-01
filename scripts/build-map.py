@@ -35,9 +35,10 @@ POIS = [
     {"name": "Haus Lanzinger",          "cat": "lodging", "st": "Liesing", "hn": "21"},
     {"name": "Haus Obernosterer",       "cat": "lodging", "st": "Liesing", "hn": "25"},
     {"name": "Kleines Berghotel",       "cat": "lodging", "st": "Klebas",  "hn": "7"},
-    {"name": "Kultursaal",               "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A2", "AH"]},  # the Akademie; A2/AH are rooms inside it
+    {"name": "Kultursaal",               "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A1", "A2", "AH"]},  # the Akademie; A1/A2/AH are rooms inside it
     {"name": "Werner",                   "cat": "venue", "st": "Liesing", "hn": "30"},   # yellow house down the street from Musikhof Lexer (the WERNER rehearsal room)
-    {"name": "Pfarrkirche Hl. Nikolaus", "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus"},
+    {"name": "Band Room",                "cat": "venue", "st": "Liesing", "hn": "20"},   # the BAND ROOM rehearsal space; name lowercases to the schedule's room code, so the chip links without an alias
+    {"name": "Pfarrkirche Hl. Nikolaus", "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus", "aliases": ["CHAPEL"]},  # CHAPEL rehearsal room
     {"name": "Badstubn",     "cat": "food", "osm": "Badstubn", "aliases": ["KS"]},   # KS = the Konzertsaal in this building
     {"name": "GH Wilhelmer / Mascha Wirt", "cat": "food", "st": "Liesing", "hn": "24"},  # slash → line break in the label
     {"name": "Steineckenalm",            "cat": "food", "way": 438758257},  # Jausenstation up the Steinecken-Weg; OSM names it only as a node, so anchor the footprint by way id
