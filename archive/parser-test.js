@@ -18,6 +18,8 @@ const gv = { table: { rows: [
   R(N, N, "A1", "A2", "AH", "KS", "BAND ROOM", "THEATRE", "CHAPEL", "WERNER"),
   R(N, "14:30 - 15:45\nGroup E", "Beethoven Piano Trio\nJesus - P", "Brahms Clarinet Quintet\nChad/Ilinca - P", "Dvorak Piano Quintet\nJames - P", "Bruch Octet\nGijs/Nathan - P", "Loeffler Two Rhapsodies\nTanya - C", "Reinecke Trio", "Debussy Quartet\nClaudia - P"),
   R(N, "17:20 - 19:00\nPractice Block / Free Reading", N, N, "Faculty Rehearsal\nWebern Langsamer Satz", "Faculty Rehearsal\nFaure Piano Quartet"),
+  // a keyword-free banner event (no "concert"/meeting phrase) — must still surface, venue from parens
+  R(N, "16:00\nGuest Artist Talk (Lesachtalerhof Terrace)"),
   R(N, "1 9 : 0 0\nD I N N E R @ Lesachtalerhof"),
   R(N, "20:00\nPractice Block / Free Reading", N, N, N, N, N, "Closed"),
   // a headline evening event: faculty concert banner in the label column, no room grid — must surface
@@ -36,8 +38,9 @@ const checks = [
   ["dinner venue", day.meals.some(m => m[2] === "Dinner" && m[3] === "Lesachtalerhof")],
   ["evening Webern + Faure faculty", day.evening.filter(e => e[4] === "faculty").length === 2],
   ["morning all-hands above grid", day.allhands.filter(e => /Meeting|Tour/.test(e[2])).length === 2],
-  ["all-hands times chronological", day.allhands.map(e => e[0]).join(",") === "9:00,9:30,20:00"],
-  ["faculty concert banner surfaces", day.allhands.some(e => e[0] === "20:00" && e[2] === "FACULTY CONCERT" && e[3] === "Kultursaal")],
+  ["all-hands times chronological", day.allhands.map(e => e[0]).join(",") === "9:00,9:30,16:00,20:00"],
+  ["faculty concert banner surfaces (re-cased)", day.allhands.some(e => e[0] === "20:00" && e[2] === "Faculty Concert" && e[3] === "Kultursaal")],
+  ["keyword-free banner surfaces, venue from parens", day.allhands.some(e => e[0] === "16:00" && e[2] === "Guest Artist Talk" && e[3] === "Lesachtalerhof Terrace")],
   ["only his private lesson surfaces", day.lessons.length === 1],
   ["lesson 10:55–11:25 with Jesus in WERNER", day.lessons[0].join("|") === "10:55|11:25|Jesus|WERNER"],
   ["two evening blocks split out", blocks.length === 2],

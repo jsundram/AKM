@@ -133,22 +133,24 @@ function parse(rows){
         : lab.replace(/\d{1,2}:\d{2}(\s*-\s*\d{1,2}:\d{2})?/,"").replace(/\b(LUNCH|DINNER|BREAKFAST)\b/i,"").replace(/\s+/g," ").trim().toLowerCase();
       day.meals.push([start,end,kind,venue]); continue;
     }
-    // headline evening events — faculty/participant concerts & recitals — are banner rows: the label
-    // column carries the whole event, no room grid, so they slip past the meal/meeting/practice-block
-    // buckets and vanish. Catch them (guarding against a rehearsal row that just names a "Concerto")
-    // and surface as all-welcome, map-linking a "@venue" or trailing "(Venue)".
-    const hasGrid = Object.keys(cols).some(i => (cells[+i]||"").trim());
-    if(!hasGrid && /\bconcerts?\b|\brecitals?\b/i.test(lab)){
-      const full = lab.replace(/\d{1,2}:\d{2}(\s*-\s*\d{1,2}:\d{2})?/,"").replace(/\n/g," ").replace(/\s+/g," ").trim();
-      const venue = full.includes("@") ? full.split("@")[1].trim() : (full.match(/\(([^)]+)\)\s*$/)||[])[1] || "";
-      const what = full.split("@")[0].replace(/\s*\([^)]*\)\s*$/,"").trim();
-      day.allhands.push([start,end,what,venue]); continue;
-    }
     const evening = U.includes("PRACTICE BLOCK") || U.includes("FREE READING");
     if(evening) day.evLabels[start] = lab.split("\n").slice(1).join(" ").trim();
     // all-hands meetings can sit above the first room grid (cols still empty), so match per-row
     const meet = cells.slice(li+1).filter(c => MEET.test(c));
     if(meet.length){ for(const c of meet) day.allhands.push([start,end,c.split("\n").map(x=>x.trim()).filter(Boolean).join(" "),""]); continue; }
+    // generic timed banner — a "full-width" event with no room-grid entry that isn't a meal or a
+    // practice block: faculty/participant concerts, recitals, masterclasses, screenings, whatever the
+    // festival adds. Keyword-free by design, so a new event type surfaces instead of silently dropping;
+    // a "@venue" or trailing "(Venue)" is split off and map-linked. Rehearsal rows are excluded (their
+    // content lives in room columns → hasGrid; a bare "Group X" label with empty rooms isn't an event).
+    const hasGrid = Object.keys(cols).some(i => (cells[+i]||"").trim());
+    const desc = despace([lab.split("\n").slice(1).join(" "), ...cells.slice(li+1)].filter(Boolean).join(" ")).replace(/\s+/g," ").trim();
+    if(!evening && !hasGrid && desc && !/^group\b/i.test(desc)){
+      const venue = desc.includes("@") ? desc.split("@")[1].trim() : (desc.match(/\(([^)]+)\)\s*$/)||[])[1] || "";
+      let what = desc.split("@")[0].replace(/\s*\([^)]*\)\s*$/,"").trim();
+      if(what===what.toUpperCase()) what = title(what);   // soften the sheet's letter-spaced ALL-CAPS banners
+      day.allhands.push([start,end,what,venue]); continue;
+    }
     for(const i in cols){
       const cell = cells[+i] || ""; if(!cell) continue;
       const lines = cell.split("\n").map(x=>x.trim()).filter(Boolean);
