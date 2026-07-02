@@ -247,10 +247,17 @@ function svg(w,now,cur){
   }
   return s+"</svg>";
 }
+// time-of-day phrase for a precip window [startHour, endHour), so the text tracks the SHOWERS band on the curve
+const dpart = h => h<12?"morning":h<17?"afternoon":"evening";
+function whenPhrase(win){
+  if(!win) return "";                                 // no measurable band (thunder-only / drizzle): don't claim a time
+  const a=dpart(win[0]), b=dpart(win[1]-1);
+  return a===b ? ` in the ${a}` : ` from the ${a} into the ${b}`;
+}
 function wxcard(w,now,cur){
   if(!w||!w.ok) return `<div class="wx"><div class="wx-top"><div class="wx-sum"><b>Forecast unavailable.</b><br>schedule below.</div></div></div>`;
   const precip = w.thunder?"Thunderstorms possible":w.shower?"Showers possible":w.drizzle?"Drizzle possible":"";
-  const sub = precip ? `${precip} in the afternoon.` : `${w.sky||"Dry"}.`;
+  const sub = precip ? `${precip}${whenPhrase(w.shower)}.` : `${w.sky||"Dry"}.`;
   const src = w.src ? `<div class="wx-src">forecast via ${w.src}</div>` : "";
   return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w,now,cur)}</div>${src}</div>`;
 }
@@ -336,10 +343,10 @@ function timeline(day,w){
   }
   ev.sort((a,b)=>mins(a[0])-mins(b[0]));
   let out = ev.map(x=>x[1]);
-  if(w&&w.ok&&(w.thunder||w.shower)){
+  if(w&&w.ok&&(w.thunder||(w.shower&&w.shower[1]>12))){    // only warn when rain reaches midday+ (matches the band)
     const aft = day.mine.filter(e=>mins(e[0])>=840);
     if(aft.length){
-      const note=`<div class="wxnote">Showers${w.thunder?", maybe thunder,":","} building through the afternoon — bring an umbrella and a jacket.</div>`;
+      const note=`<div class="wxnote">Showers${w.thunder?", maybe thunder,":","} building${whenPhrase(w.shower)} — bring an umbrella and a jacket.</div>`;
       const piece=aft[aft.length-1][2];
       for(let i=0;i<out.length;i++){ if(out[i].includes('class="row mine"') && out[i].includes(esc(piece))){ out.splice(i,0,note); break; } }
     }
