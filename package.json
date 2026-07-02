@@ -1,0 +1,13 @@
+{
+  "name": "akm",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Tooling for the AKM briefing PWA — the site itself is static, this is just the test harnesses.",
+  "scripts": {
+    "test": "node archive/parser-test.js",
+    "test:ui": "node scripts/ui-test.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.48.0"
+  }
+}

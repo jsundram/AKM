@@ -1,5 +1,8 @@
 .DS_Store
 
+# test tooling (installed by the session-start hook / `npm install`)
+node_modules/
+
 # source archives (map + roster), not for the public repo
 *.zip
 
