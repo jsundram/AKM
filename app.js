@@ -405,6 +405,7 @@ const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
 const MK = "akm-mine";
 const loadMine = () => { try{return JSON.parse(localStorage.getItem(MK))||{}}catch{return {}} };
 const saveMine = m => { try{localStorage.setItem(MK,JSON.stringify(m))}catch{} };
+let editIdx = null;   // index into loadMine()[sel] while editing an existing event; null = adding a new one
 const pad2 = t => { const [h,m]=t.split(":"); return h.padStart(2,"0")+":"+m; };   // "9:00" → "09:00" for <input type=time>
 const unpad = t => t.replace(/^0(?=\d:)/,"");                                       // "09:00" → "9:00" to match the sheet's style
 
@@ -422,7 +423,7 @@ function selfCardHtml(m,i){
   const who = m.who?`<span class="with">with <b>${esc(m.who)}</b></span>`:"";
   const meta = (chip||who)?`<div class="meta">${chip}${who}</div>`:"";
   return `<div class="row mine self">${tline(m.s,m.e)}<div class="body"><span class="dot"></span>`
-    +`<div class="card"><div class="kicker"><span>Yours · added</span>`
+    +`<div class="card" data-edit="${i}"><div class="kicker"><span>Yours · added</span>`
     +`<button class="selfx" type="button" data-del="${i}" aria-label="Remove">×</button></div>`
     +`<div class="piece">${esc(m.what||"Session")}</div>${meta}</div></div></div>`;
 }
@@ -432,26 +433,32 @@ function removeSelf(i){
   saveMine(m); render();
 }
 // --- add-sheet (overlay, lives OUTSIDE #app so a background refresh mid-entry can't wipe the form) ---
-function openAdd(){
+function openAdd(i){
   const box=$("#addsheet"); if(!box) return;
-  $("#f-s").value=""; $("#f-e").value=""; $("#f-what").value=""; $("#f-who").value="";
-  $("#f-room").innerHTML = `<option value="">room…</option>`+[...ROOMS].map(r=>`<option>${r}</option>`).join("");
+  editIdx = typeof i==="number" ? i : null;            // editing an existing event vs adding a new one
+  const ev = editIdx!=null ? (loadMine()[sel]||[])[editIdx] : null;
+  $("#f-s").value=ev?pad2(ev.s):""; $("#f-e").value=ev&&ev.e?pad2(ev.e):"";
+  $("#f-what").value=ev?ev.what||"":""; $("#f-who").value=ev?ev.who||"":"";
+  $("#f-room").innerHTML = `<option value="">room…</option>`
+    +[...ROOMS].map(r=>`<option${ev&&ev.room===r?" selected":""}>${r}</option>`).join("");
   const day=(load().sched||{})[sel], slots=dayTimes(day);
   $("#addslots").innerHTML = slots.length
     ? `<span class="slotlab">from today</span>`+slots.map(t=>`<button type="button" class="slotchip" data-t="${t}">${t}</button>`).join("")
     : "";
-  $("#add-day").textContent = tabName(sel);
+  if(editIdx!=null){ $("#add-title").textContent="Edit event"; $("#addsave").textContent="Save"; }
+  else { $("#add-title").innerHTML=`Add to <b>${esc(tabName(sel))}</b>`; $("#addsave").textContent="Add"; }
   box.hidden=false; $("#f-s").focus();
 }
-const closeAdd = () => { const b=$("#addsheet"); if(b) b.hidden=true; };
+const closeAdd = () => { editIdx=null; const b=$("#addsheet"); if(b) b.hidden=true; };
 function saveSelf(){
   let s=$("#f-s").value, e=$("#f-e").value;
   if(!s){ $("#f-s").focus(); return; }                 // start is the one required field
   if(!e) e=hhmm(Math.min(mins(s)+60,1439));            // default to a one-hour slot
   const ev={ s:unpad(s), e:unpad(e), what:$("#f-what").value.trim(),
              who:$("#f-who").value.trim(), room:$("#f-room").value };
-  const m=loadMine(); (m[sel]=m[sel]||[]).push(ev); saveMine(m);
-  closeAdd(); render();
+  const m=loadMine(); const list=(m[sel]=m[sel]||[]);
+  if(editIdx!=null && list[editIdx]) list[editIdx]=ev; else list.push(ev);   // update in place, or append
+  saveMine(m); closeAdd(); render();
 }
 function setupAdd(){
   const box=$("#addsheet"); if(!box) return;
@@ -548,10 +555,12 @@ async function boot(){
     if(age>60e3) refresh(); });
   setupPTR();
   setupAdd();
-  // #app is repainted on every render; delegate so the add button + per-card delete survive repaints
+  // #app is repainted on every render; delegate so the add button + per-card delete/edit survive repaints
   $("#app").addEventListener("click", e=>{
     if(e.target.closest("#addself")){ openAdd(); return; }
-    const d=e.target.closest("[data-del]"); if(d) removeSelf(+d.dataset.del);
+    const d=e.target.closest("[data-del]"); if(d){ removeSelf(+d.dataset.del); return; }
+    if(e.target.closest("a")) return;                    // room maplinks open the map, not the editor
+    const ed=e.target.closest("[data-edit]"); if(ed) openAdd(+ed.dataset.edit);
   });
   refresh();                // stale-while-revalidate
   if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
