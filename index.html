@@ -202,6 +202,57 @@
   #ptr.snap{transition:height .25s ease}
 
   @media (prefers-color-scheme: dark){ .chip.on{background:#2E2616} }
+
+  /* --- personal (self-added) events --- */
+  .addbtn{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;color:var(--muted);
+    background:none;border:1px solid var(--line);border-radius:5px;padding:2px 7px;cursor:pointer}
+  .addbtn:hover{border-color:var(--muted);color:var(--ink)}
+  /* dashed, unbrassed card — "yours, informal", distinct from the reserved warm-brass rehearsal card */
+  .row.self .dot{background:var(--muted);border-color:var(--muted);box-shadow:0 0 0 3px var(--paper)}
+  .self .card{background:transparent;border:1px dashed var(--line)}
+  .self .kicker{color:var(--muted)}
+  .self .kicker .selfx{font-family:"Inter",sans-serif;font-size:16px;line-height:1;color:var(--faint);
+    background:none;border:none;cursor:pointer;padding:0 0 0 8px;margin:-2px 0}
+  .self .kicker .selfx:hover{color:var(--shower)}
+  .self .roomchip{background:var(--haze);border-color:var(--line);color:var(--muted)}
+  .self a.roomchip:hover{background:var(--haze);border-color:var(--muted)}
+  .self .meta .with b{color:var(--ink);font-weight:500}
+
+  /* --- add sheet (overlay) --- */
+  #addsheet[hidden]{display:none}
+  #addsheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center}
+  .add-scrim{position:absolute;inset:0;background:rgba(15,24,23,.42);-webkit-backdrop-filter:blur(1.5px);backdrop-filter:blur(1.5px)}
+  .add-card{position:relative;width:100%;max-width:452px;background:var(--paper);border:1px solid var(--line);
+    border-radius:16px 16px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+  @media (prefers-reduced-motion:no-preference){
+    .add-card{animation:sheetup .28s cubic-bezier(.2,.7,.3,1) both}
+    @keyframes sheetup{from{transform:translateY(16px);opacity:.5}to{transform:none;opacity:1}}
+  }
+  .add-head{display:flex;justify-content:space-between;align-items:center;font-family:"IBM Plex Mono",monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .add-head b{color:var(--ink);font-weight:500}
+  .addx{font-size:22px;line-height:1;color:var(--faint);background:none;border:none;cursor:pointer;padding:0 2px}
+  .add-slots{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;align-items:center}
+  .add-slots:empty{display:none}
+  .add-slots::-webkit-scrollbar{display:none}
+  .add-slots .slotlab{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--faint);flex:none;padding-right:2px}
+  .slotchip{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);border:1px solid var(--line);
+    border-radius:6px;padding:3px 8px;background:none;cursor:pointer;white-space:nowrap;flex:none}
+  .slotchip:hover{border-color:var(--muted);color:var(--ink)}
+  .add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .add-f{display:flex;flex-direction:column;gap:4px;font-family:"IBM Plex Mono",monospace;
+    font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .add-f input,.add-f select{font-family:"Inter",sans-serif;font-size:16px;color:var(--ink);background:var(--haze);
+    border:1px solid var(--line);border-radius:8px;padding:9px 11px;letter-spacing:normal;text-transform:none;width:100%;-webkit-appearance:none;appearance:none}
+  .add-f input:focus,.add-f select:focus{outline:none;border-color:var(--muted)}
+  .add-actions{display:flex;gap:10px;margin-top:2px}
+  .btn-ghost{flex:none;font-family:"Inter",sans-serif;font-size:14px;color:var(--muted);background:none;
+    border:1px solid var(--line);border-radius:9px;padding:10px 16px;cursor:pointer}
+  .btn-go{flex:1;font-family:"Inter",sans-serif;font-size:14px;font-weight:500;color:var(--paper);
+    background:var(--ink);border:1px solid var(--ink);border-radius:9px;padding:10px 16px;cursor:pointer}
+  .btn-go:active{opacity:.85}
 </style>
 </head>
 <body>
@@ -215,6 +266,21 @@
     <div class="days" id="days"></div>
   </div>
   <main id="app"></main>
+</div>
+<div id="addsheet" hidden>
+  <div class="add-scrim" id="add-scrim"></div>
+  <form class="add-card" id="add-form">
+    <div class="add-head"><span>Add to <b id="add-day"></b></span><button type="button" id="addx" class="addx" aria-label="Close">×</button></div>
+    <div class="add-slots" id="addslots"></div>
+    <div class="add-grid">
+      <label class="add-f">Start<input type="time" id="f-s"></label>
+      <label class="add-f">End<input type="time" id="f-e"></label>
+    </div>
+    <label class="add-f">What<input type="text" id="f-what" placeholder="Play-through, coaching…" autocomplete="off"></label>
+    <label class="add-f">With<input type="text" id="f-who" placeholder="who you're playing with" autocomplete="off"></label>
+    <label class="add-f">Room<select id="f-room"></select></label>
+    <div class="add-actions"><button type="button" id="addcancel" class="btn-ghost">Cancel</button><button type="submit" id="addsave" class="btn-go">Add</button></div>
+  </form>
 </div>
 <script src="./roster-data.js"></script>
 <script src="./app.js"></script>

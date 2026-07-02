@@ -341,6 +341,7 @@ function timeline(day,w){
     note += " — sign up in the Akademie.";
     ev.push([b.s,`<div class="row"><div class="time"><span class="s">${b.s}</span></div><div class="body ev"><span class="dot"></span><div class="tag">Evening · your time</div><div class="what">${esc(b.label)}</div>${mh}<div class="roomnote">${note}</div></div></div>`]);
   }
+  for(const [i,m] of (loadMine()[sel]||[]).entries()) ev.push([m.s, selfCardHtml(m,i)]);
   ev.sort((a,b)=>mins(a[0])-mins(b[0]));
   let out = ev.map(x=>x[1]);
   if(w&&w.ok&&(w.thunder||(w.shower&&w.shower[1]>12))){    // only warn when rain reaches midday+ (matches the band)
@@ -388,13 +389,78 @@ function schedHead(c){
   return `<div class="tl-head"><span class="tl-title">Schedule</span><span class="tl-meta">`
     + `<span class="netdot${navigator.onLine?'':' off'}" id="netdot"></span>`
     + `<span id="asof">${asofText(c)}</span> · `
-    + `<a href="${sheetUrl(sel)}" target="_blank" rel="noopener">source sheet ↗</a></span></div>`;
+    + `<a href="${sheetUrl(sel)}" target="_blank" rel="noopener">source sheet ↗</a> · `
+    + `<button id="addself" class="addbtn" type="button">＋ add</button></span></div>`;
 }
 
 // ---- cache + state ----
 let BANK={}, COACHES={}, today=viennaToday(), sel=today;
 const load = () => { try{return JSON.parse(localStorage.getItem(CK))||{}}catch{return {}} };
 const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
+
+// ---- personal events (self-added: "someone asked me to play 5:20–6:20") ----
+// Kept in their OWN store, separate from akm-cache: refresh() overwrites c.sched[day] on every
+// online pull, so anything living there would be wiped. localStorage survives refresh + SW updates
+// (code swaps, data doesn't) — only clearing site data / uninstall loses it. Merged in at render.
+const MK = "akm-mine";
+const loadMine = () => { try{return JSON.parse(localStorage.getItem(MK))||{}}catch{return {}} };
+const saveMine = m => { try{localStorage.setItem(MK,JSON.stringify(m))}catch{} };
+const pad2 = t => { const [h,m]=t.split(":"); return h.padStart(2,"0")+":"+m; };   // "9:00" → "09:00" for <input type=time>
+const unpad = t => t.replace(/^0(?=\d:)/,"");                                       // "09:00" → "9:00" to match the sheet's style
+
+// the day's own start/end times → quick-fill candidates (align to a block boundary, or type a custom time)
+function dayTimes(day){
+  if(!day) return [];
+  const t=new Set(), add=x=>{ if(x && /^\d{1,2}:\d{2}$/.test(x)) t.add(x); };
+  for(const k of ["allhands","mine","lessons","meals","evening"])
+    for(const row of (day[k]||[])){ add(row[0]); add(row[1]); }
+  return [...t].sort((a,b)=>mins(a)-mins(b));
+}
+// a self-added event as a timeline row — a dashed "yours, informal" card (never the reserved brass fill)
+function selfCardHtml(m,i){
+  const chip = m.room?placeChip(m.room):"";
+  const who = m.who?`<span class="with">with <b>${esc(m.who)}</b></span>`:"";
+  const meta = (chip||who)?`<div class="meta">${chip}${who}</div>`:"";
+  return `<div class="row mine self">${tline(m.s,m.e)}<div class="body"><span class="dot"></span>`
+    +`<div class="card"><div class="kicker"><span>Yours · added</span>`
+    +`<button class="selfx" type="button" data-del="${i}" aria-label="Remove">×</button></div>`
+    +`<div class="piece">${esc(m.what||"Session")}</div>${meta}</div></div></div>`;
+}
+function removeSelf(i){
+  const m=loadMine(), list=m[sel]||[]; list.splice(i,1);
+  if(list.length) m[sel]=list; else delete m[sel];
+  saveMine(m); render();
+}
+// --- add-sheet (overlay, lives OUTSIDE #app so a background refresh mid-entry can't wipe the form) ---
+function openAdd(){
+  const box=$("#addsheet"); if(!box) return;
+  $("#f-s").value=""; $("#f-e").value=""; $("#f-what").value=""; $("#f-who").value="";
+  $("#f-room").innerHTML = `<option value="">room…</option>`+[...ROOMS].map(r=>`<option>${r}</option>`).join("");
+  const day=(load().sched||{})[sel], slots=dayTimes(day);
+  $("#addslots").innerHTML = slots.length
+    ? `<span class="slotlab">from today</span>`+slots.map(t=>`<button type="button" class="slotchip" data-t="${t}">${t}</button>`).join("")
+    : "";
+  $("#add-day").textContent = tabName(sel);
+  box.hidden=false; $("#f-s").focus();
+}
+const closeAdd = () => { const b=$("#addsheet"); if(b) b.hidden=true; };
+function saveSelf(){
+  let s=$("#f-s").value, e=$("#f-e").value;
+  if(!s){ $("#f-s").focus(); return; }                 // start is the one required field
+  if(!e) e=hhmm(Math.min(mins(s)+60,1439));            // default to a one-hour slot
+  const ev={ s:unpad(s), e:unpad(e), what:$("#f-what").value.trim(),
+             who:$("#f-who").value.trim(), room:$("#f-room").value };
+  const m=loadMine(); (m[sel]=m[sel]||[]).push(ev); saveMine(m);
+  closeAdd(); render();
+}
+function setupAdd(){
+  const box=$("#addsheet"); if(!box) return;
+  $("#add-scrim").onclick=closeAdd; $("#addx").onclick=closeAdd; $("#addcancel").onclick=closeAdd;
+  $("#add-form").onsubmit=e=>{ e.preventDefault(); saveSelf(); };
+  $("#addslots").onclick=e=>{ const c=e.target.closest(".slotchip"); if(!c) return;
+    $("#f-s").value=pad2(c.dataset.t);
+    if(!$("#f-e").value) $("#f-e").value=pad2(hhmm(Math.min(mins(c.dataset.t)+60,1439))); };
+}
 
 function render(){
   const c=load(), day=c.sched&&c.sched[sel], w=c.wx&&c.wx[sel];
@@ -481,8 +547,15 @@ async function boot(){
     const c=load(), age=c.ts?Date.now()-new Date(c.ts).getTime():Infinity;
     if(age>60e3) refresh(); });
   setupPTR();
+  setupAdd();
+  // #app is repainted on every render; delegate so the add button + per-card delete survive repaints
+  $("#app").addEventListener("click", e=>{
+    if(e.target.closest("#addself")){ openAdd(); return; }
+    const d=e.target.closest("[data-del]"); if(d) removeSelf(+d.dataset.del);
+  });
   refresh();                // stale-while-revalidate
   if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
 }
 if (typeof document !== "undefined") boot();
-if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks };
+if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
+  dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };
