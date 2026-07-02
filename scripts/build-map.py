@@ -58,6 +58,10 @@ def line(geom): return [c for p in geom for c in xy(p["lat"], p["lon"])]
 def centroid(geom):
     xs = [xy(p["lat"], p["lon"]) for p in geom]
     return [round(sum(p[0] for p in xs) / len(xs)), round(sum(p[1] for p in xs) / len(xs))]
+def fp_centroid(fp):                                        # same mean-of-vertices, but on a baked flat footprint
+    n = len(fp) // 2
+    return [round(sum(fp[i] for i in range(0, len(fp), 2)) / n),
+            round(sum(fp[i + 1] for i in range(0, len(fp), 2)) / n)]
 
 def fetch():
     q = ("[out:json][timeout:80];("
@@ -159,15 +163,59 @@ def build(els):
     return {"meta": meta, "roads": roads, "buildings": buildings,
             "water": water, "land": land, "labels": labels, "pois": pois}, missed
 
+# Overpass-free path: reconcile POIS against the *already-baked* map-data.json. Every building is
+# stored with its address (`a`) + footprint (`p`), so an address-anchored POI can be promoted to a
+# pin — centroid + footprint — without the network. This is the code form of the CLAUDE.md hand-edit:
+# use it when Overpass is unreachable and the edit is a new address-anchored POI or an alias change.
+def promote_offline(data):
+    have = {p["name"]: p for p in data["pois"]}
+    by_addr = {}
+    for b in data["buildings"]:
+        if b.get("a"): by_addr.setdefault(b["a"], b)
+    pois, promoted, need_net = [], [], []
+    for poi in POIS:
+        if poi["name"] in have:                             # already a pin — keep its baked geometry as-is
+            p = have[poi["name"]]
+            if poi.get("aliases"): p["aliases"] = poi["aliases"]   # let alias-only edits flow through
+            elif "aliases" in p: del p["aliases"]
+            pois.append(p); continue
+        b = by_addr.get(f'{poi["st"]} {poi["hn"]}') if "hn" in poi else None
+        if b and b.get("p"):                                # address-anchored → promote from the baked footprint
+            p = {"name": poi["name"], "cat": poi["cat"]}
+            if poi.get("mine"): p["mine"] = True
+            if poi.get("aliases"): p["aliases"] = poi["aliases"]
+            p["xy"], p["fp"] = fp_centroid(b["p"]), b["p"]
+            pois.append(p); promoted.append((poi["name"], b["a"]))
+        else:                                               # osm/way-anchored or no baked footprint → needs Overpass
+            need_net.append(poi["name"])
+    data["pois"] = pois
+    dropped = {a for _, a in promoted}
+    data["buildings"] = [b for b in data["buildings"] if b.get("a") not in dropped]
+    return promoted, need_net
+
+def run_offline(reason):
+    try:
+        data = json.load(open(OUT))
+    except Exception as e:
+        print(f"{reason}; and no existing {OUT} to reconcile ({e}) — nothing to do", file=sys.stderr)
+        return
+    promoted, need_net = promote_offline(data)
+    with open(OUT, "w") as f:
+        json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
+    for name, addr in promoted:
+        print(f"  promoted {name} ← baked building {addr}")
+    print(f"{reason}: reconciled POIS offline — {len(promoted)} promoted, {len(data['pois'])} POIs total")
+    if need_net:
+        print("  WARNING these need Overpass (osm/way-anchored or no baked footprint):",
+              ", ".join(need_net), file=sys.stderr)
+
 def main():
+    if "--offline" in sys.argv:                             # force the Overpass-free reconcile
+        return run_offline("--offline")
     try:
         els = fetch()
     except Exception as e:
-        print(f"offline / fetch failed ({e}); keeping existing map-data.json", file=sys.stderr)
-        print("  note: alias edits and address-anchored POIs can be hand-applied to map-data.json "
-              "without Overpass — the footprints are already baked (see CLAUDE.md 'map data').",
-              file=sys.stderr)
-        return
+        return run_offline(f"offline / fetch failed ({e})")   # auto-fall back instead of leaving it stale
     data, missed = build(els)
     with open(OUT, "w") as f:
         json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
