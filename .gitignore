@@ -3,6 +3,10 @@
 # test tooling (installed by the session-start hook / `npm install`)
 node_modules/
 
+# python bytecode (from running the scripts/ tools)
+__pycache__/
+*.pyc
+
 # source archives (map + roster), not for the public repo
 *.zip
 
