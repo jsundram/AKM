@@ -11,7 +11,7 @@ const GID = {"Mon 6/29":"1079055190","Tue 6/30":"385081621","Wed 7/1":"123110692
 let LAT = 46.6928, LON = 12.8166;        // forecast point: the Kultursaal venue; refined from its map-data POI in loadPlaces
 const TZ = "Europe/Vienna";
 const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusive
-const ROOMS = new Set(["A1","A2","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
+const ROOMS = new Set(["A1","A2","A3","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
 const MINE = {"dvorak quartet":"dvorak","bruch octet":"bruch",
               "brahms piano quartet":"brahms","faure piano quartet":"faure"};
 const ME = /\bjason\b/i;     // his name in a private-lessons slot → surface it, emphasized

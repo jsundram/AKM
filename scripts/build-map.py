@@ -35,7 +35,7 @@ POIS = [
     {"name": "Haus Lanzinger",          "cat": "lodging", "st": "Liesing", "hn": "21"},
     {"name": "Haus Obernosterer",       "cat": "lodging", "st": "Liesing", "hn": "25"},
     {"name": "Kleines Berghotel",       "cat": "lodging", "st": "Klebas",  "hn": "7"},
-    {"name": "Kultursaal",               "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A1", "A2", "AH"]},  # the Akademie; A1/A2/AH are rooms inside it
+    {"name": "Kultursaal",               "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A1", "A2", "A3", "AH"]},  # the Akademie; A1/A2/A3/AH are rooms inside it
     {"name": "Werner",                   "cat": "venue", "st": "Liesing", "hn": "30"},   # yellow house down the street from Musikhof Lexer (the WERNER rehearsal room)
     {"name": "Band Room",                "cat": "venue", "st": "Liesing", "hn": "20"},   # the BAND ROOM rehearsal space; name lowercases to the schedule's room code, so the chip links without an alias
     {"name": "Pfarrkirche Hl. Nikolaus", "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus", "aliases": ["CHAPEL"]},  # CHAPEL rehearsal room
