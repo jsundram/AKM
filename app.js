@@ -27,6 +27,8 @@ const norm = s => s.toLowerCase().replace(/ř/g,"r").replace(/á/g,"a").replace(
 const despace = s => s.replace(/(?<!\S)(\S(?: \S){2,})(?!\S)/g, m => m.replace(/ /g,""));
 const mins = t => { const [h,m]=t.split(":"); return +h*60 + +m; };
 const hhmm = m => `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`;
+const to24 = (t, ap) => { let [h,m]=t.split(":").map(Number); ap=(ap||"").toLowerCase();
+  if(ap==="pm"&&h<12) h+=12; if(ap==="am"&&h===12) h=0; return `${h}:${String(m).padStart(2,"0")}`; };
 const iso = d => d.toISOString().slice(0,10);
 
 function viennaToday(){
@@ -108,6 +110,16 @@ function parse(rows){
       for(const line of ll){ const m=line.match(/^(\d{1,2}:\d{2})\s*-\s*(.+)$/);
         if(m && ME.test(m[2])) day.lessons.push([m[1], hhmm(mins(m[1])+30), coach, room]); }
     });
+    // DAILY NOTES is a free-text block, not a grid row — it carries a time + meal words that would
+    // be misread as meal slots (e.g. "you must have signed up by 12:00pm to dine at …"). Pull that
+    // dinner sign-up deadline out as its own reminder and skip the rest of the row.
+    const notes = cells.find(c => /daily notes/i.test(c));
+    if(notes){
+      const m = notes.match(/sign(?:ed)?\s*up\s+by\s+(\d{1,2}:\d{2})\s*(am|pm)?/i);
+      if(m){ const where = ((notes.match(/to dine at ([A-Za-z][^.)\n]*)/i)||[])[1]||"").trim();
+        day.meals.push([to24(m[1],m[2]), "", "Dinner sign-up", where]); }
+      continue;
+    }
     let li=-1, lab="";
     for(let i=0;i<cells.length;i++){ const dl=despace(cells[i]); if(/\d{1,2}:\d{2}/.test(dl)){ li=i; lab=dl; break; } }
     if(li<0) continue;
@@ -116,7 +128,9 @@ function parse(rows){
     const U = lab.toUpperCase();
     if(U.includes("LUNCH")||U.includes("DINNER")||U.includes("BREAKFAST")){
       const kind = U.includes("LUNCH")?"Lunch":U.includes("DINNER")?"Dinner":"Breakfast";
-      const venue = lab.includes("@") ? lab.split("@")[1].trim() : "";
+      // detail after "@venue", else the words trailing the meal keyword ("on your own")
+      const venue = lab.includes("@") ? lab.split("@")[1].trim()
+        : lab.replace(/\d{1,2}:\d{2}(\s*-\s*\d{1,2}:\d{2})?/,"").replace(/\b(LUNCH|DINNER|BREAKFAST)\b/i,"").replace(/\s+/g," ").trim().toLowerCase();
       day.meals.push([start,end,kind,venue]); continue;
     }
     const evening = U.includes("PRACTICE BLOCK") || U.includes("FREE READING");
@@ -141,6 +155,8 @@ function parse(rows){
       if(key && !fac) day.mine.push([start,end,piece,cols[i],coach,tag,MINE[key]]);
     }
   }
+  // the notes block is repeated in the sheet (top + bottom), so the sign-up reminder lands twice — dedupe
+  day.meals = day.meals.filter((m,i,a)=> a.findIndex(x=>x[0]===m[0]&&x[2]===m[2]&&x[3]===m[3])===i);
   const byT = a => mins(a[0]);
   day.mine.sort((a,b)=>byT(a)-byT(b)); day.meals.sort((a,b)=>byT(a)-byT(b));
   day.allhands.sort((a,b)=>byT(a)-byT(b)); day.lessons.sort((a,b)=>byT(a)-byT(b));
@@ -302,7 +318,7 @@ function timeline(day,w){
     ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your private lesson</span><span class="pc">be ready</span></div><div class="piece">Private lesson</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
   }
   for(const [s,e,kind,venue] of day.meals)
-    ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind} · ${placeText(venue)}</div></div></div>`]);
+    ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
   for(const b of evblocks(day)){
     const items = b.items.map(({room,piece})=>{
       // descriptive only — never tag a faculty reading "Your piece": faculty play repertoire that
