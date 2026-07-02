@@ -38,6 +38,7 @@ POIS = [
     {"name": "Kultursaal",               "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A1", "A2", "A3", "AH"]},  # the Akademie; A1/A2/A3/AH are rooms inside it
     {"name": "Werner",                   "cat": "venue", "st": "Liesing", "hn": "30"},   # yellow house down the street from Musikhof Lexer (the WERNER rehearsal room)
     {"name": "Band Room",                "cat": "venue", "st": "Liesing", "hn": "20"},   # the BAND ROOM rehearsal space; name lowercases to the schedule's room code, so the chip links without an alias
+    {"name": "Theatre",                  "cat": "venue", "st": "Liesing", "hn": "5"},    # the THEATRE rehearsal room; name lowercases to the schedule's room code, so the chip links without an alias
     {"name": "Pfarrkirche Hl. Nikolaus", "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus", "aliases": ["CHAPEL"]},  # CHAPEL rehearsal room
     {"name": "Badstubn",     "cat": "food", "osm": "Badstubn", "aliases": ["KS"]},   # KS = the Konzertsaal in this building
     {"name": "GH Wilhelmer / Mascha Wirt", "cat": "food", "st": "Liesing", "hn": "24"},  # slash → line break in the label
