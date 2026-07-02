@@ -133,6 +133,17 @@ function parse(rows){
         : lab.replace(/\d{1,2}:\d{2}(\s*-\s*\d{1,2}:\d{2})?/,"").replace(/\b(LUNCH|DINNER|BREAKFAST)\b/i,"").replace(/\s+/g," ").trim().toLowerCase();
       day.meals.push([start,end,kind,venue]); continue;
     }
+    // headline evening events — faculty/participant concerts & recitals — are banner rows: the label
+    // column carries the whole event, no room grid, so they slip past the meal/meeting/practice-block
+    // buckets and vanish. Catch them (guarding against a rehearsal row that just names a "Concerto")
+    // and surface as all-welcome, map-linking a "@venue" or trailing "(Venue)".
+    const hasGrid = Object.keys(cols).some(i => (cells[+i]||"").trim());
+    if(!hasGrid && /\bconcerts?\b|\brecitals?\b/i.test(lab)){
+      const full = lab.replace(/\d{1,2}:\d{2}(\s*-\s*\d{1,2}:\d{2})?/,"").replace(/\n/g," ").replace(/\s+/g," ").trim();
+      const venue = full.includes("@") ? full.split("@")[1].trim() : (full.match(/\(([^)]+)\)\s*$/)||[])[1] || "";
+      const what = full.split("@")[0].replace(/\s*\([^)]*\)\s*$/,"").trim();
+      day.allhands.push([start,end,what,venue]); continue;
+    }
     const evening = U.includes("PRACTICE BLOCK") || U.includes("FREE READING");
     if(evening) day.evLabels[start] = lab.split("\n").slice(1).join(" ").trim();
     // all-hands meetings can sit above the first room grid (cols still empty), so match per-row
@@ -311,8 +322,10 @@ function evblocks(day){
 }
 function timeline(day,w){
   const ev=[];
-  for(const [s,e,piece] of day.allhands)
-    ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}</div></div></div>`]);
+  for(const [s,e,piece,venue] of day.allhands){
+    const at = venue?` · ${placeText(venue)}`:"";   // concerts carry a venue; meetings don't
+    ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${at}</div></div></div>`]);
+  }
   for(const [s,e,piece,room,coach,tag] of day.mine){
     const pc = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
     const chip = room?placeChip(room):"";

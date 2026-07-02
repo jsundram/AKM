@@ -20,6 +20,8 @@ const gv = { table: { rows: [
   R(N, "17:20 - 19:00\nPractice Block / Free Reading", N, N, "Faculty Rehearsal\nWebern Langsamer Satz", "Faculty Rehearsal\nFaure Piano Quartet"),
   R(N, "1 9 : 0 0\nD I N N E R @ Lesachtalerhof"),
   R(N, "20:00\nPractice Block / Free Reading", N, N, N, N, N, "Closed"),
+  // a headline evening event: faculty concert banner in the label column, no room grid — must surface
+  R(N, "2 0 : 0 0\nF A C U L T Y   C O N C E R T @ Kultursaal"),
 ] } };
 
 const day = parse(rowsFrom(gv));
@@ -33,8 +35,9 @@ const checks = [
   ["lunch venue intact", day.meals.some(m => m[2] === "Lunch" && m[3] === "Mascha Wirt")],
   ["dinner venue", day.meals.some(m => m[2] === "Dinner" && m[3] === "Lesachtalerhof")],
   ["evening Webern + Faure faculty", day.evening.filter(e => e[4] === "faculty").length === 2],
-  ["morning all-hands above grid", day.allhands.length === 2],
-  ["all-hands times chronological", day.allhands.map(e => e[0]).join(",") === "9:00,9:30"],
+  ["morning all-hands above grid", day.allhands.filter(e => /Meeting|Tour/.test(e[2])).length === 2],
+  ["all-hands times chronological", day.allhands.map(e => e[0]).join(",") === "9:00,9:30,20:00"],
+  ["faculty concert banner surfaces", day.allhands.some(e => e[0] === "20:00" && e[2] === "FACULTY CONCERT" && e[3] === "Kultursaal")],
   ["only his private lesson surfaces", day.lessons.length === 1],
   ["lesson 10:55–11:25 with Jesus in WERNER", day.lessons[0].join("|") === "10:55|11:25|Jesus|WERNER"],
   ["two evening blocks split out", blocks.length === 2],
