@@ -1,7 +1,7 @@
 // Parser unit test. Run from repo root:  node archive/parser-test.js
 // Exercises the ported parser against the real Tuesday grid structure. parse() is user-agnostic;
 // whose day it is comes from userCtx (roster row) + mineOf/lessonsOf, exercised here as Jason.
-const { parse, rowsFrom, evblocks, userCtx, mineOf, lessonsOf } = require("../app.js");
+const { parse, rowsFrom, evblocks, userCtx, mineOf, lessonsOf, facOf } = require("../app.js");
 const R = (...vals) => ({ c: vals.map(v => v === null ? null : { v: String(v) }) });
 const N = null;
 
@@ -14,7 +14,7 @@ const gv = { table: { rows: [
   R(N, "9:00 - 10:15\nGroup B", "Schubert Cello Quintet\nYoanna - P", "Grieg Quartet\nClaudia - C", "Prokofiev Quintet\nEmi - P\nChad - C", "Casarrubios Piano Trio\nSteve - C", "Schubert Piano Trio\nTanya - C", "Schumann Piano Trio\nNathan - P", "Shostakovich Quartet no. 9\nGijs - C", "Dvorak Quartet\nYoojin - C", N, "Claudia\nPrivate Lessons\n9:00 - Korn\n9:30 - Chia\n10:00 - Steph"),
   // the sheet's live curveball: a new room (A4) appears in the header, a faculty rehearsal is
   // parked in a room column mid-day, and the cell mixes a coach line with an "in A4" note
-  R(N, "11:50 - 12:40\nGroup A", "Faculty Rehearsal\nSchumann Marchenerzahlungen", N, N, N, N, N, N, N, "Elgar Piano Quintet\nGijs - P (half)\nin A4"),
+  R(N, "11:50 - 12:40\nGroup A", "Faculty Rehearsal\nSchumann Marchenerzahlungen", N, N, N, N, "Faculty Rehearsal\nRavel Duo", N, N, "Elgar Piano Quintet\nGijs - P (half)\nin A4"),
   // Group C: Jason's block is shoved into the WERNER column (no LESSONS column here) — must surface his
   // 10:55 (not Maya's 10:25) and report WERNER as the room he reports to
   R(N, "10:25 - 11:40\nGroup C", "Beethoven String Trio\nIlinca - P", "Korngold Suite\nYoanna - P", "Mozart Clarinet Quintet\nJesus - P", "Faure Piano Quartet\nClaudia - P", "Schumann Piano Quartet\nSteve - C", "Ravel Piano Trio\nJames - P", "Jacob Oboe Quartet\nChad - C", "Jesus\nPrivate Lessons\n10:25 - Maya\n10:55 - Jason\n11:25 - Steph"),
@@ -106,7 +106,13 @@ const checks = [
   // the live curveballs of 7/3: a new room learned from the header, a mid-line coach + "in A4"
   // note stripped clean, and a daytime faculty cell that must NOT fabricate a practice block
   ["new room A4 adopted + claimed", (m => m.length === 1 && m[0][2] === "Elgar Piano Quintet" && m[0][3] === "A4" && m[0][4] === "Gijs" && m[0][5] === "P")(mineOf(day, userCtx(roster, "Kian Woo")))],
-  ["daytime faculty cell → informational, no phantom block", day.fac.length === 1 && day.fac[0].join("|") === "11:50|12:40|Schumann Marchenerzahlungen|A1" && blocks.length === 2],
+  ["daytime faculty cells → informational, no phantom block", day.fac.length === 2 && day.fac.some(f => f.join("|") === "11:50|12:40|Schumann Marchenerzahlungen|A1") && blocks.length === 2],
+  // sitting in is only appropriate in the performance rooms (THEATRE/KS) — the A1 rehearsal is
+  // private and shows to no one, even the free; the THEATRE one shows only to the unconflicted
+  ["private-room faculty rehearsal shown to no one", facOf(day, []).length === 1 && facOf(day, [])[0][3] === "THEATRE"],
+  ["open faculty rehearsal hidden behind Kian's conflict", facOf(day, mineOf(day, userCtx(roster, "Kian Woo"))).length === 0],
+  ["open faculty rehearsal shown to free Jason", (f => f.length === 1 && f[0][2] === "Ravel Duo")(facOf(day, [...day.mine, ...day.lessons]))],
+  ["evening sit-in list keeps KS Fauré, drops AH Webern", blocks[0].items.map(i => i.room).join() === "KS"],
   // week gating: W1-only Claudia shares Jason's Fauré, so that group dies after week 1;
   // a W1-annotated player gets nothing at all on a Week Two day
   ["Jason week two: Fauré gone, Dvořák+Bruch stay", mineOf(w2day, me).map(e => e[2]).join(",") === "Dvorak Quartet,Bruch Octet"],

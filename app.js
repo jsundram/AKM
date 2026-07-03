@@ -265,6 +265,19 @@ function mineOf(day, u){
   }
   return out;
 }
+// faculty rehearsals aren't typically open — sitting in is only appropriate in the performance
+// rooms. Elsewhere they're private: never shown, though they still book the room.
+const OPEN = new Set(["THEATRE","KS"]);
+// ...and even an open one is only worth showing to someone free to sit in — anyone whose own
+// rehearsal/lesson/self-added event overlaps it sees their conflict instead, not the invitation
+function facOf(day, busy){
+  const span = (s,e) => [mins(s), e?mins(e):mins(s)+60];
+  const B = (busy||[]).filter(x=>x&&x[0]).map(([s,e])=>span(s,e));
+  return (day.fac||[]).filter(([s,e,,room])=>{
+    if(!OPEN.has(room)) return false;
+    const [a,b]=span(s,e); return !B.some(([x,y])=>x<b&&a<y);
+  });
+}
 // lesson slots name students informally — first name, "Goes by" nickname, or a ≥3-char diminutive
 // ("Matt" for Matthew). When the same name also fits another lesson-taker ("Steph"), the slot's
 // coach breaks the tie by instrument: it's yours only if the coach teaches your family and not the
@@ -427,7 +440,7 @@ function evblocks(day){
       if(kind==="closed" || /closed/i.test(piece)){ closed.add(room); continue; }
       if(kind==="lessons"){ booked.add(room); continue; }   // a coach's private lessons — room's taken, not a draw
       if(!piece) continue;
-      booked.add(room); if(fac) items.push({room,piece});
+      booked.add(room); if(fac && OPEN.has(room)) items.push({room,piece});   // only performance rooms are open to sit in
     }
     const free=(day.rooms||[]).filter(r=>!booked.has(r) && !closed.has(r));
     return {s, e:entries[0][1], label:(day.evLabels||{})[s]||"Practice Block / Free Reading", items, free, closed:[...closed]};
@@ -636,6 +649,7 @@ function render(){
     html = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + `<div class="tl-empty">${head}</div>`;
   } else {
     day.mine = mineOf(day,USER); day.lessons = lessonsOf(day,USER);   // whose day this is, decided here
+    day.fac = facOf(day, [...day.mine, ...day.lessons, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
     const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
     html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
       + (USER && USER.name===JASON ? coda(day,BANK,dnum) : "");   // grace notes: his easter egg only
@@ -724,4 +738,4 @@ async function boot(){
 }
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
-  userCtx, mineOf, lessonsOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };
+  userCtx, mineOf, lessonsOf, facOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };
