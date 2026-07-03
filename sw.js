@@ -1,6 +1,6 @@
-const V = "akm-v46";
+const V = "akm-v47";
 const SHELL = ["./", "./index.html", "./app.js", "./roster-data.js", "./nav.css", "./manifest.json",
-               "./composer-bank.json", "./roster.html", "./notes.html",
+               "./composer-bank.json", "./roster.html", "./notes.html", "./about.html",
                "./network.html", "./network.js", "./d3.v7.min.js",
                "./map.html", "./map.js", "./map-data.json",
                "./map-relief.jpg", "./map-aerial.jpg", "./icon.svg",
