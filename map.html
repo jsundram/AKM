@@ -44,12 +44,14 @@
     border:1px solid var(--line);border-radius:7px;padding:5px 10px}
   .back:hover{color:var(--brass-deep);border-color:var(--warm-line)}
 
-  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:10px 0 8px;flex:none;
-    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.03em;color:var(--muted)}
-  .legend b{display:inline-flex;align-items:center;gap:5px;font-weight:400}
-  .legend i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--paper);box-shadow:0 0 0 1px var(--line)}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:10px 0 8px;flex:none;
+    font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.03em;color:var(--muted)}
+  .legend b{display:inline-flex;align-items:center;gap:6px;font-weight:400}
+  /* swatches mirror the pins themselves: same size feel, paper border + soft shadow, no hard ring */
+  .legend i{width:13px;height:13px;border-radius:50%;border:2px solid var(--paper);box-shadow:0 1px 2px rgba(20,30,30,.3)}
   .legend .l-mine{background:var(--gold)} .legend .l-lodge{background:var(--pin-lodge)}
   .legend .l-venue{background:var(--pin-venue)} .legend .l-food{background:var(--pin-food)}
+  .legend .l-both{background:linear-gradient(135deg,var(--pin-lodge) 50%,var(--pin-food) 50%)}
 
   #map{position:relative;flex:1;min-height:0;overflow:hidden;border:1px solid var(--line);
     border-radius:13px;background:var(--valley);cursor:grab;touch-action:none}
@@ -106,6 +108,9 @@
   .dot{flex:0 0 auto;width:16px;height:16px;border-radius:50%;border:2px solid var(--paper);
     background:var(--pin-lodge);box-shadow:0 1px 3px rgba(20,30,30,.4);pointer-events:auto;cursor:pointer;touch-action:none}
   .cat-venue .dot{background:var(--pin-venue)} .cat-food .dot{background:var(--pin-food)}
+  /* a place with two roles (hotel + restaurant, hall + gasthaus) wears both colours */
+  .cat-lodging.also-food:not(.mine) .dot{background:linear-gradient(135deg,var(--pin-lodge) 50%,var(--pin-food) 50%)}
+  .cat-venue.also-food:not(.mine) .dot{background:linear-gradient(135deg,var(--pin-venue) 50%,var(--pin-food) 50%)}
   .mk.mine .dot{width:18px;height:18px;background:var(--gold);box-shadow:0 0 0 3px var(--valley),0 1px 4px rgba(20,30,30,.45)}
   .lab{display:none;padding:3px 6px 4px;border:1px solid var(--line);border-radius:5px;color:var(--ink);
     background:rgba(249,250,249,.94);box-shadow:0 1px 3px rgba(20,30,30,.14);
@@ -197,6 +202,7 @@
     <b><i class="l-lodge"></i>lodging</b>
     <b><i class="l-venue"></i>venue</b>
     <b><i class="l-food"></i>food</b>
+    <b><i class="l-both"></i>both</b>
   </div>
 
   <div id="map" aria-label="Map of Liesing and Klebas">

@@ -26,21 +26,25 @@ API = "https://overpass-api.de/api/interpreter"
 
 # the places that matter. hn/st → anchor to a building footprint; osm → anchor to a named feature.
 # names mirror roster.html so the two pages agree. mine = Jason's base (the one warm-brass accent).
+# "was" = the pin's previous name, so a rename flows through the --offline reconcile (it matches
+# the baked pin by old name, keeps the geometry, and takes everything else fresh from here).
+# "also" = a second role — the pin renders split-colour (Lesachtalerhof is hotel AND restaurant).
+# No baked "mine": "your base" is derived at runtime from the picked identity (map.js myBase).
 POIS = [
-    {"name": "Musikhof Lexer",          "cat": "lodging", "st": "Liesing", "hn": "11", "mine": True},
-    {"name": "Lesachtalerhof",          "cat": "lodging", "st": "Liesing", "hn": "40"},
+    {"name": "Musikhof Lexer",          "cat": "lodging", "st": "Liesing", "hn": "11"},
+    {"name": "Lesachtalerhof",          "cat": "lodging", "also": "food", "st": "Liesing", "hn": "40"},  # hotel + the dinner restaurant
     {"name": "Ferienwohnung Wilhelmer", "cat": "lodging", "st": "Liesing", "hn": "51"},
     {"name": "Haus Anita",              "cat": "lodging", "st": "Liesing", "hn": "47"},
     {"name": "Gästehaus Ortner",        "cat": "lodging", "st": "Liesing", "hn": "8"},
     {"name": "Haus Lanzinger",          "cat": "lodging", "st": "Liesing", "hn": "21"},
     {"name": "Haus Obernosterer",       "cat": "lodging", "st": "Liesing", "hn": "25"},
     {"name": "Kleines Berghotel",       "cat": "lodging", "st": "Klebas",  "hn": "7"},
-    {"name": "Kultursaal",               "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A1", "A2", "A3", "AH"]},  # the Akademie; A1/A2/A3/AH are rooms inside it
+    {"name": "Akademie", "was": "Kultursaal", "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A1", "A2", "A3", "A4", "AH"]},  # the Volksmusik Akademie (VMA); the A-rooms + AH are inside it
+    {"name": "Kultursaal", "was": "Badstubn", "cat": "venue", "also": "food", "osm": "Badstubn", "aliases": ["KS", "Badstubn"]},  # Klebas 30 — KS / "Kultursaal" in the schedule mean THIS building (the Badstub'n gasthaus)
     {"name": "Werner",                   "cat": "venue", "st": "Liesing", "hn": "30"},   # yellow house down the street from Musikhof Lexer (the WERNER rehearsal room)
     {"name": "Band Room",                "cat": "venue", "st": "Liesing", "hn": "20"},   # the BAND ROOM rehearsal space; name lowercases to the schedule's room code, so the chip links without an alias
     {"name": "Theatre",                  "cat": "venue", "st": "Liesing", "hn": "5"},    # the THEATRE rehearsal room; name lowercases to the schedule's room code, so the chip links without an alias
     {"name": "Pfarrkirche Hl. Nikolaus", "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus", "aliases": ["CHAPEL"]},  # CHAPEL rehearsal room
-    {"name": "Badstubn",     "cat": "food", "osm": "Badstubn", "aliases": ["KS"]},   # KS = the Konzertsaal in this building
     {"name": "GH Wilhelmer / Mascha Wirt", "cat": "food", "st": "Liesing", "hn": "24"},  # slash → line break in the label
     {"name": "Steineckenalm",            "cat": "food", "way": 438758257},  # Jausenstation up the Steinecken-Weg; OSM names it only as a node, so anchor the footprint by way id
 ]
@@ -98,7 +102,7 @@ def build(els):
         if not hit:
             missed.append(poi["name"]); continue
         p = {"name": poi["name"], "cat": poi["cat"]}
-        if poi.get("mine"): p["mine"] = True
+        if poi.get("also"): p["also"] = poi["also"]            # second role → split-colour pin
         if poi.get("aliases"): p["aliases"] = poi["aliases"]   # schedule room codes (A2/AH/KS) → shown on the pin
         if geom:                                            # area feature → centroid + footprint
             p["xy"] = centroid(geom); p["fp"] = line(geom)
@@ -172,18 +176,22 @@ def promote_offline(data):
     by_addr = {}
     for b in data["buildings"]:
         if b.get("a"): by_addr.setdefault(b["a"], b)
+    def meta(poi):                                          # everything but geometry comes fresh from POIS
+        p = {"name": poi["name"], "cat": poi["cat"]}
+        if poi.get("also"): p["also"] = poi["also"]
+        if poi.get("aliases"): p["aliases"] = poi["aliases"]
+        return p
     pois, promoted, need_net = [], [], []
     for poi in POIS:
-        if poi["name"] in have:                             # already a pin — keep its baked geometry as-is
-            p = have[poi["name"]]
-            if poi.get("aliases"): p["aliases"] = poi["aliases"]   # let alias-only edits flow through
-            elif "aliases" in p: del p["aliases"]
+        src = have.pop(poi.get("was") or poi["name"], None)  # renames match the baked pin by old name
+        if src:                                             # already a pin — keep only its baked geometry
+            p = meta(poi)
+            p["xy"] = src["xy"]
+            if src.get("fp"): p["fp"] = src["fp"]
             pois.append(p); continue
         b = by_addr.get(f'{poi["st"]} {poi["hn"]}') if "hn" in poi else None
         if b and b.get("p"):                                # address-anchored → promote from the baked footprint
-            p = {"name": poi["name"], "cat": poi["cat"]}
-            if poi.get("mine"): p["mine"] = True
-            if poi.get("aliases"): p["aliases"] = poi["aliases"]
+            p = meta(poi)
             p["xy"], p["fp"] = fp_centroid(b["p"]), b["p"]
             pois.append(p); promoted.append((poi["name"], b["a"]))
         else:                                               # osm/way-anchored or no baked footprint → needs Overpass

@@ -81,7 +81,7 @@ function makeMarkers(d) {
   markers.replaceChildren();
   pins = d.pois.map(p => {
     const mk = document.createElement("div");
-    mk.className = "mk cat-" + p.cat + (p.mine ? " mine" : "");
+    mk.className = "mk cat-" + p.cat + (p.also ? " also-" + p.also : "") + (p.mine ? " mine" : "");
     const code = p.aliases ? `<span class="code">${p.aliases.join(" · ")}</span>` : "";
     mk.innerHTML = `<span class="dot"></span><span class="lab">${p.name.replace(" / ", "<br>")}${code}</span>`;
     markers.appendChild(mk);

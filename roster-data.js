@@ -14,13 +14,14 @@
   const setMe = n => { try{ localStorage.setItem(MEK, n); }catch{} };
 
   // roster Hotel values → map POI names: both "Obermosterer …" rows are Haus Obernosterer (OCR
-  // drift, m→n — tolerate the pre- and post-fix sheet spellings), the Kultursaal apartment sits
-  // at the Kultursaal venue. Everything else matches a POI verbatim or isn't mapped yet
+  // drift, m→n — tolerate the pre- and post-fix sheet spellings), and the "Kultursaal apartment"
+  // sits in the Liesing 15 building — now labelled Akademie (the schedule's KS/Kultursaal is the
+  // Badstub'n hall at Klebas 30). Everything else matches a POI verbatim or isn't mapped yet
   // (Haus Simona, Haus Salcher) — callers check membership against their own POI set.
   const HOTEL_POI = {
     "obermosterer airbnb":"Haus Obernosterer", "obermosterer apartment":"Haus Obernosterer",
     "obernosterer airbnb":"Haus Obernosterer", "obernosterer apartment":"Haus Obernosterer",
-    "kultursaal apartment":"Kultursaal",
+    "kultursaal apartment":"Akademie",
   };
   const hotelPoi = h => HOTEL_POI[(h||"").toLowerCase()] || h;
 
