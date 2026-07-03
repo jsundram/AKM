@@ -88,7 +88,7 @@ function coachMap(people){
 // User-agnostic: every rehearsal cell (with its block's Group letter) and every private-lesson slot
 // is kept; whose they are is decided at render time by mineOf()/lessonsOf() against the picked identity.
 function parse(rows){
-  let cols = {}; const day = {eyebrow:"", rehearsals:[], meals:[], allhands:[], evening:[], slots:[], rooms:[], evLabels:{}};
+  let cols = {}; const day = {eyebrow:"", rehearsals:[], meals:[], allhands:[], evening:[], fac:[], slots:[], rooms:[], evLabels:{}};
   for(const raw of rows){
     const cells = raw.map(c => (c||"").trim());
     const joined = despace(cells.join(" "));
@@ -96,11 +96,17 @@ function parse(rows){
       const m = joined.toUpperCase().match(/WEEK\s+\w+/); if(m) day.eyebrow = title(m[0].replace(/\s+/g," "));
     }
     // room-header cells sometimes wrap ("BAND\nROOM") — normalize before matching, and store the
-    // clean name so the column isn't silently dropped (it took a whole morning column with it)
+    // clean name so the column isn't silently dropped (it took a whole morning column with it).
+    // The sheet also grows rooms mid-festival (A3 became A4): once a row IS a header (≥3 known
+    // rooms), adopt its other short all-caps cells as rooms too — a new column must never vanish.
     const rm = cells.map(c=>c.replace(/\s+/g," "));
-    const hits = rm.map((c,i)=>ROOMS.has(c)?i:-1).filter(i=>i>=0);
-    // keep the most complete header's room list as the practice-room universe (free-room calc)
-    if(hits.length>=3){ cols={}; hits.forEach(i=>cols[i]=rm[i]); if(hits.length>day.rooms.length) day.rooms=hits.map(i=>rm[i]); continue; }
+    if(rm.filter(c=>ROOMS.has(c)).length>=3){
+      cols={}; rm.forEach((c,i)=>{ if(ROOMS.has(c) || /^[A-Z][A-Z0-9 .]{0,11}$/.test(c)) cols[i]=c; });
+      // keep the most complete header's room list as the practice-room universe (free-room calc)
+      const names = Object.values(cols);
+      if(names.length>day.rooms.length) day.rooms=names;
+      continue;
+    }
     // private-lessons blocks: a coach + half-hour slots ("HH:MM - Student"). The block sits in the
     // dedicated LESSONS column some rows, but gets shoved into an unused room column (e.g. WERNER)
     // others — so match by content, not position. Keep every slot with its student name; lessonsOf()
@@ -153,19 +159,25 @@ function parse(rows){
       const lines = cell.split("\n").map(x=>x.trim()).filter(Boolean);
       const text = lines.join(" ");
       const fac = /^faculty/i.test(text);
-      let piece = text.replace(/^faculty\s+(rehearsal|reading)\s*/i,"").trim();
       let coach="", tag="";
-      // a cell can carry several trailing coach lines ("Emi - P" + "Chad - C") — strip them all;
-      // names join "/" (coachLink links each), the tag is the first-listed (playing) coach's
-      while(!fac && lines.length>1){
-        const mt = lines[lines.length-1].match(/^(.*?)\s*[-–]\s*([PC])\b/); if(!mt) break;
-        coach = coach ? mt[1].trim()+"/"+coach : mt[1].trim(); tag = mt[2];
-        lines.pop(); piece = lines.join(" ").trim() || piece;
-      }
-      if(fac || evening){
+      // coach lines ("Emi - P", "Chad - C") can sit anywhere below the piece, mixed with notes
+      // ("in A4" — redundant, the column names the room): collect every coach (names join "/",
+      // coachLink links each; the tag is the first-listed, playing coach's), drop the room notes,
+      // and what's left is the piece
+      const kept = lines.filter((l,li)=>{
+        if(li===0) return true;
+        const mt = fac ? null : l.match(/^(.*?)\s*[-–]\s*([PC])\b/);
+        if(mt){ coach = coach ? coach+"/"+mt[1].trim() : mt[1].trim(); tag = tag||mt[2]; return false; }
+        return !/^in\s+[A-Z][A-Z0-9 ]*$/i.test(l);
+      });
+      const piece = kept.join(" ").replace(/^faculty\s+(rehearsal|reading)\s*/i,"").trim();
+      if(evening){
         const kind = fac ? "faculty" : /private\s+lesson/i.test(text) ? "lessons" : /closed/i.test(piece) ? "closed" : "other";
         day.evening.push([start,end,piece,cols[i],kind]); continue;
       }
+      // a faculty rehearsal parked in a room column mid-day is informational — never a practice
+      // block (routing it through `evening` fabricated a phantom "free rooms" block at 10:50)
+      if(fac){ day.fac.push([start,end,piece,cols[i]]); continue; }
       if(/private\s+lesson/i.test(text)) continue;   // lesson blocks were slot-parsed above, not a rehearsal
       day.rehearsals.push([start,end,piece,cols[i],coach,tag,grp]);
     }
@@ -174,7 +186,7 @@ function parse(rows){
   day.meals = day.meals.filter((m,i,a)=> a.findIndex(x=>x[0]===m[0]&&x[2]===m[2]&&x[3]===m[3])===i);
   const byT = a => mins(a[0]);
   day.rehearsals.sort((a,b)=>byT(a)-byT(b)); day.meals.sort((a,b)=>byT(a)-byT(b));
-  day.allhands.sort((a,b)=>byT(a)-byT(b)); day.slots.sort((a,b)=>byT(a)-byT(b));
+  day.allhands.sort((a,b)=>byT(a)-byT(b)); day.slots.sort((a,b)=>byT(a)-byT(b)); day.fac.sort((a,b)=>byT(a)-byT(b));
   return day;
 }
 
@@ -425,6 +437,9 @@ function timeline(day,w){
   const ev=[];
   for(const [s,e,piece,venue] of day.allhands)
     ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
+  // a daytime faculty rehearsal (parked in a room column) — informational, worth sitting in on
+  for(const [s,e,piece,room] of day.fac||[])
+    ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">Faculty rehearsal</div><div class="what">${esc(piece)}</div><div class="where">${placeChip(room,"rm")}</div></div></div>`]);
   for(const [s,e,piece,room,coach,tag] of day.mine){
     const pc = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
     const chip = room?placeChip(room):"";
@@ -451,7 +466,8 @@ function timeline(day,w){
       : b.free.length ? `<b>Free rooms:</b> ${b.free.map(r=>esc(r)).join(", ")}` : "All rooms booked";
     if(b.closed.length) note += ` · ${b.closed.map(r=>esc(r)).join(", ")} closed`;
     note += " — sign up in the Akademie.";
-    ev.push([b.s,`<div class="row"><div class="time"><span class="s">${b.s}</span></div><div class="body ev"><span class="dot"></span><div class="tag">Evening · your time</div><div class="what">${esc(b.label)}</div>${mh}<div class="roomnote">${note}</div></div></div>`]);
+    const tg = mins(b.s)>=1020 ? "Evening · your time" : "Open block · your time";   // a practice block isn't always after dinner
+    ev.push([b.s,`<div class="row"><div class="time"><span class="s">${b.s}</span></div><div class="body ev"><span class="dot"></span><div class="tag">${tg}</div><div class="what">${esc(b.label)}</div>${mh}<div class="roomnote">${note}</div></div></div>`]);
   }
   for(const [i,m] of (loadMine()[sel]||[]).entries()) ev.push([m.s, selfCardHtml(m,i)]);
   ev.sort((a,b)=>mins(a[0])-mins(b[0]));
@@ -551,9 +567,9 @@ function openAdd(i){
   const ev = editIdx!=null ? (loadMine()[sel]||[])[editIdx] : null;
   $("#f-s").value=ev?pad2(ev.s):""; $("#f-e").value=ev&&ev.e?pad2(ev.e):"";
   $("#f-what").value=ev?ev.what||"":""; $("#f-who").value=ev?ev.who||"":"";
-  $("#f-room").innerHTML = `<option value="">room…</option>`
-    +[...ROOMS].map(r=>`<option${ev&&ev.room===r?" selected":""}>${r}</option>`).join("");
   const day=(load().sched||{})[sel], slots=dayTimes(day);
+  $("#f-room").innerHTML = `<option value="">room…</option>`   // incl. rooms learned from the day's header (A4)
+    +[...new Set([...ROOMS, ...((day&&day.rooms)||[])])].map(r=>`<option${ev&&ev.room===r?" selected":""}>${r}</option>`).join("");
   $("#addslots").innerHTML = slots.length
     ? `<span class="slotlab">from today</span>`+slots.map(t=>`<button type="button" class="slotchip" data-t="${t}">${t}</button>`).join("")
     : "";

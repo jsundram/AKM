@@ -9,9 +9,12 @@ const gv = { table: { rows: [
   R(N, "T U E S D A Y  J U N E   3 0     |     W E E K   O N E"),
   R(N, "9:00 - 9:30", "New Participant Tour\nMeet Matt at the fountain. All welcome!"),
   R(N, "9:30 - 10:20", "Full Festival Informational Meeting\n(Lesachtalerhof Terrace)"),
-  R(N, N, "A1", "A2", "AH", "KS", "BAND\nROOM", "THEATRE", "CHAPEL", "WERNER"),
+  R(N, N, "A1", "A2", "AH", "KS", "BAND\nROOM", "THEATRE", "CHAPEL", "WERNER", "A4"),
   // Group B carries someone else's private-lessons block (no Jason) — must NOT surface
-  R(N, "9:00 - 10:15\nGroup B", "Schubert Cello Quintet\nYoanna - P", "Grieg Quartet\nClaudia - C", "Prokofiev Quintet\nEmi - P\nChad - C", "Casarrubios Piano Trio\nSteve - C", "Schubert Piano Trio\nTanya - C", "Schumann Piano Trio\nNathan - P", "Shostakovich Quartet no. 9\nGijs - C", "Dvorak Quartet\nYoojin - C", "Claudia\nPrivate Lessons\n9:00 - Korn\n9:30 - Chia\n10:00 - Steph"),
+  R(N, "9:00 - 10:15\nGroup B", "Schubert Cello Quintet\nYoanna - P", "Grieg Quartet\nClaudia - C", "Prokofiev Quintet\nEmi - P\nChad - C", "Casarrubios Piano Trio\nSteve - C", "Schubert Piano Trio\nTanya - C", "Schumann Piano Trio\nNathan - P", "Shostakovich Quartet no. 9\nGijs - C", "Dvorak Quartet\nYoojin - C", N, "Claudia\nPrivate Lessons\n9:00 - Korn\n9:30 - Chia\n10:00 - Steph"),
+  // the sheet's live curveball: a new room (A4) appears in the header, a faculty rehearsal is
+  // parked in a room column mid-day, and the cell mixes a coach line with an "in A4" note
+  R(N, "11:50 - 12:40\nGroup A", "Faculty Rehearsal\nSchumann Marchenerzahlungen", N, N, N, N, N, N, N, "Elgar Piano Quintet\nGijs - P (half)\nin A4"),
   // Group C: Jason's block is shoved into the WERNER column (no LESSONS column here) — must surface his
   // 10:55 (not Maya's 10:25) and report WERNER as the room he reports to
   R(N, "10:25 - 11:40\nGroup C", "Beethoven String Trio\nIlinca - P", "Korngold Suite\nYoanna - P", "Mozart Clarinet Quintet\nJesus - P", "Faure Piano Quartet\nClaudia - P", "Schumann Piano Quartet\nSteve - C", "Ravel Piano Trio\nJames - P", "Jacob Oboe Quartet\nChad - C", "Jesus\nPrivate Lessons\n10:25 - Maya\n10:55 - Jason\n11:25 - Steph"),
@@ -52,6 +55,8 @@ const roster = [
     pieces: "E: Loeffler Two Rhapsodies for Oboe, Viola, Piano" },
   { name: "Cara Wunder", type: "", instrument: "VC", hotel: "", notes: "",
     pieces: "B: Schubert Piano Trio no. 1 in Bb major, D. 898" },
+  { name: "Kian Woo", type: "", instrument: "Piano", hotel: "", notes: "",
+    pieces: "A: Elgar Piano Quintet in A minor, op. 84" },
 ];
 const w2day = { ...parse(rowsFrom(gv)), eyebrow: "Week Two" };   // same grid, week-two masthead
 const me = userCtx(roster, "Jason Sundram");
@@ -75,7 +80,7 @@ const checks = [
   ["only his private lesson surfaces", day.lessons.length === 1],
   ["lesson 10:55–11:25 with Jesus in WERNER", day.lessons[0].join("|") === "10:55|11:25|Jesus|WERNER"],
   ["two evening blocks split out", blocks.length === 2],
-  ["post-dinner free rooms (all but closed THEATRE)", blocks[1].free.join(",") === "A1,A2,AH,KS,BAND ROOM,CHAPEL,WERNER"],
+  ["post-dinner free rooms (all but closed THEATRE)", blocks[1].free.join(",") === "A1,A2,AH,KS,BAND ROOM,CHAPEL,WERNER,A4"],
   ["closed room flagged, not free", blocks[1].closed.join(",") === "THEATRE" && !blocks[1].free.includes("THEATRE")],
   ["faculty-booked rooms excluded from free", !blocks[0].free.includes("AH") && !blocks[0].free.includes("KS")],
   // another user's view off the same parse: similar titles in one block must not cross-match
@@ -98,6 +103,10 @@ const checks = [
   ["Cara: Schubert PT @ BAND ROOM", mineOf(day, userCtx(roster, "Cara Wunder")).some(e => e[2] === "Schubert Piano Trio" && e[3] === "BAND ROOM" && e[0] === "9:00")],
   // a double-coached cell ("Emi - P" + "Chad - C") strips clean: both names, the playing tag
   ["double coach lines strip to Emi/Chad, tag P", (r => r && r[4] === "Emi/Chad" && r[5] === "P")(day.rehearsals.find(r => r[2] === "Prokofiev Quintet"))],
+  // the live curveballs of 7/3: a new room learned from the header, a mid-line coach + "in A4"
+  // note stripped clean, and a daytime faculty cell that must NOT fabricate a practice block
+  ["new room A4 adopted + claimed", (m => m.length === 1 && m[0][2] === "Elgar Piano Quintet" && m[0][3] === "A4" && m[0][4] === "Gijs" && m[0][5] === "P")(mineOf(day, userCtx(roster, "Kian Woo")))],
+  ["daytime faculty cell → informational, no phantom block", day.fac.length === 1 && day.fac[0].join("|") === "11:50|12:40|Schumann Marchenerzahlungen|A1" && blocks.length === 2],
   // week gating: W1-only Claudia shares Jason's Fauré, so that group dies after week 1;
   // a W1-annotated player gets nothing at all on a Week Two day
   ["Jason week two: Fauré gone, Dvořák+Bruch stay", mineOf(w2day, me).map(e => e[2]).join(",") === "Dvorak Quartet,Bruch Octet"],
