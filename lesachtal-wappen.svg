@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="25 15 650 780">
+  <!-- Lesachtal coat of arms, reconstructed from the village road sign.
+       One tree path serves all four firs; band/field boundaries share curve segments exactly. -->
+  <defs>
+    <!-- Outer shield: flat top, tapered sides, round U bottom -->
+    <path id="shield" d="M70,50 H630 L607,545 C607,672 488,755 350,755 C212,755 93,672 93,545 Z"/>
+    <!-- Stencil fir: apex, three broad stepped tiers with drooping tips, short rectangular trunk -->
+    <path id="tree" stroke-linejoin="miter" d="M0,-180
+      L21,-125 L7,-130 L36,-76 L11,-83 L50,-30 L11,-26 L11,0
+      L-11,0 L-11,-26 L-50,-30 L-11,-83 L-36,-76 L-7,-130 L-21,-125 Z"/>
+    <clipPath id="clip"><use href="#shield"/></clipPath>
+  </defs>
+
+  <g stroke="#101010" stroke-width="9" clip-path="url(#clip)">
+    <!-- base green: what remains visible are the two side bands + corner wedges -->
+    <use href="#shield" fill="#2f8636" stroke="none"/>
+    <!-- silver top band, slant-cut ends (overdrawn past the rim, clipped back) -->
+    <path fill="#8f9cb1" d="M152,138 L122,30 H578 L548,138 Z"/>
+    <!-- silver bottom band: inner edge shares the inner-shield curve, seams extend the saltire -->
+    <path fill="#8f9cb1" d="M186,570 C220,622 280,648 350,648 C420,648 480,622 514,570
+      L581,650 C540,760 445,800 350,800 C255,800 160,760 119,650 Z"/>
+    <!-- inner field, silver: the saltire's left and right quarters -->
+    <path fill="#8f9cb1" d="M152,138 H548 L533,470 C533,530 527,552 514,570
+      C480,622 420,648 350,648 C280,648 220,622 186,570 C173,552 167,530 167,470 Z"/>
+    <!-- green top quarter -->
+    <path fill="#2f8636" d="M152,138 H548 L350,374 Z"/>
+    <!-- green bottom quarter (same lower curve as the inner field) -->
+    <path fill="#2f8636" d="M350,374 L514,570 C480,622 420,648 350,648 C280,648 220,622 186,570 Z"/>
+    <!-- four firs: silver on green (top/bottom), green on silver (left/right) -->
+    <use href="#tree" x="350" y="336" fill="#8f9cb1"/>
+    <use href="#tree" x="350" y="620" fill="#8f9cb1"/>
+    <use href="#tree" x="234" y="465" fill="#2f8636"/>
+    <use href="#tree" x="466" y="465" fill="#2f8636"/>
+  </g>
+  <!-- heavy rim on top -->
+  <use href="#shield" fill="none" stroke="#101010" stroke-width="13"/>
+</svg>
