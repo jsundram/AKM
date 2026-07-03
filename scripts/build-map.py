@@ -173,6 +173,13 @@ def build(els):
 # use it when Overpass is unreachable and the edit is a new address-anchored POI or an alias change.
 def promote_offline(data):
     have = {p["name"]: p for p in data["pois"]}
+    # apply pending renames FIRST, and only once: a "was" is consumed only while the new name
+    # doesn't exist yet. (Re-running after a rename must be a no-op — v1 of this matched "was"
+    # unconditionally, so a second run stole the recycled old name's pin: Akademie ate Kultursaal.)
+    for poi in POIS:
+        w = poi.get("was")
+        if w and poi["name"] not in have and w in have:
+            have[poi["name"]] = have.pop(w)
     by_addr = {}
     for b in data["buildings"]:
         if b.get("a"): by_addr.setdefault(b["a"], b)
@@ -183,7 +190,7 @@ def promote_offline(data):
         return p
     pois, promoted, need_net = [], [], []
     for poi in POIS:
-        src = have.pop(poi.get("was") or poi["name"], None)  # renames match the baked pin by old name
+        src = have.pop(poi["name"], None)
         if src:                                             # already a pin — keep only its baked geometry
             p = meta(poi)
             p["xy"] = src["xy"]
@@ -203,6 +210,11 @@ def promote_offline(data):
     data["pois"] = pois
     dropped = {a for _, a in promoted}
     data["buildings"] = [b for b in data["buildings"] if b.get("a") not in dropped]
+    # two pins on one building = almost certainly a reconcile bug, not geography — scream
+    for i, a in enumerate(pois):
+        for b in pois[i+1:]:
+            if abs(a["xy"][0]-b["xy"][0]) < 8 and abs(a["xy"][1]-b["xy"][1]) < 8:
+                print(f'WARNING {a["name"]} and {b["name"]} share a position {a["xy"]} — check POIS', file=sys.stderr)
     return promoted, need_net
 
 def run_offline(reason):
