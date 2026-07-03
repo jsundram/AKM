@@ -12,9 +12,7 @@ let LAT = 46.6928, LON = 12.8166;        // forecast point: the Kultursaal venue
 const TZ = "Europe/Vienna";
 const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusive
 const ROOMS = new Set(["A1","A2","A3","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
-const MINE = {"dvorak quartet":"dvorak","bruch octet":"bruch",
-              "brahms piano quartet":"brahms","faure piano quartet":"faure"};
-const ME = /\bjason\b/i;     // his name in a private-lessons slot → surface it, emphasized
+const JASON = "Jason Sundram";     // the grace notes stay his easter egg; everything else follows the picker
 const MEET = /Participant Tour|Info Meeting|Informational Meeting|Festival Meeting|Festival Informational/;
 const CK = "akm-cache";
 
@@ -23,7 +21,7 @@ const $ = s => document.querySelector(s);
 // re-triggers the `rise` entrance animation — the flicker after refresh() re-renders identical cached content.
 const paint = (el,html) => { if(el.__html===html) return; el.__html=html; el.innerHTML=html; };
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-const norm = s => s.toLowerCase().replace(/ř/g,"r").replace(/á/g,"a").replace(/é/g,"e").replace(/\s+/g," ").trim();
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();   // Dvořák/Fauré/Kodály → dvorak/faure/kodaly
 const despace = s => s.replace(/(?<!\S)(\S(?: \S){2,})(?!\S)/g, m => m.replace(/ /g,""));
 const mins = t => { const [h,m]=t.split(":"); return +h*60 + +m; };
 const hhmm = m => `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`;
@@ -87,28 +85,33 @@ function coachMap(people){
 }
 
 // ---- parse one day's grid ----
+// User-agnostic: every rehearsal cell (with its block's Group letter) and every private-lesson slot
+// is kept; whose they are is decided at render time by mineOf()/lessonsOf() against the picked identity.
 function parse(rows){
-  let cols = {}; const day = {eyebrow:"", mine:[], meals:[], allhands:[], evening:[], lessons:[], rooms:[], evLabels:{}};
+  let cols = {}; const day = {eyebrow:"", rehearsals:[], meals:[], allhands:[], evening:[], slots:[], rooms:[], evLabels:{}};
   for(const raw of rows){
     const cells = raw.map(c => (c||"").trim());
     const joined = despace(cells.join(" "));
     if(joined.toUpperCase().includes("WEEK") && cells.join(" ").includes("|")){
       const m = joined.toUpperCase().match(/WEEK\s+\w+/); if(m) day.eyebrow = title(m[0].replace(/\s+/g," "));
     }
-    const hits = cells.map((c,i)=>ROOMS.has(c)?i:-1).filter(i=>i>=0);
+    // room-header cells sometimes wrap ("BAND\nROOM") — normalize before matching, and store the
+    // clean name so the column isn't silently dropped (it took a whole morning column with it)
+    const rm = cells.map(c=>c.replace(/\s+/g," "));
+    const hits = rm.map((c,i)=>ROOMS.has(c)?i:-1).filter(i=>i>=0);
     // keep the most complete header's room list as the practice-room universe (free-room calc)
-    if(hits.length>=3){ cols={}; hits.forEach(i=>cols[i]=cells[i]); if(hits.length>day.rooms.length) day.rooms=hits.map(i=>cells[i]); continue; }
+    if(hits.length>=3){ cols={}; hits.forEach(i=>cols[i]=rm[i]); if(hits.length>day.rooms.length) day.rooms=hits.map(i=>rm[i]); continue; }
     // private-lessons blocks: a coach + half-hour slots ("HH:MM - Student"). The block sits in the
     // dedicated LESSONS column some rows, but gets shoved into an unused room column (e.g. WERNER)
-    // others — so match by content, not position. Usually not his; but when his name is in a slot
-    // it's a focused commitment, so pull just those out, emphasized.
+    // others — so match by content, not position. Keep every slot with its student name; lessonsOf()
+    // surfaces only the picked user's.
     cells.forEach((cell,ci)=>{
       if(!/private\s+lesson/i.test(cell)) return;
       const ll = cell.split("\n").map(x=>x.trim()).filter(Boolean);
       const coach = ll.find(x=>!/private\s+lesson/i.test(x) && !/^\d{1,2}:\d{2}/.test(x)) || "";
       const room = cols[ci] || "";   // the room it's parked in (WERNER, etc.) — where to actually show up
       for(const line of ll){ const m=line.match(/^(\d{1,2}:\d{2})\s*-\s*(.+)$/);
-        if(m && ME.test(m[2])) day.lessons.push([m[1], hhmm(mins(m[1])+30), coach, room]); }
+        if(m) day.slots.push([m[1], hhmm(mins(m[1])+30), coach, room, m[2].trim()]); }
     });
     // DAILY NOTES is a free-text block, not a grid row — it carries a time + meal words that would
     // be misread as meal slots (e.g. "you must have signed up by 12:00pm to dine at …"). Pull that
@@ -125,6 +128,7 @@ function parse(rows){
     if(li<0) continue;
     const tm = lab.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/) || lab.match(/(\d{1,2}:\d{2})/);
     const start=tm[1], end=tm[2]||"";
+    const grp = (lab.match(/\bGROUP\s+([A-Z])\b/i)||[])[1]||"";   // rehearsal blocks are labelled "Group A…E"
     const U = lab.toUpperCase();
     if(U.includes("LUNCH")||U.includes("DINNER")||U.includes("BREAKFAST")){
       const kind = U.includes("LUNCH")?"Lunch":U.includes("DINNER")?"Dinner":"Breakfast";
@@ -132,6 +136,12 @@ function parse(rows){
       const venue = lab.includes("@") ? lab.split("@")[1].trim()
         : lab.replace(/\d{1,2}:\d{2}(\s*-\s*\d{1,2}:\d{2})?/,"").replace(/\b(LUNCH|DINNER|BREAKFAST)\b/i,"").replace(/\s+/g," ").trim().toLowerCase();
       day.meals.push([start,end,kind,venue]); continue;
+    }
+    // concerts are banner rows like the meals ("2 0 : 0 0  F A C U L T Y  C O N C E R T @ Kultursaal")
+    // — the festival's headline events, and the final day is *only* concerts (no room grid at all)
+    if(U.includes("CONCERT")){
+      const what = title(lab.replace(/\d{1,2}:\d{2}(\s*-\s*\d{1,2}:\d{2})?/,"").split("@")[0].replace(/\s+/g," ").trim());
+      day.allhands.push([start,end,what,lab.includes("@") ? lab.split("@")[1].trim() : ""]); continue;
     }
     const evening = U.includes("PRACTICE BLOCK") || U.includes("FREE READING");
     if(evening) day.evLabels[start] = lab.split("\n").slice(1).join(" ").trim();
@@ -145,22 +155,124 @@ function parse(rows){
       const fac = /^faculty/i.test(text);
       let piece = text.replace(/^faculty\s+(rehearsal|reading)\s*/i,"").trim();
       let coach="", tag="";
-      const mt = lines.length ? lines[lines.length-1].match(/^(.*?)\s*[-–]\s*([PC])\b/) : null;
-      if(mt && !fac){ coach=mt[1].trim(); tag=mt[2]; piece=lines.slice(0,-1).join(" ").trim()||piece; }
-      const key = Object.keys(MINE).find(k => norm(piece).includes(k));
+      // a cell can carry several trailing coach lines ("Emi - P" + "Chad - C") — strip them all;
+      // names join "/" (coachLink links each), the tag is the first-listed (playing) coach's
+      while(!fac && lines.length>1){
+        const mt = lines[lines.length-1].match(/^(.*?)\s*[-–]\s*([PC])\b/); if(!mt) break;
+        coach = coach ? mt[1].trim()+"/"+coach : mt[1].trim(); tag = mt[2];
+        lines.pop(); piece = lines.join(" ").trim() || piece;
+      }
       if(fac || evening){
         const kind = fac ? "faculty" : /private\s+lesson/i.test(text) ? "lessons" : /closed/i.test(piece) ? "closed" : "other";
         day.evening.push([start,end,piece,cols[i],kind]); continue;
       }
-      if(key && !fac) day.mine.push([start,end,piece,cols[i],coach,tag,MINE[key]]);
+      if(/private\s+lesson/i.test(text)) continue;   // lesson blocks were slot-parsed above, not a rehearsal
+      day.rehearsals.push([start,end,piece,cols[i],coach,tag,grp]);
     }
   }
   // the notes block is repeated in the sheet (top + bottom), so the sign-up reminder lands twice — dedupe
   day.meals = day.meals.filter((m,i,a)=> a.findIndex(x=>x[0]===m[0]&&x[2]===m[2]&&x[3]===m[3])===i);
   const byT = a => mins(a[0]);
-  day.mine.sort((a,b)=>byT(a)-byT(b)); day.meals.sort((a,b)=>byT(a)-byT(b));
-  day.allhands.sort((a,b)=>byT(a)-byT(b)); day.lessons.sort((a,b)=>byT(a)-byT(b));
+  day.rehearsals.sort((a,b)=>byT(a)-byT(b)); day.meals.sort((a,b)=>byT(a)-byT(b));
+  day.allhands.sort((a,b)=>byT(a)-byT(b)); day.slots.sort((a,b)=>byT(a)-byT(b));
   return day;
+}
+
+// ---- who is "me" — the picked identity, resolved against the shared roster ----
+// The roster's Pieces cell assigns one piece per rehearsal group ("BCE: Dvorak … | Faure … | Bruch …",
+// letters map positionally); Notes may carry a nickname ("Goes by Yuan") that lesson slots use.
+// Type cells can compound ("F, W1" = week-1-only faculty) — always test by token, never equality
+const hasTok = (t,k) => new RegExp(`\\b${k}\\b`).test(t||"");
+const takesLessons = t => !hasTok(t,"F") && !hasTok(t,"DIR");   // F/DIR give lessons; AF/TF/MGR also take them
+// instrument families, for lesson-name ties: a cellist doesn't take lessons from violin faculty
+const fams = s => { const l=(s||"").trim().toLowerCase();
+  return new Set(l==="v/va" ? ["v","va"] : l.startsWith("vc")||l.startsWith("ce") ? ["vc"]
+    : l.startsWith("va") ? ["va"] : l.startsWith("v") ? ["v"] : l.startsWith("b") ? ["bass"]
+    : l.startsWith("p") ? ["p"] : l.startsWith("c") ? ["cl"] : l.startsWith("o") ? ["ob"] : []); };
+const teaches = (stu, coach) => [...stu].some(f=>coach.has(f));
+function userCtx(people, name){
+  const p = name && (people||[]).find(x=>x.name===name); if(!p) return null;
+  const first = p.name.split(/\s+/)[0];
+  const nick = ((p.notes||"").match(/goes by (\w+)/i)||[])[1];
+  const groups = {}, wk = {};
+  // a piece any W1-annotated player shares is a week-one-only group (and W2 symmetrically);
+  // unannotated groups run both weeks — so a stale letter can't claim a dead group next week
+  const wkOf = piece => (people||[]).some(x=>hasTok(x.type,"W1") && (x.pieces||"").includes(piece)) ? 1
+                      : (people||[]).some(x=>hasTok(x.type,"W2") && (x.pieces||"").includes(piece)) ? 2 : 0;
+  const m = (p.pieces||"").match(/^\s*([A-Z]+)\s*:\s*([\s\S]+)/);
+  if(m){ const ps=m[2].split("|").map(x=>x.trim()); [...m[1]].forEach((g,i)=>{ if(ps[i]){ groups[g]=ps[i]; wk[g]=wkOf(ps[i]); } }); }
+  const idy = q => ({ first:q.name.split(/\s+/)[0].toLowerCase(),
+                      nick:(((q.notes||"").match(/goes by (\w+)/i)||[])[1]||"").toLowerCase(),
+                      fams:fams(q.instrument) });
+  return { name:p.name, first, hotel:p.hotel, type:(p.type||"").trim(), groups, wk, fams:fams(p.instrument),
+           week: hasTok(p.type,"W1") ? 1 : hasTok(p.type,"W2") ? 2 : 0,   // attending one week only?
+           re: new RegExp(`\\b(${[first,nick].filter(Boolean).join("|")})\\b`,"i"),
+           rivals: (people||[]).filter(x=>x!==p && takesLessons(x.type)).map(idy),   // who else a slot name could mean
+           coaches: (people||[]).filter(x=>hasTok(x.type,"F")||hasTok(x.type,"DIR")).map(idy) };
+}
+// which week a day belongs to, from its eyebrow ("Week One" / "Week Two"); 0 = unknown → no gating
+const weekOf = day => /week\s+two/i.test(day.eyebrow||"") ? 2 : /week\s+one/i.test(day.eyebrow||"") ? 1 : 0;
+// "your rehearsals", data-driven: a block's Group letter names which of my pieces could be in it; the
+// grid writes informal titles ("Casarrubios Piano Trio" for luzAzul, "Schubert Cello Quintet") but
+// always includes the surname, so token overlap with the canonical name picks my cell — and requiring
+// the strict argmax within the block keeps same-composer neighbours apart (Brahms Sextet vs Clarinet Trio).
+const STOP = new Set(["in","the","for","no","op","a","of","on","major","minor"]);
+const words = s => norm(s).replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(w=>w&&!STOP.has(w));
+const toks = s => new Set(words(s));
+const overlap = (t,want) => { let n=0; for(const w of t) if(want.has(w)) n++; return n; };
+// guards against near-miss claims (a stale group letter can put a *similar* piece in "your" block):
+// the cell must share a composer token — the canonical name's words before its first instrument/
+// ensemble word — and may not cross ensembles (quartet≠sextet) or instrument families
+// (clarinet≠string≠piano; cello≈string, so "Schubert Cello Quintet" still reads as the D.956).
+const ENS = new Set(["quartet","quintet","trio","sextet","octet","duo"]);
+const FAM = {string:"s",cello:"s",viola:"s",violin:"s",violins:"s",clarinet:"c",piano:"p",oboe:"o"};
+const famOf = ws => { const f=new Set(ws.map(w=>FAM[w]).filter(Boolean)); return f.size===1?[...f][0]:null; };
+const ensOf = ws => { const e=ws.filter(w=>ENS.has(w)); return e.length===1?e[0]:null; };
+function fits(cellW, canonW){
+  const cut = canonW.findIndex(w=>ENS.has(w)||FAM[w]);
+  const composer = new Set(cut>0 ? canonW.slice(0,cut) : canonW);
+  if(!cellW.some(w=>composer.has(w))) return false;
+  const e1=ensOf(cellW), e2=ensOf(canonW); if(e1&&e2&&e1!==e2) return false;
+  const f1=famOf(cellW), f2=famOf(canonW); if(f1&&f2&&f1!==f2) return false;
+  return true;
+}
+function mineOf(day, u){
+  if(!u) return [];
+  const wk = weekOf(day);
+  if(wk && u.week && u.week!==wk) return [];        // not at the festival this week
+  const out=[];
+  for(const [s,e,piece,room,coach,tag,grp] of (day.rehearsals||[])){
+    const target = grp && u.groups[grp]; if(!target) continue;
+    if(wk && u.wk[grp] && u.wk[grp]!==wk) continue;  // this group's week is over (or hasn't started)
+    const cw = words(piece), tw = words(target);
+    if(!fits(cw,tw)) continue;
+    const want = new Set(tw), score = overlap(new Set(cw), want);
+    const peers = (day.rehearsals||[]).filter(r=>r[0]===s && r[6]===grp && r[2]!==piece);
+    if(!peers.every(r=>overlap(toks(r[2]),want)<score)) continue;
+    out.push([s,e,piece,room,coach,tag,norm(piece).split(" ")[0]]);   // last = composer key for the coda
+  }
+  return out;
+}
+// lesson slots name students informally — first name, "Goes by" nickname, or a ≥3-char diminutive
+// ("Matt" for Matthew). When the same name also fits another lesson-taker ("Steph"), the slot's
+// coach breaks the tie by instrument: it's yours only if the coach teaches your family and not the
+// rival's. F/DIR are skipped as students (they coach), which also keeps the duplicate
+// Tanyas/Stephens apart. Unresolvable ties stay unmatched — never a wrong card.
+function lessonsOf(day, u){
+  if(!u || !takesLessons(u.type)) return [];
+  const wk = weekOf(day);
+  if(wk && u.week && u.week!==wk) return [];        // not at the festival this week
+  const me = { first:u.first.toLowerCase(), nick:"", fams:u.fams };   // u.re already covers the nickname
+  const hit = (r,ws) => ws.some(w => w===r.first || (r.nick && w===r.nick) || (w.length>=3 && r.first.startsWith(w)));
+  return (day.slots||[]).filter(([,,coach,,student])=>{
+    const ws = student.toLowerCase().split(/[^a-z]+/).filter(Boolean);
+    if(!u.re.test(student) && !hit(me,ws)) return false;
+    const rivals = u.rivals.filter(r=>hit(r,ws));
+    if(!rivals.length) return true;
+    const w = (coach||"").split(/[\s\/]+/)[0].toLowerCase();
+    const c = u.coaches.find(x=>x.first===w || (w.length>=3 && x.first.startsWith(w)));
+    return !!c && teaches(u.fams,c.fams) && !rivals.some(r=>teaches(r.fams,c.fams));
+  }).map(([s,e,coach,room])=>[s,e,coach,room]);
 }
 const title = s => s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 
@@ -311,8 +423,8 @@ function evblocks(day){
 }
 function timeline(day,w){
   const ev=[];
-  for(const [s,e,piece] of day.allhands)
-    ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}</div></div></div>`]);
+  for(const [s,e,piece,venue] of day.allhands)
+    ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
   for(const [s,e,piece,room,coach,tag] of day.mine){
     const pc = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
     const chip = room?placeChip(room):"";
@@ -355,7 +467,7 @@ function timeline(day,w){
   return out.join("");
 }
 function coda(day,bank,dnum){
-  const keys=[...new Set(day.mine.map(e=>e[6]))]; if(!keys.length) return "";
+  const keys=[...new Set(day.mine.map(e=>e[6]))].filter(k=>bank[k]); if(!keys.length) return "";
   const order=(arr)=>[...arr].sort((a,b)=>(a.tier==="sourced"?0:1)-(b.tier==="sourced"?0:1));
   const qc=keys[0], qs=order(bank[qc]?.quotes||[]);
   const q = qs.length ? qs[dnum % qs.length] : null;
@@ -394,7 +506,7 @@ function schedHead(c){
 }
 
 // ---- cache + state ----
-let BANK={}, COACHES={}, today=viennaToday(), sel=today;
+let BANK={}, COACHES={}, USER=null, today=viennaToday(), sel=today;
 const load = () => { try{return JSON.parse(localStorage.getItem(CK))||{}}catch{return {}} };
 const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
 
@@ -413,7 +525,7 @@ const unpad = t => t.replace(/^0(?=\d:)/,"");                                   
 function dayTimes(day){
   if(!day) return [];
   const t=new Set(), add=x=>{ if(x && /^\d{1,2}:\d{2}$/.test(x)) t.add(x); };
-  for(const k of ["allhands","mine","lessons","meals","evening"])
+  for(const k of ["allhands","rehearsals","slots","meals","evening"])
     for(const row of (day[k]||[])){ add(row[0]); add(row[1]); }
   return [...t].sort((a,b)=>mins(a)-mins(b));
 }
@@ -469,13 +581,36 @@ function setupAdd(){
     if(!$("#f-e").value) $("#f-e").value=pad2(hhmm(Math.min(mins(c.dataset.t)+60,1439))); };
 }
 
+// --- identity picker (overlay like #addsheet) — one shared URL, choose yourself once; localStorage
+// only, per device. Dismissing without choosing still counts as "asked" (me="") so it never nags.
+function openWho(){
+  const box=$("#whosheet"), people=Roster.cached()||[];
+  if(!box || !box.hidden || !people.length) return;
+  $("#who-list").innerHTML = [...people].sort((a,b)=>a.name.localeCompare(b.name)).map(p=>
+    `<button type="button" class="who${p.name===Roster.me()?" on":""}" data-n="${esc(p.name)}">${esc(p.name)}`
+    +`${p.instrument?`<span>${esc(p.instrument)}</span>`:""}</button>`).join("");
+  box.hidden=false;
+}
+function closeWho(){
+  if(Roster.me()==null) Roster.setMe("");   // asked + declined ≠ never asked
+  $("#whosheet").hidden=true; render();
+}
+function setupWho(){
+  const box=$("#whosheet"); if(!box) return;
+  $("#who-scrim").onclick=closeWho; $("#whox").onclick=closeWho;
+  $("#who-list").onclick=e=>{ const b=e.target.closest(".who"); if(!b) return;
+    Roster.setMe(b.dataset.n); $("#whosheet").hidden=true; render(); };
+}
+
 function render(){
   const c=load(), day=c.sched&&c.sched[sel], w=c.wx&&c.wx[sel];
   const now = sel===viennaToday() ? viennaNowH() : null;   // "now" marker on today's curve only
   // prefer the live "current" reading for the now-dot, but only while it's actually current
   const cur = (now!=null && w && w.cur!=null && w.curAt && w.curAt.slice(0,10)===sel
     && Math.abs(now - (+w.curAt.slice(11,13) + +w.curAt.slice(14,16)/60)) < 1.5) ? w.cur : null;
-  COACHES = coachMap(Roster.cached());
+  const people = Roster.cached();
+  COACHES = coachMap(people);
+  USER = userCtx(people, Roster.me());
   let html;
   if(!day){
     const fetching = navigator.onLine && !c.ts;       // first load, refresh still in flight
@@ -484,11 +619,15 @@ function render(){
       : `<b>You're offline.</b><br>${w?"showing cached forecast.":"reconnect to load this day."}`;
     html = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + `<div class="tl-empty">${head}</div>`;
   } else {
+    day.mine = mineOf(day,USER); day.lessons = lessonsOf(day,USER);   // whose day this is, decided here
     const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
-    html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>` + coda(day,BANK,dnum);
+    html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
+      + (USER && USER.name===JASON ? coda(day,BANK,dnum) : "");   // grace notes: his easter egg only
   }
+  html += `<div class="who-foot">${USER?`for <b>${esc(USER.first)}</b>`:`no one picked`} · <button id="whobtn" type="button">switch</button></div>`;
   paint($("#app"), html);
   chips();
+  if(Roster.me()==null && (people||[]).length) openWho();   // first ever open: ask once the roster is here
 }
 function chips(){
   const c=load(), box=$("#days"), days=festDays();
@@ -534,7 +673,7 @@ async function refresh(){
   try{ await Roster.pull(); }catch(e){ /* keep the cached roster */ }   // shared cache; primes the roster page
   for(const day of festDays()){
     try{ const rows=rowsFrom(await jsonp(day)); const p=parse(rows);
-         if(p.mine.length||p.meals.length||p.allhands.length||p.evening.length||p.lessons.length) c.sched[day]=p; }
+         if(p.rehearsals.length||p.meals.length||p.allhands.length||p.evening.length||p.slots.length) c.sched[day]=p; }
     catch(e){ /* keep old day */ }
   }
   c.ts=new Date().toISOString(); save(c); render();
@@ -555,8 +694,10 @@ async function boot(){
     if(age>60e3) refresh(); });
   setupPTR();
   setupAdd();
+  setupWho();
   // #app is repainted on every render; delegate so the add button + per-card delete/edit survive repaints
   $("#app").addEventListener("click", e=>{
+    if(e.target.closest("#whobtn")){ openWho(); return; }
     if(e.target.closest("#addself")){ openAdd(); return; }
     const d=e.target.closest("[data-del]"); if(d){ removeSelf(+d.dataset.del); return; }
     if(e.target.closest("a")) return;                    // room maplinks open the map, not the editor
@@ -567,4 +708,4 @@ async function boot(){
 }
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
-  dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };
+  userCtx, mineOf, lessonsOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };

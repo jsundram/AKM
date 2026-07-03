@@ -128,19 +128,21 @@ async function loadPlaces(){
   }catch{ /* offline + uncached: links just won't render until the map data is around */ }
 }
 const PIN = '<svg class="pin" viewBox="0 0 24 24" width="9" height="9" aria-hidden="true"><path fill="currentColor" d="M12 2C8.1 2 5 5.1 5 9c0 5 7 13 7 13s7-8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
-// a few roster names don't match a map POI verbatim: both "Obermosterer …" entries are Haus
-// Obernosterer (OCR drift, m→n), and the Kultursaal apartment sits at the Kultursaal venue.
-const HOTEL_ALIAS = {
-  "obermosterer airbnb":"Haus Obernosterer", "obermosterer apartment":"Haus Obernosterer",
-  "kultursaal apartment":"Kultursaal",
-};
-const mapTarget = hotel => { const c = HOTEL_ALIAS[(hotel||"").toLowerCase()] || hotel;
+// a few roster names don't match a map POI verbatim (Obermosterer OCR drift, the Kultursaal
+// apartment) — the canonicalization lives in roster-data.js, shared with the map's "your base"
+const mapTarget = hotel => { const c = Roster.hotelPoi(hotel);
   return PLACES.has((c||"").toLowerCase()) ? c : null; };
 const mapLink = hotel => { const t = mapTarget(hotel);   // link to the canonical POI, keep the printed name
   return t ? `<a class="maplink" href="./map.html#${encodeURIComponent(t)}" onclick="event.stopPropagation()">${esc(hotel)}${PIN}</a>` : esc(hotel); };
 
-// click the WhatsApp glyph → open a chat (app on phone) pre-filled with this greeting ({first} = first name)
-const WA_MSG = "Hi {first}, it's Jason from AKM ";
+// click the WhatsApp glyph → open a chat (app on phone) pre-filled with a greeting from whoever
+// this device belongs to (the schedule page's picker); anonymous until someone's picked
+const ME_NAME = Roster.me() || "";
+const ME_FIRST = ME_NAME.split(/\s+/)[0] || "";
+// the Notes column is Jason's private annotations about people — render its text only to him
+// (URLs mined from it — name/coach bio links — stay for everyone; they expose a link, not the prose)
+const NOTES_OK = ME_NAME === "Jason Sundram";
+const WA_MSG = ME_FIRST ? `Hi {first}, it's ${ME_FIRST} from AKM ` : "Hi {first}! ";
 const WA_SVG = '<svg viewBox="0 0 32 32" width="14" height="14" aria-hidden="true"><path fill="#25D366" d="M16 .6C7.5.6.6 7.5.6 16c0 2.8.8 5.5 2.1 7.8L.5 31.5l7.9-2.1c2.2 1.2 4.8 1.9 7.6 1.9 8.5 0 15.4-6.9 15.4-15.4S24.5.6 16 .6z"/><path fill="#fff" d="M23.1 19.3c-.4-.2-2.3-1.1-2.6-1.3-.3-.1-.6-.2-.8.2-.2.3-.9 1.2-1.2 1.5-.2.2-.4.2-.8.1-.4-.2-1.6-.6-3.1-1.9-1.1-1-1.9-2.3-2.1-2.7-.2-.4 0-.6.2-.8l.5-.6c.2-.2.2-.4.4-.6.1-.3 0-.5 0-.7-.1-.2-.8-2.1-1.2-2.8-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.5 3.8 6 5.3.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 2.3-.9 2.6-1.8.3-.9.3-1.7.2-1.8z"/></svg>';
 function waLink(p){
   const num = (p.whatsapp||"").replace(/\D/g,"");
@@ -159,7 +161,8 @@ function instLabel(s){ s=(s||"").trim(); if(!s) return ""; const l=s.toLowerCase
 const instRank = s => { const k=instLabel(s), i=INST_ORDER.indexOf(k); return i>=0?i:(k?50:99); };
 function key(p){
   if(sortKey==="n") return parseFloat(p.n)||0;
-  if(sortKey==="type") return (p.type in TYPE_RANK) ? TYPE_RANK[p.type] : 8;
+  // Type can compound ("F, W1" = week-1-only faculty) — rank by the first recognized token
+  if(sortKey==="type"){ const k=((p.type||"").match(/[A-Z]+\d*/g)||[]).find(t=>t in TYPE_RANK); return k?TYPE_RANK[k]:8; }
   return (p[sortKey]||"~").toLowerCase();    // blanks sort last
 }
 function cmp(a,b){
@@ -180,8 +183,8 @@ function paint(){
   const people = sortKey ? [...PEOPLE].sort(cmp) : PEOPLE;
   for(const p of people){
     const fill = HOTEL_COLORS[p.hotel] || DEFAULT_FILL;
-    const you = p.name==="Jason Sundram";
-    const exp = !!(p.pieces || p.notes || p.from);             // expandable only if there's more to show
+    const you = !!ME_NAME && p.name===ME_NAME;
+    const exp = !!(p.pieces || p.from || (NOTES_OK && p.notes));   // expandable only if there's more to show
     const tr=document.createElement("tr");
     tr.style.background = fill;
     tr.className = (you?"you ":"") + (exp?"exp":"");
@@ -198,7 +201,7 @@ function paint(){
       const dr=document.createElement("tr");
       dr.className="detail"; dr.hidden=true; dr.style.background=fill;
       const dl=(k,v)=>v?`<div class="dl"><span class="k">${k}</span><span class="v">${linkify(v)}</span></div>`:"";
-      dr.innerHTML=`<td colspan="6">${dl("From",p.from)}${dl("Pieces",p.pieces)}${dl("Notes",p.notes)}</td>`;
+      dr.innerHTML=`<td colspan="6">${dl("From",p.from)}${dl("Pieces",p.pieces)}${NOTES_OK?dl("Notes",p.notes):""}</td>`;
       tb.appendChild(dr);
       tr.addEventListener("click", ()=>{ const open=dr.hidden; dr.hidden=!open; tr.classList.toggle("open",open); });
     }

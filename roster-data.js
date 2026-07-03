@@ -7,6 +7,22 @@
   const SID = "1j__RMUvFWQlX9UuT-Uxkw7BkqWHCQkbR_hKsTyNwiyo";
   const GID = "800090339";
   const KEY = "akm-roster";
+  const MEK = "akm-me";     // picked identity (canonical roster Name); null = never asked, "" = declined
+
+  // whoever the schedule page's picker chose — every page personalizes off this one value
+  const me = () => { try{ return localStorage.getItem(MEK); }catch{ return null; } };
+  const setMe = n => { try{ localStorage.setItem(MEK, n); }catch{} };
+
+  // roster Hotel values → map POI names: both "Obermosterer …" rows are Haus Obernosterer (OCR
+  // drift, m→n — tolerate the pre- and post-fix sheet spellings), the Kultursaal apartment sits
+  // at the Kultursaal venue. Everything else matches a POI verbatim or isn't mapped yet
+  // (Haus Simona, Haus Salcher) — callers check membership against their own POI set.
+  const HOTEL_POI = {
+    "obermosterer airbnb":"Haus Obernosterer", "obermosterer apartment":"Haus Obernosterer",
+    "obernosterer airbnb":"Haus Obernosterer", "obernosterer apartment":"Haus Obernosterer",
+    "kultursaal apartment":"Kultursaal",
+  };
+  const hotelPoi = h => HOTEL_POI[(h||"").toLowerCase()] || h;
 
   function jsonp(){
     return new Promise((res,rej)=>{
@@ -50,5 +66,5 @@
     if(people.length){ try{ localStorage.setItem(KEY, JSON.stringify({people})); }catch{} }
     return people;
   }
-  g.Roster = { SID, GID, KEY, parse, cached, pull };
+  g.Roster = { SID, GID, KEY, parse, cached, pull, me, setMe, hotelPoi };
 })(window);

@@ -277,9 +277,20 @@ function setMode(m) {
 }
 seg.addEventListener("click", e => { const b = e.target.closest("button"); if (b) setMode(b.dataset.m); });
 
+// "your base" (the one warm-brass POI) follows the schedule page's picked identity via the roster's
+// Hotel column — the mine flag baked into map-data.json is cleared so brass stays the picked user's.
+// No pick / unmapped lodging (Haus Simona, Haus Salcher) → no brass pin, everything else as usual.
+function myBase(d) {
+  d.pois.forEach(p => delete p.mine);
+  const who = (Roster.cached() || []).find(x => x.name === Roster.me());
+  const t = who && Roster.hotelPoi(who.hotel);
+  const poi = t && d.pois.find(p => p.name.toLowerCase() === t.toLowerCase());
+  if (poi) poi.mine = true;
+}
+
 let D;
 fetch("./map-data.json").then(r => r.json()).then(d => {
-  D = d; drawScene(d); makeMarkers(d); setMode("map"); fit();
+  D = d; myBase(d); drawScene(d); makeMarkers(d); setMode("map"); fit();
   let at = ""; try { at = decodeURIComponent(location.hash.slice(1)); } catch {}
   focusPoi(at); locate();
   new ResizeObserver(() => { const r = map.getBoundingClientRect(); W = r.width; H = r.height; render(); }).observe(map);

@@ -244,6 +244,26 @@
   .add-f input,.add-f select{font-family:"Inter",sans-serif;font-size:16px;color:var(--ink);background:var(--haze);
     border:1px solid var(--line);border-radius:8px;padding:9px 11px;letter-spacing:normal;text-transform:none;width:100%;-webkit-appearance:none;appearance:none}
   .add-f input:focus,.add-f select:focus{outline:none;border-color:var(--muted)}
+  /* --- identity picker (same sheet chrome as #addsheet) --- */
+  #whosheet[hidden]{display:none}
+  #whosheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center}
+  .who-sub{font-size:12.5px;color:var(--muted);line-height:1.45}
+  .who-list{display:flex;flex-direction:column;overflow-y:auto;max-height:52vh;
+    border:1px solid var(--line);border-radius:10px;-webkit-overflow-scrolling:touch}
+  .who{display:flex;justify-content:space-between;align-items:baseline;gap:10px;text-align:left;
+    font-family:"Inter",sans-serif;font-size:14.5px;color:var(--ink);background:none;border:none;
+    border-bottom:1px solid var(--line);padding:10px 13px;cursor:pointer}
+  .who:last-child{border-bottom:none}
+  .who span{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--faint);letter-spacing:.02em}
+  .who:hover{background:var(--haze)}
+  .who.on{color:var(--brass-deep);font-weight:500;box-shadow:inset 3px 0 var(--brass)}
+  .who-foot{margin-top:26px;padding-top:12px;border-top:1px solid var(--line);
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;color:var(--faint)}
+  .who-foot b{color:var(--brass);font-weight:500}
+  .who-foot button{font:inherit;color:var(--muted);background:none;border:none;cursor:pointer;
+    padding:0;text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line)}
+  .who-foot button:hover{color:var(--ink)}
+
   .add-actions{display:flex;gap:10px;margin-top:2px}
   .btn-ghost{flex:none;font-family:"Inter",sans-serif;font-size:14px;color:var(--muted);background:none;
     border:1px solid var(--line);border-radius:9px;padding:10px 16px;cursor:pointer}
@@ -278,6 +298,15 @@
     <label class="add-f">Room<select id="f-room"></select></label>
     <div class="add-actions"><button type="button" id="addcancel" class="btn-ghost">Cancel</button><button type="submit" id="addsave" class="btn-go">Add</button></div>
   </form>
+</div>
+<div id="whosheet" hidden>
+  <div class="add-scrim" id="who-scrim"></div>
+  <div class="add-card">
+    <div class="add-head"><span>Who are you?</span><button type="button" id="whox" class="addx" aria-label="Close">×</button></div>
+    <p class="who-sub">Pick yourself and the day highlights <em>your</em> rehearsals and lessons.
+      Stays on this device only — switch anytime from the bottom of the page.</p>
+    <div class="who-list" id="who-list"></div>
+  </div>
 </div>
 <script src="./roster-data.js"></script>
 <script src="./app.js"></script>
