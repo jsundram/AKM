@@ -1,7 +1,7 @@
 // Parser unit test. Run from repo root:  node archive/parser-test.js
 // Exercises the ported parser against the real Tuesday grid structure. parse() is user-agnostic;
 // whose day it is comes from userCtx (roster row) + mineOf/lessonsOf, exercised here as Jason.
-const { parse, rowsFrom, evblocks, userCtx, mineOf, lessonsOf, facOf } = require("../app.js");
+const { parse, rowsFrom, evblocks, userCtx, mineOf, lessonsOf, freeOf } = require("../app.js");
 const R = (...vals) => ({ c: vals.map(v => v === null ? null : { v: String(v) }) });
 const N = null;
 
@@ -106,13 +106,13 @@ const checks = [
   // the live curveballs of 7/3: a new room learned from the header, a mid-line coach + "in A4"
   // note stripped clean, and a daytime faculty cell that must NOT fabricate a practice block
   ["new room A4 adopted + claimed", (m => m.length === 1 && m[0][2] === "Elgar Piano Quintet" && m[0][3] === "A4" && m[0][4] === "Gijs" && m[0][5] === "P")(mineOf(day, userCtx(roster, "Kian Woo")))],
-  ["daytime faculty cells → informational, no phantom block", day.fac.length === 2 && day.fac.some(f => f.join("|") === "11:50|12:40|Schumann Marchenerzahlungen|A1") && blocks.length === 2],
-  // sitting in is only appropriate in the performance rooms (THEATRE/KS) — the A1 rehearsal is
-  // private and shows to no one, even the free; the THEATRE one shows only to the unconflicted
-  ["private-room faculty rehearsal shown to no one", facOf(day, []).length === 1 && facOf(day, [])[0][3] === "THEATRE"],
-  ["open faculty rehearsal hidden behind Kian's conflict", facOf(day, mineOf(day, userCtx(roster, "Kian Woo"))).length === 0],
-  ["open faculty rehearsal shown to free Jason", (f => f.length === 1 && f[0][2] === "Ravel Duo")(facOf(day, [...day.mine, ...day.lessons]))],
-  ["evening sit-in list keeps KS Fauré, drops AH Webern", blocks[0].items.map(i => i.room).join() === "KS"],
+  ["daytime faculty cells → parsed but never rehearsals/blocks", day.fac.length === 2 && day.fac.some(f => f.join("|") === "11:50|12:40|Schumann Marchenerzahlungen|A1") && blocks.length === 2],
+  // unscheduled blocks are called out per user: every Group slot with no conflicting rehearsal/
+  // lesson/self-added event — and only on a day you're actually scheduled
+  ["Jason's one free block is 11:50 (Group A)", freeOf(day, [...day.mine, ...day.lessons]).map(f => f.join("-")).join() === "11:50-12:40"],
+  ["Kian free in the three blocks he doesn't play", freeOf(day, mineOf(day, userCtx(roster, "Kian Woo"))).length === 3],
+  ["a self-added event fills the free block", freeOf(day, [...day.mine, ...day.lessons, ["12:00", "12:30"]]).length === 0],
+  ["no schedule → no phantom free time", freeOf(day, []).length === 0],
   // week gating: W1-only Claudia shares Jason's Fauré, so that group dies after week 1;
   // a W1-annotated player gets nothing at all on a Week Two day
   ["Jason week two: Fauré gone, Dvořák+Bruch stay", mineOf(w2day, me).map(e => e[2]).join(",") === "Dvorak Quartet,Bruch Octet"],

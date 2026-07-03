@@ -265,18 +265,19 @@ function mineOf(day, u){
   }
   return out;
 }
-// faculty rehearsals aren't typically open — sitting in is only appropriate in the performance
-// rooms. Elsewhere they're private: never shown, though they still book the room.
-const OPEN = new Set(["THEATRE","KS"]);
-// ...and even an open one is only worth showing to someone free to sit in — anyone whose own
-// rehearsal/lesson/self-added event overlaps it sees their conflict instead, not the invitation
-function facOf(day, busy){
-  const span = (s,e) => [mins(s), e?mins(e):mins(s)+60];
-  const B = (busy||[]).filter(x=>x&&x[0]).map(([s,e])=>span(s,e));
-  return (day.fac||[]).filter(([s,e,,room])=>{
-    if(!OPEN.has(room)) return false;
-    const [a,b]=span(s,e); return !B.some(([x,y])=>x<b&&a<y);
-  });
+// your unscheduled rehearsal blocks, called out explicitly: every Group slot where you have no
+// rehearsal/lesson/self-added event is free time — a tappable card that can become an event.
+// Only meaningful on a day you're actually scheduled (guests/blank days get no phantom free time).
+function freeOf(day, busy){
+  const B = (busy||[]).filter(x=>x&&x[0]).map(([s,e])=>[mins(s), e?mins(e):mins(s)+60]);
+  if(!B.length) return [];
+  const seen = new Set(), out = [];
+  for(const [s,e,,,,,grp] of day.rehearsals||[]){
+    if(!grp || seen.has(s)) continue; seen.add(s);
+    const a = mins(s), b = e?mins(e):a+60;
+    if(!B.some(([x,y])=>x<b&&a<y)) out.push([s,e]);
+  }
+  return out;
 }
 // lesson slots name students informally — first name, "Goes by" nickname, or a ≥3-char diminutive
 // ("Matt" for Matthew). When the same name also fits another lesson-taker ("Steph"), the slot's
@@ -428,31 +429,29 @@ function coachLink(coach){
   }).join("");
   return `<b>${html}</b>`;
 }
-// group evening practice/reading rows into per-block sections (pre- and post-dinner differ in what's
-// booked) — each with its faculty "worth sitting in on" items and the rooms left unbooked
+// group evening practice/reading rows into per-block sections (pre- and post-dinner differ in
+// what's booked), each with the rooms left unbooked. Faculty rehearsals book rooms but are never
+// advertised — they're not open invitations, and we don't send a crowd to one.
 function evblocks(day){
   const map=new Map();
   for(const e of day.evening){ const s=e[0]; if(!map.has(s)) map.set(s,[]); map.get(s).push(e); }
   return [...map].sort((a,b)=>mins(a[0])-mins(b[0])).map(([s,entries])=>{
-    const items=[], booked=new Set(), closed=new Set();
+    const booked=new Set(), closed=new Set();
     for(const [,, piece, room, kind] of entries){
-      const fac = kind===true || kind==="faculty";          // tolerate pre-kind cached days (5th was a bool)
       if(kind==="closed" || /closed/i.test(piece)){ closed.add(room); continue; }
-      if(kind==="lessons"){ booked.add(room); continue; }   // a coach's private lessons — room's taken, not a draw
-      if(!piece) continue;
-      booked.add(room); if(fac && OPEN.has(room)) items.push({room,piece});   // only performance rooms are open to sit in
+      if(piece) booked.add(room);
     }
     const free=(day.rooms||[]).filter(r=>!booked.has(r) && !closed.has(r));
-    return {s, e:entries[0][1], label:(day.evLabels||{})[s]||"Practice Block / Free Reading", items, free, closed:[...closed]};
+    return {s, e:entries[0][1], label:(day.evLabels||{})[s]||"Practice Block / Free Reading", free, closed:[...closed]};
   });
 }
 function timeline(day,w){
   const ev=[];
   for(const [s,e,piece,venue] of day.allhands)
     ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
-  // a daytime faculty rehearsal (parked in a room column) — informational, worth sitting in on
-  for(const [s,e,piece,room] of day.fac||[])
-    ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">Faculty rehearsal</div><div class="what">${esc(piece)}</div><div class="where">${placeChip(room,"rm")}</div></div></div>`]);
+  // your unscheduled blocks, explicit — free time, not brass; tap to turn one into an event
+  for(const [s,e] of day.free||[])
+    ev.push([s,`<div class="row free">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card freecard" data-free="${s}|${e}"><div class="kicker"><span>Unscheduled</span><span class="pc">＋ add</span></div><div class="piece">Practice Time / Free Reading</div></div></div></div>`]);
   for(const [s,e,piece,room,coach,tag] of day.mine){
     const pc = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
     const chip = room?placeChip(room):"";
@@ -467,20 +466,13 @@ function timeline(day,w){
   for(const [s,e,kind,venue] of day.meals)
     ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
   for(const b of evblocks(day)){
-    const items = b.items.map(({room,piece})=>{
-      // descriptive only — never tag a faculty reading "Your piece": faculty play repertoire that
-      // overlaps the participants' by name without being his exact piece (e.g. the faculty Fauré).
-      const flag = /quartet|langsamer satz/i.test(piece) ? `<span class="flag">String Quartet</span>` : "";
-      return `<div class="mh-item">${placeChip(room,"rm")}<span class="pl"><b>${esc(piece)}</b> <span class="who">· faculty</span></span>${flag}</div>`;
-    });
-    const mh = items.length?`<div class="meanwhile"><div class="mh-lab">Worth sitting in on</div>${items.join("")}</div>`:"";
     // (day.rooms is absent only on a pre-upgrade cached day — skip the room tally until the refresh lands)
     let note = !(day.rooms||[]).length ? "Practice rooms"
       : b.free.length ? `<b>Free rooms:</b> ${b.free.map(r=>esc(r)).join(", ")}` : "All rooms booked";
     if(b.closed.length) note += ` · ${b.closed.map(r=>esc(r)).join(", ")} closed`;
     note += " — sign up in the Akademie.";
     const tg = mins(b.s)>=1020 ? "Evening · your time" : "Open block · your time";   // a practice block isn't always after dinner
-    ev.push([b.s,`<div class="row"><div class="time"><span class="s">${b.s}</span></div><div class="body ev"><span class="dot"></span><div class="tag">${tg}</div><div class="what">${esc(b.label)}</div>${mh}<div class="roomnote">${note}</div></div></div>`]);
+    ev.push([b.s,`<div class="row"><div class="time"><span class="s">${b.s}</span></div><div class="body ev"><span class="dot"></span><div class="tag">${tg}</div><div class="what">${esc(b.label)}</div><div class="roomnote">${note}</div></div></div>`]);
   }
   for(const [i,m] of (loadMine()[sel]||[]).entries()) ev.push([m.s, selfCardHtml(m,i)]);
   ev.sort((a,b)=>mins(a[0])-mins(b[0]));
@@ -574,10 +566,11 @@ function removeSelf(i){
   saveMine(m); render();
 }
 // --- add-sheet (overlay, lives OUTSIDE #app so a background refresh mid-entry can't wipe the form) ---
-function openAdd(i){
+// pre = {s,e}: opened from an unscheduled block, times pre-filled
+function openAdd(i, pre){
   const box=$("#addsheet"); if(!box) return;
   editIdx = typeof i==="number" ? i : null;            // editing an existing event vs adding a new one
-  const ev = editIdx!=null ? (loadMine()[sel]||[])[editIdx] : null;
+  const ev = editIdx!=null ? (loadMine()[sel]||[])[editIdx] : pre;
   $("#f-s").value=ev?pad2(ev.s):""; $("#f-e").value=ev&&ev.e?pad2(ev.e):"";
   $("#f-what").value=ev?ev.what||"":""; $("#f-who").value=ev?ev.who||"":"";
   const day=(load().sched||{})[sel], slots=dayTimes(day);
@@ -649,7 +642,7 @@ function render(){
     html = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + `<div class="tl-empty">${head}</div>`;
   } else {
     day.mine = mineOf(day,USER); day.lessons = lessonsOf(day,USER);   // whose day this is, decided here
-    day.fac = facOf(day, [...day.mine, ...day.lessons, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
+    day.free = freeOf(day, [...day.mine, ...day.lessons, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
     const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
     html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
       + (USER && USER.name===JASON ? coda(day,BANK,dnum) : "");   // grace notes: his easter egg only
@@ -729,6 +722,7 @@ async function boot(){
   $("#app").addEventListener("click", e=>{
     if(e.target.closest("#whobtn")){ openWho(); return; }
     if(e.target.closest("#addself")){ openAdd(); return; }
+    const fr=e.target.closest("[data-free]"); if(fr){ const [s,en]=fr.dataset.free.split("|"); openAdd(null,{s,e:en}); return; }
     const d=e.target.closest("[data-del]"); if(d){ removeSelf(+d.dataset.del); return; }
     if(e.target.closest("a")) return;                    // room maplinks open the map, not the editor
     const ed=e.target.closest("[data-edit]"); if(ed) openAdd(+ed.dataset.edit);
@@ -738,4 +732,4 @@ async function boot(){
 }
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
-  userCtx, mineOf, lessonsOf, facOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };
+  userCtx, mineOf, lessonsOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };
