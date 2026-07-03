@@ -73,6 +73,10 @@
   #svg .fp-venue{fill:var(--fp-venue);stroke:var(--pin-venue)}
   #svg .fp-food{fill:var(--fp-food);stroke:var(--pin-food)}
   #svg .fp-mine{fill:var(--fp-mine);stroke:var(--brass-deep);stroke-width:2px}
+  /* dual-role footprints wear the same diagonal split as their pin (gradient stops via CSS vars) */
+  #svg .s-lodging{stop-color:var(--pin-lodge)} #svg .s-venue{stop-color:var(--pin-venue)} #svg .s-food{stop-color:var(--pin-food)}
+  #svg .fp-split-lodging{fill:url(#split-lodging);fill-opacity:.3;stroke:url(#split-lodging)}
+  #svg .fp-split-venue{fill:url(#split-venue);fill-opacity:.3;stroke:url(#split-venue)}
   #svg .rl,#svg .ae{display:none}
   #svg image{image-rendering:auto}
   .mode-relief #svg .rl{display:block}
@@ -202,7 +206,7 @@
     <b><i class="l-lodge"></i>lodging</b>
     <b><i class="l-venue"></i>venue</b>
     <b><i class="l-food"></i>food</b>
-    <b><i class="l-both"></i>both</b>
+    <b><i class="l-both"></i>lodging + food</b>
   </div>
 
   <div id="map" aria-label="Map of Liesing and Klebas">

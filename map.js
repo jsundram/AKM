@@ -63,9 +63,20 @@ function drawScene(d) {
     if (o.a || o.n) e.__info = o;                  // address/name shown on tap
     scene.appendChild(e);
   });
+  const defs = el("defs");                         // diagonal split gradients for dual-role footprints,
+  for (const cat of ["lodging", "venue"]) {        // stop colours themed via CSS (s-* classes)
+    const g = el("linearGradient");
+    g.setAttribute("id", "split-" + cat);
+    ["x1,0", "y1,0", "x2,1", "y2,1"].forEach(a => { const [k, v] = a.split(","); g.setAttribute(k, v); });
+    for (const cls of [cat, "food"]) {
+      const s = el("stop", "s-" + cls); s.setAttribute("offset", "0.5"); g.appendChild(s);
+    }
+    defs.appendChild(g);
+  }
+  scene.appendChild(defs);
   d.pois.forEach(p => {                            // highlighted footprints under the pins
     if (!p.fp) return;
-    const e = el("polygon", "fp fp-" + (p.mine ? "mine" : p.cat));
+    const e = el("polygon", "fp fp-" + (p.mine ? "mine" : p.cat) + (p.also && !p.mine ? " fp-split-" + p.cat : ""));
     e.setAttribute("points", pts(p.fp));
     scene.appendChild(e);
   });
