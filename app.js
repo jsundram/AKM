@@ -13,6 +13,9 @@ const TZ = "Europe/Vienna";
 const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusive
 const ROOMS = new Set(["A1","A2","A3","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
 const JASON = "Jason Sundram";     // the grace notes stay his easter egg; everything else follows the picker
+// concert programs (PDFs in programs/), keyed by date — aft/eve split at 18:00 so the link survives a
+// sheet time shift. To add a day's: drop the PDFs in programs/, add the entry, precache in sw.js (V bump).
+const PROGRAMS = {"2026-07-04":{aft:"programs/2026-07-04-afternoon.pdf", eve:"programs/2026-07-04-evening.pdf"}};
 const MEET = /Participant Tour|Info Meeting|Informational Meeting|Festival Meeting|Festival Informational/;
 const CK = "akm-cache";
 
@@ -417,6 +420,11 @@ const placeChip = (room,cls="roomchip") => mapped(room)
   : `<span class="${cls}">${esc(room)}</span>`;
 const placeText = label => mapped(label)
   ? `<a class="maplink" href="${mapHref(label)}">${esc(label)}${PIN}</a>` : esc(label);
+// the day's concert row gets its printed program, once Jason has the PDF (precached, so it opens at the venue)
+const progLink = (s,piece) => {
+  const p = PROGRAMS[sel], u = p && /concert/i.test(piece) && (mins(s)<1080 ? p.aft : p.eve);
+  return u ? ` · <a class="prog" href="${u}" target="_blank" rel="noopener">program ↗</a>` : "";
+};
 
 function tline(s,e){ return `<div class="time"><span class="s">${s}</span>${e?`<span class="e">${e}</span>`:""}</div>`; }
 // a coach with a bio URL in the roster → link the name, so you can get a refresher on who's coaching
@@ -448,7 +456,7 @@ function evblocks(day){
 function timeline(day,w){
   const ev=[];
   for(const [s,e,piece,venue] of day.allhands)
-    ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
+    ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}${progLink(s,piece)}</div></div></div>`]);
   // your unscheduled blocks, explicit — free time, not brass; tap to turn one into an event
   for(const [s,e] of day.free||[])
     ev.push([s,`<div class="row free">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card freecard" data-free="${s}|${e}"><div class="kicker"><span>Unscheduled</span><span class="pc">＋ add</span></div><div class="piece">Practice Time / Free Reading</div></div></div></div>`]);

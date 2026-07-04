@@ -1,10 +1,12 @@
-const V = "akm-v57";
+const V = "akm-v58";
 const SHELL = ["./", "./index.html", "./app.js", "./roster-data.js", "./ping.js", "./nav.css", "./manifest.json",
                "./composer-bank.json", "./roster.html", "./notes.html", "./about.html",
                "./network.html", "./network.js", "./d3.v7.min.js",
                "./map.html", "./map.js", "./map-data.json",
                "./map-relief.jpg", "./map-aerial.jpg", "./icon.svg",
-               "./icon-180.png", "./icon-192.png", "./icon-512.png"];
+               "./icon-180.png", "./icon-192.png", "./icon-512.png",
+               // concert programs (PROGRAMS in app.js) — precached so they open offline at the venue
+               "./programs/2026-07-04-afternoon.pdf", "./programs/2026-07-04-evening.pdf"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
