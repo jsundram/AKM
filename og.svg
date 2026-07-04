@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- Social share card (og:image): the icon's Lesachtal dawn recomposed wide, wordmark left.
+       Rasterize with scripts/make-og.sh (needs Fraunces + IBM Plex Mono installed locally). -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#86A9C0"/>
+      <stop offset="0.48" stop-color="#BCCED5"/>
+      <stop offset="0.78" stop-color="#ECDCBB"/>
+      <stop offset="1"    stop-color="#F1D096"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#FBE0A6"/>
+      <stop offset="0.55" stop-color="#F0B85A"/>
+      <stop offset="1"    stop-color="#C9892B"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#F4C36A" stop-opacity="0.55"/>
+      <stop offset="1"   stop-color="#F4C36A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#sky)"/>
+
+  <!-- dawn sun -->
+  <circle cx="985" cy="150" r="210" fill="url(#halo)"/>
+  <circle cx="985" cy="150" r="58"  fill="url(#sun)"/>
+
+  <!-- hazy side ranges -->
+  <path d="M-20,480 L130,392 L310,480 Z"   fill="#A9C0CA"/>
+  <path d="M520,480 L700,312 L880,480 Z"   fill="#9DB6C2"/>
+  <path d="M880,480 L1035,328 L1190,480 Z" fill="#A9C0CA"/>
+
+  <!-- hero peak + snow cap -->
+  <path d="M540,480 L760,180 L835,295 L888,262 L1018,480 Z" fill="#5C7682"/>
+  <path d="M760,180 L792,254 L783,241 L773,256 L762,233 L752,256 L742,241 L729,255 Z" fill="#F2F5F4"/>
+
+  <!-- rolling meadows -->
+  <path d="M0,468 C280,438 430,460 600,451 C800,441 960,466 1200,446 L1200,630 L0,630 Z" fill="#94A56C"/>
+  <path d="M0,542 C330,516 470,536 685,526 C895,516 1060,542 1200,528 L1200,630 L0,630 Z" fill="#6E8350"/>
+
+  <!-- wordmark -->
+  <text x="92" y="158" font-family="IBM Plex Mono" font-weight="500" font-size="22"
+        letter-spacing="5.5" fill="#2E4649">ALPEN KAMMERMUSIK FESTIVAL</text>
+  <text x="84" y="352" font-family="Fraunces" font-weight="500" font-size="200"
+        letter-spacing="-3" fill="#172526">AKM</text>
+</svg>
