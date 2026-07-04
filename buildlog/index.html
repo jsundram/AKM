@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>AKM · Build log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap">
+<link rel="icon" type="image/svg+xml" href="../icon.svg">
+</head>
+<body>
+<style>
+:root{
+  --paper:#E9EDEC; --haze:#DFE5E3; --ink:#172526; --muted:#5F7072; --faint:#8C9A9B;
+  --line:#CBD3D1; --warm:#F4ECDD; --warm-line:#E2D2B2; --brass:#9A6B22; --brass-deep:#7C5417;
+  --card:linear-gradient(180deg,#F2F5F4,#E7ECEA);
+  --s-hands:#9A6B22; --s-wait:#2F8247; --s-claude:#2F72B1;
+  --tip-bg:#172526; --tip-ink:#E9EEEC;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#0F1817; --haze:#172221; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
+    --line:#2C3938; --warm:#272015; --warm-line:#4A3D23; --brass:#D9A24C; --brass-deep:#E8C481;
+    --card:linear-gradient(180deg,#172221,#0F1817);
+    --s-hands:#C0851F; --s-wait:#50A064; --s-claude:#4E90D2;
+    --tip-bg:#E9EEEC; --tip-ink:#172526;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F1817; --haze:#172221; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
+  --line:#2C3938; --warm:#272015; --warm-line:#4A3D23; --brass:#D9A24C; --brass-deep:#E8C481;
+  --card:linear-gradient(180deg,#172221,#0F1817);
+  --s-hands:#C0851F; --s-wait:#50A064; --s-claude:#4E90D2;
+  --tip-bg:#E9EEEC; --tip-ink:#172526;
+}
+:root[data-theme="light"]{
+  --paper:#E9EDEC; --haze:#DFE5E3; --ink:#172526; --muted:#5F7072; --faint:#8C9A9B;
+  --line:#CBD3D1; --warm:#F4ECDD; --warm-line:#E2D2B2; --brass:#9A6B22; --brass-deep:#7C5417;
+  --card:linear-gradient(180deg,#F2F5F4,#E7ECEA);
+  --s-hands:#9A6B22; --s-wait:#2F8247; --s-claude:#2F72B1;
+  --tip-bg:#172526; --tip-ink:#E9EEEC;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:auto;min-height:0;overflow-y:visible}
+body{background:var(--paper);color:var(--ink);
+  font-family:"Inter",system-ui,sans-serif;line-height:1.45;
+  padding:clamp(20px,4vw,34px) clamp(12px,3vw,18px) 64px;
+  -webkit-text-size-adjust:100%}
+.sheet{width:100%;max-width:880px;margin:0 auto}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+.eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--muted);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 12px}
+.eyebrow>span{white-space:nowrap}
+.eyebrow b{color:var(--brass);font-weight:500}
+h1{font-family:"Fraunces","Iowan Old Style",Georgia,serif;font-weight:500;font-size:clamp(28px,7.5vw,38px);
+  line-height:1.05;letter-spacing:-.015em;margin:10px 0 6px;text-wrap:balance}
+.sub{color:var(--muted);font-size:14px;max-width:60ch}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:10px;margin:24px 0 8px}
+.tile{border:1px solid var(--line);border-radius:13px;background:var(--card);padding:12px 14px 11px}
+.tile.you{background:var(--warm);border-color:var(--warm-line)}
+.tile .k{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
+.tile .k i{width:8px;height:8px;border-radius:50%;flex:none}
+.tile .v{font-family:"Fraunces","Iowan Old Style",Georgia,serif;font-size:23px;font-weight:500;
+  letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tile .d{font-size:11px;color:var(--faint);margin-top:2px}
+
+.card{border:1px solid var(--line);border-radius:13px;background:var(--card);margin:18px 0;overflow:hidden}
+.card h2{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);font-weight:500;
+  padding:13px 16px 0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;letter-spacing:.05em;text-transform:none;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:10px;height:3px;border-radius:2px;flex:none}
+.legend i.dash{background:repeating-linear-gradient(90deg,var(--s-claude) 0 3px,transparent 3px 5px)}
+.legend i.dashb{background:repeating-linear-gradient(90deg,var(--s-hands) 0 3px,transparent 3px 5px)}
+.chartwrap{position:relative;padding:8px 10px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.chartwrap svg{display:block;width:100%;min-width:660px;height:auto}
+.note{padding:0 16px 12px;font-size:11px;color:var(--faint)}
+
+.tip{position:fixed;pointer-events:none;background:var(--tip-bg);color:var(--tip-ink);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;line-height:1.5;
+  border-radius:7px;padding:7px 9px;opacity:0;transition:opacity .12s;max-width:260px;z-index:5}
+@media (prefers-reduced-motion: reduce){.tip{transition:none}}
+.tip b{font-weight:600}
+
+.day{margin:22px 0 0}
+.dayhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 10px;
+  border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:2px}
+.dayhead h3{font-family:"Fraunces","Iowan Old Style",Georgia,serif;font-weight:500;font-size:17px}
+.dayhead .sum{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;color:var(--muted);text-align:right}
+.commit{display:flex;gap:12px;padding:5.5px 2px;border-bottom:1px solid color-mix(in srgb,var(--line) 45%,transparent);
+  font-size:13px;align-items:baseline}
+.commit:last-child{border-bottom:none}
+.commit .t{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;color:var(--faint);
+  flex:none;width:38px;font-variant-numeric:tabular-nums}
+.commit .s{flex:1;min-width:0}
+.chipc{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:8.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--s-claude);border:1px solid color-mix(in srgb,var(--s-claude) 45%,transparent);
+  border-radius:4px;padding:0 5px;flex:none}
+
+.tablewrap{overflow-x:auto;padding:4px 12px 14px}
+table{border-collapse:collapse;width:100%;font-size:12px;min-width:560px}
+th{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;
+  padding:8px 10px 5px;border-bottom:1px solid var(--line)}
+td{padding:5.5px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 45%,transparent);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+th.r,td.r{text-align:right}
+.kindchip{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:8.5px;letter-spacing:.08em;
+  text-transform:uppercase;border-radius:4px;padding:0 5px;border:1px solid var(--line);color:var(--muted)}
+.kindchip.cloud{color:var(--s-claude);border-color:color-mix(in srgb,var(--s-claude) 45%,transparent)}
+
+.method{border:1px solid var(--warm-line);background:var(--warm);border-radius:13px;
+  padding:14px 16px;margin:18px 0;font-size:12.5px;color:var(--ink)}
+.method h2{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:8px}
+.method p{margin:6px 0;max-width:72ch}
+.method b{font-weight:600}
+.method .knob{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
+footer{margin-top:26px;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;letter-spacing:.06em;color:var(--faint)}
+summary{cursor:pointer;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted);padding:13px 16px}
+summary:focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:6px}
+details[open] summary{padding-bottom:0}
+</style>
+
+<div class="sheet">
+  <div class="eyebrow"><span>Alpenkammermusik · <b>Build log</b></span><span id="range"></span></div>
+  <h1>Six days, one festival app.</h1>
+  <p class="sub" id="deck"></p>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="card">
+    <h2><span>Cumulative hours</span>
+      <span class="legend">
+        <span><i style="background:var(--s-hands)"></i>you, hands-on</span>
+        <span><i style="background:var(--s-wait)"></i>you, waiting</span>
+        <span><i class="dashb"></i>you, in session</span>
+        <span><i style="background:var(--s-claude)"></i>Claude, busy</span>
+        <span><i class="dash"></i>Claude, effort</span>
+      </span></h2>
+    <div class="chartwrap" id="cumwrap"></div>
+    <p class="note">Ticks along the base are commits — brass-inked from this laptop, blue from cloud sessions. Dotted verticals are midnight. Hover for values.</p>
+  </div>
+
+  <div class="card">
+    <h2><span>Hours by day</span>
+      <span class="legend">
+        <span><i style="background:var(--s-hands)"></i>you, hands-on</span>
+        <span><i style="background:var(--s-wait)"></i>you, waiting</span>
+        <span><i class="dashb"></i>you, in session</span>
+        <span><i style="background:var(--s-claude)"></i>Claude, laptop</span>
+        <span><i style="background:var(--s-claude);opacity:.45"></i>Claude, cloud</span>
+      </span></h2>
+    <div class="chartwrap" id="barwrap"></div>
+  </div>
+
+  <div class="card">
+    <h2><span>Code size</span><span class="legend" id="locnow"></span></h2>
+    <div class="chartwrap" id="locwrap"></div>
+    <p class="note">Tracked lines in git after each commit — vendored d3 and the baked map-data.json excluded, binary assets not counted. Hover for the commit that moved it.</p>
+  </div>
+
+  <h1 style="font-size:24px;margin-top:34px">Ship log</h1>
+  <p class="sub">Every commit, newest day last. <span class="chipc">cloud</span> marks work done in claude.ai/code sessions — phone prompts included.</p>
+  <div id="log"></div>
+
+  <div class="card"><details>
+    <summary>Sessions · <span id="sesscount"></span></summary>
+    <div class="tablewrap"><table id="sess">
+      <thead><tr><th>Start</th><th>Kind</th><th class="r">Prompts</th><th class="r">You</th><th class="r">Claude</th><th class="r">Wall</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </details></div>
+
+  <div class="method">
+    <h2>How these numbers are made</h2>
+    <p><b>Local sessions</b> (12 transcripts, every message timestamped): a silent gap that ends in your prompt counts as <b>hands-on</b> — reading, thinking, typing — capped at <span class="knob">5 min</span> per gap. A gap inside Claude's turn counts as <b>Claude working</b>, capped at <span class="knob">10 min</span> per silent stretch, so an abandoned session doesn't bill overnight.</p>
+    <p><b>Waiting</b> is credited per continuous Claude stretch on a merged timeline: the first <span class="knob">2 min</span> watched fully, <span class="knob">25%</span> attention after that — alt-tab time, not desk-staring time.</p>
+    <p><b>In session</b> is the generous measure — "how long was I actually at this and nothing else": all laptop activity merged onto one timeline, split into working blocks wherever <span class="knob">30 min</span> passes in silence, each block counted wall-to-wall including the passive stretches inside (waiting, reading, testing on the phone). Cloud fire-and-forget time is deliberately excluded — only its prompting minutes count.</p>
+    <p><b>Parallel sessions</b> are merged for your metrics (you can't wait twice at once) but summed for Claude's <b>effort</b>; <b>busy</b> is union wall-clock.</p>
+    <p><b>Cloud sessions</b> have no local transcript, so they're reconstructed from Claude-Session commit trailers: commits under 45 min apart form a burst, each burst bills its span + <span class="knob">12 min</span> to Claude and <span class="knob">3 min</span> of prompting to you, with no waiting — those were fire-and-forget.</p>
+    <p>All of it is estimation, not measurement. The knobs live in <span class="knob">crunch.py</span>; nudge them and the picture shifts by tens of minutes, not hours.</p>
+  </div>
+
+  <footer id="gen"></footer>
+</div>
+
+<script>
+const DATA = {"generated":"2026-07-04T16:55:40.925857+02:00","totals":{"hands":15584,"wait":31095,"busy":95635,"effort":120910,"engaged":89964,"busy_local":80448,"busy_cloud":17924},"daily":{"2026-06-29":{"hands":2971,"wait":9150,"busy":29759,"effort":37507,"engaged":25753,"busy_local":29759,"busy_cloud":0},"2026-06-30":{"hands":7456,"wait":11016,"busy":33080,"effort":42365,"engaged":35205,"busy_local":27407,"busy_cloud":7681},"2026-07-01":{"hands":720,"wait":974,"busy":2817,"effort":3537,"engaged":0,"busy_local":0,"busy_cloud":2817},"2026-07-02":{"hands":600,"wait":1837,"busy":5907,"effort":5924,"engaged":3734,"busy_local":1880,"busy_cloud":4044},"2026-07-03":{"hands":3227,"wait":5315,"busy":15021,"effort":17941,"engaged":16695,"busy_local":13984,"busy_cloud":1037},"2026-07-04":{"hands":610,"wait":2803,"busy":9051,"effort":13636,"engaged":8577,"busy_local":7418,"busy_cloud":2345}},"sessions":[{"id":"cbff3d2e","kind":"local","start":"2026-06-28T22:37:38.725000+00:00","end":"2026-06-29T01:28:09.135000+00:00","prompts":22,"tokens":1171317,"hands":1688.2409999370575,"work":8542.169000148773},{"id":"e9fcbdad","kind":"local","start":"2026-06-28T23:16:29.340000+00:00","end":"2026-06-28T23:30:55.281000+00:00","prompts":2,"tokens":52529,"hands":0.0010001659393310547,"work":865.9399998188019},{"id":"0ac3407b","kind":"local","start":"2026-06-28T23:34:33.327000+00:00","end":"2026-06-30T11:16:44.003000+00:00","prompts":17,"tokens":764431,"hands":1342.8970003128052,"work":10832.963000059128},{"id":"81611ca1","kind":"local","start":"2026-06-29T01:28:31.946000+00:00","end":"2026-06-29T23:42:20.162000+00:00","prompts":39,"tokens":931166,"hands":1110.9400000572205,"work":25129.151999235153},{"id":"5352c02d","kind":"local","start":"2026-06-29T22:25:19.506000+00:00","end":"2026-06-30T11:16:22.502000+00:00","prompts":11,"tokens":391608,"hands":1205.9119999408722,"work":4185.9020001888275},{"id":"36df0891","kind":"local","start":"2026-06-29T23:43:43.857000+00:00","end":"2026-06-30T11:08:24.135000+00:00","prompts":15,"tokens":454955,"hands":1486.3969995975494,"work":8168.774000167847},{"id":"3b786151","kind":"local","start":"2026-06-30T11:08:33.814000+00:00","end":"2026-06-30T20:06:22.338000+00:00","prompts":15,"tokens":421360,"hands":1724.1340000629425,"work":6827.665000200272},{"id":"01Ta8YQTWSD7","kind":"cloud","start":"2026-06-30T12:29:54+00:00","end":"2026-06-30T14:20:23+00:00","prompts":2,"tokens":0,"commits":3,"hands":360.0,"work":3548.0},{"id":"01ALowz7yfyn","kind":"cloud","start":"2026-06-30T14:53:48+00:00","end":"2026-06-30T16:20:15+00:00","prompts":1,"tokens":0,"commits":7,"hands":180.0,"work":5907.0},{"id":"95dc7480","kind":"local","start":"2026-06-30T16:43:05.608000+00:00","end":"2026-07-02T23:23:35.106000+00:00","prompts":25,"tokens":698520,"hands":2584.300999879837,"work":9382.687000274658},{"id":"01Rb5j4ZabhP","kind":"cloud","start":"2026-07-01T00:55:22+00:00","end":"2026-07-01T00:55:22+00:00","prompts":1,"tokens":0,"commits":1,"hands":180.0,"work":720.0},{"id":"018q9BGS7Zvr","kind":"cloud","start":"2026-07-01T05:37:54+00:00","end":"2026-07-01T09:22:58+00:00","prompts":2,"tokens":0,"commits":2,"hands":360.0,"work":1440.0},{"id":"01U6jY27FC9S","kind":"cloud","start":"2026-07-01T12:30:27+00:00","end":"2026-07-01T12:41:24+00:00","prompts":1,"tokens":0,"commits":2,"hands":180.0,"work":1377.0},{"id":"01SG4yxeF1G5","kind":"cloud","start":"2026-07-01T21:55:59+00:00","end":"2026-07-01T22:39:23+00:00","prompts":1,"tokens":0,"commits":2,"hands":180.0,"work":3324.0},{"id":"014pj4h6gP7x","kind":"cloud","start":"2026-07-02T08:06:54+00:00","end":"2026-07-02T08:06:54+00:00","prompts":1,"tokens":0,"commits":1,"hands":180.0,"work":720.0},{"id":"01WsRq4vRMbz","kind":"cloud","start":"2026-07-02T10:26:43+00:00","end":"2026-07-02T22:27:08+00:00","prompts":4,"tokens":0,"commits":7,"hands":720.0,"work":4148.0},{"id":"81302948","kind":"local","start":"2026-07-02T23:23:46.840000+00:00","end":"2026-07-02T23:24:30.189000+00:00","prompts":0,"tokens":0,"hands":0.0,"work":43.348999977111816},{"id":"d8ea844d","kind":"local","start":"2026-07-02T23:28:59.855000+00:00","end":"2026-07-04T12:32:07.367000+00:00","prompts":25,"tokens":1306618,"hands":2812.5000002384186,"work":14081.153000116348},{"id":"01Mxfa8xAKEB","kind":"cloud","start":"2026-07-04T08:01:13+00:00","end":"2026-07-04T12:03:29+00:00","prompts":3,"tokens":0,"commits":5,"hands":540.0,"work":4782.0},{"id":"01AD5Mgz6DCu","kind":"cloud","start":"2026-07-04T08:12:04+00:00","end":"2026-07-04T08:12:04+00:00","prompts":1,"tokens":0,"commits":1,"hands":180.0,"work":720.0},{"id":"c0394bf2","kind":"local","start":"2026-07-04T11:43:01.917000+00:00","end":"2026-07-04T11:43:01.918000+00:00","prompts":0,"tokens":0,"hands":0.0,"work":0.0009999275207519531},{"id":"untagged","kind":"cloud","start":"2026-07-04T12:04:00+00:00","end":"2026-07-04T12:04:00+00:00","prompts":1,"tokens":0,"commits":1,"hands":180.0,"work":720.0},{"id":"205dd2fd","kind":"local","start":"2026-07-04T12:32:11.580000+00:00","end":"2026-07-04T14:55:38.984000+00:00","prompts":3,"tokens":339551,"hands":0.01699995994567871,"work":5444.329000234604}],"commits":[{"h":"d027198","t":"2026-06-28T22:38:54+00:00","subject":"Initial commit: Lesachtal festival briefing PWA","cloud":false,"loc":1637},{"h":"b4ce248","t":"2026-06-28T22:50:53+00:00","subject":"Rename project to AKM; fix dropped morning all-hands block","cloud":false,"loc":1642},{"h":"7af5064","t":"2026-06-28T23:00:36+00:00","subject":"Add footer link to the day's source Google Sheets tab","cloud":false,"loc":1654},{"h":"2b3a3af","t":"2026-06-28T23:06:00+00:00","subject":"Auto-maintain the tab\u2192gid map via pre-commit hook","cloud":false,"loc":1717},{"h":"c1da296","t":"2026-06-28T23:21:57+00:00","subject":"Replace abstract temperature-peak icon with an alpine dawn scene","cloud":false,"loc":1764},{"h":"be8d19c","t":"2026-06-28T23:26:31+00:00","subject":"Fix iPhone mobile view + add pull-to-refresh","cloud":false,"loc":1817},{"h":"8ec44e8","t":"2026-06-29T00:01:13+00:00","subject":"Add Roster and village Map pages (footer-linked, offline-first)","cloud":false,"loc":2458},{"h":"9ba4529","t":"2026-06-29T00:19:49+00:00","subject":"Roster: add sortable Type column, compact rows","cloud":false,"loc":2477},{"h":"252e476","t":"2026-06-29T00:31:26+00:00","subject":"Roster: wire up header sorting; linkify URLs in Notes","cloud":false,"loc":2480},{"h":"1e650f8","t":"2026-06-29T00:35:09+00:00","subject":"Roster: sort DIR then MGR ahead of all other types","cloud":false,"loc":2480},{"h":"a4c446c","t":"2026-06-29T00:43:00+00:00","subject":"Weather: add Drizzle + Clear/Cloudy/Overcast conditions","cloud":false,"loc":2486},{"h":"e9eb23e","t":"2026-06-29T00:52:21+00:00","subject":"Weather: put sunrise/sunset on the temp curve; drop wettest footer","cloud":false,"loc":2490},{"h":"25212ed","t":"2026-06-29T01:01:31+00:00","subject":"Roster: sort instruments in score order, not alphabetically","cloud":false,"loc":2499},{"h":"f1614da","t":"2026-06-29T01:10:42+00:00","subject":"Roster: within a family, sort plain instruments before \"/\" combos","cloud":false,"loc":2500},{"h":"08cbc3d","t":"2026-06-29T01:15:21+00:00","subject":"Roster: collapse instruments to V / V/VA / VA / VC / Bass / Piano / Clar.","cloud":false,"loc":2500},{"h":"bc05a47","t":"2026-06-29T01:19:59+00:00","subject":"Docs: refresh README + CLAUDE for roster, map, and weather changes","cloud":false,"loc":2515},{"h":"725f7ac","t":"2026-06-29T01:26:30+00:00","subject":"Add repo-restructure plan (feature folders) \u2014 not yet executed","cloud":false,"loc":2613},{"h":"c821571","t":"2026-06-29T01:38:46+00:00","subject":"Roster: add \"Edit sheet \u2197\" footer link to the source Google Sheet","cloud":false,"loc":2615},{"h":"43a88bb","t":"2026-06-29T01:45:03+00:00","subject":"Roster: keep footer pills on one line (no mid-text wrap)","cloud":false,"loc":2615},{"h":"f6f71e2","t":"2026-06-29T02:07:56+00:00","subject":"Map: relief + aerial layers, labels, mobile gestures, fresher caching","cloud":false,"loc":2860},{"h":"2bc37e0","t":"2026-06-29T07:20:26+00:00","subject":"Map: add live \"you are here\" blue location dot","cloud":false,"loc":2894},{"h":"6ea4d02","t":"2026-06-29T07:47:15+00:00","subject":"Map: add faint accuracy ring around the location dot","cloud":false,"loc":2900},{"h":"37ebe95","t":"2026-06-29T07:49:54+00:00","subject":"Schedule: clearer coach P/C labels (Coach plays / Coach observes)","cloud":false,"loc":2900},{"h":"661079d","t":"2026-06-29T08:52:18+00:00","subject":"Map: add Werner venue + show schedule room codes on pins","cloud":false,"loc":2905},{"h":"c46f6fb","t":"2026-06-29T09:05:29+00:00","subject":"Weather: source from GeoSphere Austria (AROME) with Open-Meteo fallback","cloud":false,"loc":2923},{"h":"cc813ee","t":"2026-06-29T09:19:24+00:00","subject":"Roster: surface \"From\" (location) in the tap-to-expand detail","cloud":false,"loc":2924},{"h":"05b090b","t":"2026-06-29T09:35:42+00:00","subject":"Roster: match the actual \"Hometown\" header explicitly","cloud":false,"loc":2924},{"h":"3e6b57c","t":"2026-06-29T14:21:46+00:00","subject":"Map: correct WERNER venue to Liesing 30","cloud":false,"loc":2924},{"h":"a44b737","t":"2026-06-29T21:10:06+00:00","subject":"Roster: add G (guest) to the type-rank","cloud":false,"loc":2924},{"h":"0bcbf3b","t":"2026-06-29T21:43:00+00:00","subject":"Roster: point at the new cleaned tab (gid 800090339)","cloud":false,"loc":2924},{"h":"0b1ce84","t":"2026-06-29T22:48:15+00:00","subject":"Map: tap a building for its OSM name + address","cloud":false,"loc":2956},{"h":"cdb394f","t":"2026-06-29T23:33:18+00:00","subject":"Add Network page (chord + ego rings) and roster WhatsApp contact links","cloud":false,"loc":3181},{"h":"22bd8ab","t":"2026-06-29T23:37:28+00:00","subject":"Docs: refresh CLAUDE + README for Network page, GeoSphere weather, map dot, roster columns","cloud":false,"loc":3186},{"h":"0e0428a","t":"2026-06-29T23:52:06+00:00","subject":"Network: fixed detail strip instead of a floating tooltip","cloud":false,"loc":3181},{"h":"6f994a9","t":"2026-06-30T00:13:19+00:00","subject":"Schedule: surface Jason's private lessons, emphasized","cloud":false,"loc":3206},{"h":"49b4cb3","t":"2026-06-30T00:23:43+00:00","subject":"Schedule: evening blocks list the unbooked rooms","cloud":false,"loc":3231},{"h":"9a7f5a1","t":"2026-06-30T11:08:12+00:00","subject":"Evening: don't badge faculty readings as \"Your piece\"","cloud":false,"loc":3232},{"h":"65dde42","t":"2026-06-30T12:29:54+00:00","subject":"Link UI locations to the offline map","cloud":true,"loc":3295},{"h":"6159c98","t":"2026-06-30T14:02:49+00:00","subject":"Roster: alias drifted hotel names to their map POIs","cloud":true,"loc":3302},{"h":"6b7aabd","t":"2026-06-30T14:20:23+00:00","subject":"Map: loop the focus pulse until the pin is tapped","cloud":true,"loc":3302},{"h":"922f466","t":"2026-06-30T14:53:48+00:00","subject":"Weather: mark the current festival hour on the curve","cloud":true,"loc":3317},{"h":"c5f17be","t":"2026-06-30T15:03:01+00:00","subject":"Weather: label the now dot with the current-hour temp","cloud":true,"loc":3318},{"h":"1d26602","t":"2026-06-30T15:11:18+00:00","subject":"Weather: drop the now line from the curve, not the chart top","cloud":true,"loc":3318},{"h":"a6a0f4f","t":"2026-06-30T15:20:27+00:00","subject":"Weather: use Open-Meteo's live current temp for the now dot","cloud":true,"loc":3331},{"h":"0710b86","t":"2026-06-30T15:44:17+00:00","subject":"SW: bump cache to v32 for the weather now-marker","cloud":true,"loc":3331},{"h":"c227b20","t":"2026-06-30T15:53:38+00:00","subject":"Weather: query the forecast at the map centre","cloud":true,"loc":3333},{"h":"d2fec82","t":"2026-06-30T16:20:15+00:00","subject":"Weather: pin the forecast to the Kultursaal venue","cloud":true,"loc":3334},{"h":"7f605f0","t":"2026-06-30T17:03:49+00:00","subject":"Map: add Steineckenalm POI (Jausenstation up the Steinecken-Weg)","cloud":false,"loc":3339},{"h":"ef9d340","t":"2026-06-30T17:16:39+00:00","subject":"Roster + Schedule: WhatsApp column, name & coach bio links","cloud":false,"loc":3396},{"h":"eb700f7","t":"2026-06-30T20:00:38+00:00","subject":"Weather: drop the \"now\" label; the marker reads clearly on its own","cloud":false,"loc":3395},{"h":"d35ce3d","t":"2026-06-30T20:02:50+00:00","subject":"Roster: extract shared roster-data.js (one fetch + cache for both pages)","cloud":false,"loc":3387},{"h":"6391c96","t":"2026-06-30T21:10:38+00:00","subject":"Weather: nudge the low-temp label off the sunrise time","cloud":false,"loc":3387},{"h":"2b8c9a9","t":"2026-06-30T21:10:51+00:00","subject":"Schedule page: a section header for freshness, source & online state","cloud":false,"loc":3421},{"h":"71ab715","t":"2026-06-30T21:10:59+00:00","subject":"Nav: extend the shared header to Map/Roster/Network; align Roster","cloud":false,"loc":3430},{"h":"ad0035b","t":"2026-06-30T21:19:26+00:00","subject":"Map: clamp zoom-out to fit-to-extent so the map can't float in empty space","cloud":false,"loc":3430},{"h":"f92a484","t":"2026-07-01T00:55:22+00:00","subject":"Advance displayed day on foreground when the card resumes past midnight","cloud":true,"loc":3432},{"h":"686ac0f","t":"2026-07-01T05:37:54+00:00","subject":"Stop main-screen flicker: only repaint when render output changes","cloud":true,"loc":3438},{"h":"9053bba","t":"2026-07-01T09:22:58+00:00","subject":"Fix nonsensical rain note: umbrella and jacket, not a violin cloth","cloud":true,"loc":3438},{"h":"1ffe8af","t":"2026-07-01T12:30:27+00:00","subject":"Map the missing schedule rooms: A1, Chapel, Band Room","cloud":true,"loc":3439},{"h":"0eed860","t":"2026-07-01T12:41:24+00:00","subject":"Signpost the offline POI-edit path when Overpass is blocked","cloud":true,"loc":3444},{"h":"85ad65b","t":"2026-07-01T21:55:59+00:00","subject":"Add Grace Notes archive page, deep-linked from the coda","cloud":true,"loc":3580},{"h":"302874b","t":"2026-07-01T22:39:23+00:00","subject":"Keep Grace Notes out of the nav \u2014 reachable only from the coda","cloud":true,"loc":3581},{"h":"4876370","t":"2026-07-02T07:06:09+00:00","subject":"Schedule: stop the DAILY NOTES block from being parsed as dinners","cloud":false,"loc":3597},{"h":"7c5e110","t":"2026-07-02T07:32:18+00:00","subject":"Schedule: recognize A3 as a room; alias it to Kultursaal on the map","cloud":false,"loc":3597},{"h":"97a55a4","t":"2026-07-02T08:06:54+00:00","subject":"Fix forecast text/panel showers-time mismatch","cloud":true,"loc":3604},{"h":"6c302f3","t":"2026-07-02T10:26:43+00:00","subject":"Schedule: add personal events (self-added play-throughs)","cloud":true,"loc":3743},{"h":"8514c77","t":"2026-07-02T15:15:17+00:00","subject":"Add browser test harness + web session-start hook","cloud":true,"loc":3950},{"h":"5d9430f","t":"2026-07-02T15:26:35+00:00","subject":"Map: place the THEATRE rehearsal room at Liesing 5","cloud":true,"loc":3951},{"h":"ea5ebfd","t":"2026-07-02T17:06:05+00:00","subject":"Map build: real Overpass-free --offline POI promotion","cloud":true,"loc":3999},{"h":"cd942ec","t":"2026-07-02T17:06:52+00:00","subject":"gitignore Python bytecode (__pycache__/*.pyc from scripts/)","cloud":true,"loc":4003},{"h":"b273c8b","t":"2026-07-02T22:21:51+00:00","subject":"Trigger a clean GitHub Pages redeploy","cloud":true,"loc":4003},{"h":"a6ca848","t":"2026-07-02T22:27:08+00:00","subject":"Retry GitHub Pages deploy","cloud":true,"loc":4003},{"h":"6865e7b","t":"2026-07-02T23:14:06+00:00","subject":"Personal events: brass \"just for me\" styling + tap-to-edit","cloud":false,"loc":4009},{"h":"39d8199","t":"2026-07-03T01:15:23+00:00","subject":"Multi-user: first-open picker, per-user day on every page","cloud":false,"loc":4351},{"h":"35b4f5b","t":"2026-07-03T01:37:54+00:00","subject":"About page, reached via the wordmark","cloud":false,"loc":4489},{"h":"b34711d","t":"2026-07-03T06:22:32+00:00","subject":"Parse the sheet's live curveballs: new rooms, mid-day faculty cells","cloud":false,"loc":4514},{"h":"e362f80","t":"2026-07-03T07:43:41+00:00","subject":"Faculty rehearsals: only open (THEATRE/KS) + only when you're free","cloud":false,"loc":4534},{"h":"021ce87","t":"2026-07-03T08:07:24+00:00","subject":"No faculty-rehearsal CTAs; call out your unscheduled blocks instead","cloud":false,"loc":4523},{"h":"b2b95d2","t":"2026-07-03T08:37:28+00:00","subject":"Map: Akademie/Kultursaal relabel, split-role pins, readable legend","cloud":false,"loc":4538},{"h":"0008ec0","t":"2026-07-03T08:40:05+00:00","subject":"Map: lodging footprints were black \u2014 selector typo","cloud":false,"loc":4538},{"h":"9896d8d","t":"2026-07-03T08:47:10+00:00","subject":"Map: split footprints match split pins; legend says \"lodging + food\"","cloud":false,"loc":4557},{"h":"ca8c8c9","t":"2026-07-03T08:53:33+00:00","subject":"Map: un-merge Akademie from Kultursaal \u2014 rename reconcile now idempotent","cloud":false,"loc":4569},{"h":"4445c87","t":"2026-07-04T08:01:13+00:00","subject":"Analytics: per-user usage pings via private Apps Script sheet","cloud":true,"loc":4658},{"h":"63b439f","t":"2026-07-04T08:12:04+00:00","subject":"Share cards: OG/Twitter meta on every page + baked 1200\u00d7630 preview image","cloud":true,"loc":4790},{"h":"e47343e","t":"2026-07-04T09:20:13+00:00","subject":"CLAUDE.md: gotcha for keeping analytics.gs edits in sync with the live deployment","cloud":true,"loc":4791},{"h":"3295180","t":"2026-07-04T11:48:55+00:00","subject":"Analytics live: point ping.js at the deployed endpoint, SW v56","cloud":true,"loc":4791},{"h":"c4a4b06","t":"2026-07-04T11:51:17+00:00","subject":"analytics.gs: array-aware UID so =UID(A2:A) fills the key column","cloud":true,"loc":4793},{"h":"0269281","t":"2026-07-04T12:03:29+00:00","subject":"ANALYTICS.md: explain the ping \u2192 Apps Script \u2192 private sheet pattern","cloud":true,"loc":4969},{"h":"ceed8dc","t":"2026-07-04T12:04:00+00:00","subject":"Merge remote-tracking branch 'origin/main' into claude/simple-analytics-small-app-sqbsea","cloud":true,"loc":4969},{"h":"f57237c","t":"2026-07-04T12:16:06+00:00","subject":"About: rewrite in Jason's voice, add a CTA into the app","cloud":false,"loc":4971},{"h":"ac893ef","t":"2026-07-04T12:24:30+00:00","subject":"Bump SW to v57 (about.html changed after the v56 precache)","cloud":false,"loc":4971}],"blocks":[{"start":"2026-06-28T22:37:38.725000+00:00","end":"2026-06-29T02:18:22.141000+00:00"},{"start":"2026-06-29T07:17:07.935000+00:00","end":"2026-06-29T07:53:15.903000+00:00"},{"start":"2026-06-29T08:30:11.317000+00:00","end":"2026-06-29T09:39:06.592000+00:00"},{"start":"2026-06-29T12:40:39.350000+00:00","end":"2026-06-29T13:09:02.627000+00:00"},{"start":"2026-06-29T14:01:39.255000+00:00","end":"2026-06-29T14:29:42.412000+00:00"},{"start":"2026-06-29T15:08:34.166000+00:00","end":"2026-06-29T15:45:33.264000+00:00"},{"start":"2026-06-29T16:39:46.028000+00:00","end":"2026-06-29T16:49:46.725000+00:00"},{"start":"2026-06-29T20:29:25.357000+00:00","end":"2026-06-30T01:18:27.631000+00:00"},{"start":"2026-06-30T06:21:28.656000+00:00","end":"2026-06-30T06:44:39.792000+00:00"},{"start":"2026-06-30T08:31:20.305000+00:00","end":"2026-06-30T08:49:29.083000+00:00"},{"start":"2026-06-30T09:54:57.753000+00:00","end":"2026-06-30T10:16:35.270000+00:00"},{"start":"2026-06-30T11:05:17.724000+00:00","end":"2026-06-30T11:16:44.003000+00:00"},{"start":"2026-06-30T15:47:55.915000+00:00","end":"2026-06-30T17:44:21.513000+00:00"},{"start":"2026-06-30T19:43:29.307000+00:00","end":"2026-06-30T21:30:22.844000+00:00"},{"start":"2026-07-02T06:59:01.362000+00:00","end":"2026-07-02T08:01:14.873000+00:00"},{"start":"2026-07-02T23:03:25.321000+00:00","end":"2026-07-03T01:42:17.055000+00:00"},{"start":"2026-07-03T06:04:31.932000+00:00","end":"2026-07-03T06:30:58.495000+00:00"},{"start":"2026-07-03T07:38:48.597000+00:00","end":"2026-07-03T09:11:45.244000+00:00"},{"start":"2026-07-03T14:30:48.270000+00:00","end":"2026-07-03T14:30:48.341000+00:00"},{"start":"2026-07-04T11:43:01.917000+00:00","end":"2026-07-04T13:14:41.296000+00:00"},{"start":"2026-07-04T14:04:20.925000+00:00","end":"2026-07-04T14:55:38.984000+00:00"}],"series":[{"t":"2026-06-28T22:30:00+00:00","hands":121,"wait":132,"busy":167,"effort":286,"engaged":0,"busy_local":167,"busy_cloud":0},{"t":"2026-06-28T22:45:00+00:00","hands":225,"wait":132,"busy":167,"effort":1105,"engaged":0,"busy_local":167,"busy_cloud":0},{"t":"2026-06-28T23:00:00+00:00","hands":420,"wait":513,"busy":1332,"effort":1850,"engaged":0,"busy_local":1332,"busy_cloud":0},{"t":"2026-06-28T23:15:00+00:00","hands":420,"wait":513,"busy":1332,"effort":3461,"engaged":0,"busy_local":1332,"busy_cloud":0},{"t":"2026-06-28T23:30:00+00:00","hands":590,"wait":513,"busy":1332,"effort":4969,"engaged":0,"busy_local":1332,"busy_cloud":0},{"t":"2026-06-28T23:45:00+00:00","hands":722,"wait":513,"busy":1332,"effort":6662,"engaged":0,"busy_local":1332,"busy_cloud":0},{"t":"2026-06-29T00:00:00+00:00","hands":822,"wait":1518,"busy":4992,"effort":7668,"engaged":0,"busy_local":4992,"busy_cloud":0},{"t":"2026-06-29T00:15:00+00:00","hands":946,"wait":1518,"busy":4992,"effort":9322,"engaged":0,"busy_local":4992,"busy_cloud":0},{"t":"2026-06-29T00:30:00+00:00","hands":1023,"wait":2184,"busy":7297,"effort":10943,"engaged":0,"busy_local":7297,"busy_cloud":0},{"t":"2026-06-29T00:45:00+00:00","hands":1492,"wait":2184,"busy":7297,"effort":12177,"engaged":0,"busy_local":7297,"busy_cloud":0},{"t":"2026-06-29T01:00:00+00:00","hands":1622,"wait":2184,"busy":7297,"effort":13590,"engaged":0,"busy_local":7297,"busy_cloud":0},{"t":"2026-06-29T01:15:00+00:00","hands":1881,"wait":2184,"busy":7297,"effort":15269,"engaged":0,"busy_local":7297,"busy_cloud":0},{"t":"2026-06-29T01:30:00+00:00","hands":2245,"wait":2184,"busy":7297,"effort":16652,"engaged":0,"busy_local":7297,"busy_cloud":0},{"t":"2026-06-29T01:45:00+00:00","hands":2549,"wait":3191,"busy":10963,"effort":17542,"engaged":0,"busy_local":10963,"busy_cloud":0},{"t":"2026-06-29T02:00:00+00:00","hands":2671,"wait":3191,"busy":10963,"effort":18736,"engaged":0,"busy_local":10963,"busy_cloud":0},{"t":"2026-06-29T02:15:00+00:00","hands":2671,"wait":3713,"busy":12690,"effort":19179,"engaged":13243,"busy_local":12690,"busy_cloud":0},{"t":"2026-06-29T07:15:00+00:00","hands":2671,"wait":4054,"busy":13695,"effort":20184,"engaged":13243,"busy_local":13695,"busy_cloud":0},{"t":"2026-06-29T07:45:00+00:00","hands":2671,"wait":4397,"busy":14710,"effort":21198,"engaged":15411,"busy_local":14710,"busy_cloud":0},{"t":"2026-06-29T08:30:00+00:00","hands":2671,"wait":4397,"busy":14710,"effort":22533,"engaged":15411,"busy_local":14710,"busy_cloud":0},{"t":"2026-06-29T08:45:00+00:00","hands":2671,"wait":4397,"busy":14710,"effort":23401,"engaged":15411,"busy_local":14710,"busy_cloud":0},{"t":"2026-06-29T09:00:00+00:00","hands":2671,"wait":5182,"busy":17487,"effort":23976,"engaged":15411,"busy_local":17487,"busy_cloud":0},{"t":"2026-06-29T09:15:00+00:00","hands":2671,"wait":5182,"busy":17487,"effort":25155,"engaged":15411,"busy_local":17487,"busy_cloud":0},{"t":"2026-06-29T09:30:00+00:00","hands":2671,"wait":5730,"busy":19318,"effort":25807,"engaged":19547,"busy_local":19318,"busy_cloud":0},{"t":"2026-06-29T12:30:00+00:00","hands":2671,"wait":5978,"busy":19952,"effort":26440,"engaged":19547,"busy_local":19952,"busy_cloud":0},{"t":"2026-06-29T12:45:00+00:00","hands":2671,"wait":5978,"busy":19952,"effort":27220,"engaged":19547,"busy_local":19952,"busy_cloud":0},{"t":"2026-06-29T13:00:00+00:00","hands":2671,"wait":6455,"busy":21501,"effort":27990,"engaged":21250,"busy_local":21501,"busy_cloud":0},{"t":"2026-06-29T14:00:00+00:00","hands":2671,"wait":6455,"busy":21501,"effort":29246,"engaged":21250,"busy_local":21501,"busy_cloud":0},{"t":"2026-06-29T14:15:00+00:00","hands":2671,"wait":7116,"busy":23784,"effort":30273,"engaged":22933,"busy_local":23784,"busy_cloud":0},{"t":"2026-06-29T15:00:00+00:00","hands":2671,"wait":7357,"busy":24387,"effort":30875,"engaged":22933,"busy_local":24387,"busy_cloud":0},{"t":"2026-06-29T15:30:00+00:00","hands":2671,"wait":7622,"busy":25087,"effort":31576,"engaged":22933,"busy_local":25087,"busy_cloud":0},{"t":"2026-06-29T15:45:00+00:00","hands":2671,"wait":7862,"busy":25687,"effort":32176,"engaged":25152,"busy_local":25687,"busy_cloud":0},{"t":"2026-06-29T16:30:00+00:00","hands":2671,"wait":7862,"busy":25687,"effort":33024,"engaged":25152,"busy_local":25687,"busy_cloud":0},{"t":"2026-06-29T16:45:00+00:00","hands":2671,"wait":8252,"busy":26888,"effort":33376,"engaged":25753,"busy_local":26888,"busy_cloud":0},{"t":"2026-06-29T20:15:00+00:00","hands":2671,"wait":8252,"busy":26888,"effort":34001,"engaged":25753,"busy_local":26888,"busy_cloud":0},{"t":"2026-06-29T20:30:00+00:00","hands":2671,"wait":8575,"busy":27818,"effort":34307,"engaged":25753,"busy_local":27818,"busy_cloud":0},{"t":"2026-06-29T21:00:00+00:00","hands":2671,"wait":8575,"busy":27818,"effort":35616,"engaged":25753,"busy_local":27818,"busy_cloud":0},{"t":"2026-06-29T21:15:00+00:00","hands":2671,"wait":9150,"busy":29759,"effort":36247,"engaged":25753,"busy_local":29759,"busy_cloud":0},{"t":"2026-06-29T21:30:00+00:00","hands":2971,"wait":9150,"busy":29759,"effort":36833,"engaged":25753,"busy_local":29759,"busy_cloud":0},{"t":"2026-06-29T21:45:00+00:00","hands":2971,"wait":9150,"busy":29759,"effort":37507,"engaged":25753,"busy_local":29759,"busy_cloud":0},{"t":"2026-06-29T22:00:00+00:00","hands":2971,"wait":9150,"busy":29759,"effort":38627,"engaged":25753,"busy_local":29759,"busy_cloud":0},{"t":"2026-06-29T22:15:00+00:00","hands":2971,"wait":9150,"busy":29759,"effort":40719,"engaged":25753,"busy_local":29759,"busy_cloud":0},{"t":"2026-06-29T22:30:00+00:00","hands":3262,"wait":9150,"busy":29759,"effort":42556,"engaged":25753,"busy_local":29759,"busy_cloud":0},{"t":"2026-06-29T22:45:00+00:00","hands":3689,"wait":9150,"busy":29759,"effort":44384,"engaged":25753,"busy_local":29759,"busy_cloud":0},{"t":"2026-06-29T23:00:00+00:00","hands":4008,"wait":9150,"busy":29759,"effort":46123,"engaged":25753,"busy_local":29759,"busy_cloud":0},{"t":"2026-06-29T23:15:00+00:00","hands":4008,"wait":10879,"busy":35991,"effort":46432,"engaged":25753,"busy_local":35991,"busy_cloud":0},{"t":"2026-06-29T23:30:00+00:00","hands":4754,"wait":10938,"busy":36051,"effort":47717,"engaged":25753,"busy_local":36051,"busy_cloud":0},{"t":"2026-06-29T23:45:00+00:00","hands":4833,"wait":10938,"busy":36051,"effort":49121,"engaged":25753,"busy_local":36051,"busy_cloud":0},{"t":"2026-06-30T00:00:00+00:00","hands":5124,"wait":11677,"busy":38150,"effort":49549,"engaged":25753,"busy_local":38150,"busy_cloud":0},{"t":"2026-06-30T00:15:00+00:00","hands":5418,"wait":11942,"busy":38847,"effort":50246,"engaged":25753,"busy_local":38847,"busy_cloud":0},{"t":"2026-06-30T00:30:00+00:00","hands":5718,"wait":12029,"busy":38935,"effort":50333,"engaged":25753,"busy_local":38935,"busy_cloud":0},{"t":"2026-06-30T00:45:00+00:00","hands":5940,"wait":12282,"busy":39584,"effort":50983,"engaged":25753,"busy_local":39584,"busy_cloud":0},{"t":"2026-06-30T01:00:00+00:00","hands":5940,"wait":12282,"busy":39584,"effort":51693,"engaged":25753,"busy_local":39584,"busy_cloud":0},{"t":"2026-06-30T01:15:00+00:00","hands":5940,"wait":12604,"busy":40513,"effort":51911,"engaged":43095,"busy_local":40513,"busy_cloud":0},{"t":"2026-06-30T06:15:00+00:00","hands":5940,"wait":12891,"busy":41301,"effort":52700,"engaged":43095,"busy_local":41301,"busy_cloud":0},{"t":"2026-06-30T06:30:00+00:00","hands":5940,"wait":13159,"busy":42012,"effort":53411,"engaged":44486,"busy_local":42012,"busy_cloud":0},{"t":"2026-06-30T08:30:00+00:00","hands":5940,"wait":13421,"busy":42701,"effort":54099,"engaged":44486,"busy_local":42701,"busy_cloud":0},{"t":"2026-06-30T08:45:00+00:00","hands":5940,"wait":13661,"busy":43301,"effort":54699,"engaged":45575,"busy_local":43301,"busy_cloud":0},{"t":"2026-06-30T09:45:00+00:00","hands":5940,"wait":13901,"busy":43901,"effort":55299,"engaged":45575,"busy_local":43901,"busy_cloud":0},{"t":"2026-06-30T10:00:00+00:00","hands":5940,"wait":13901,"busy":43901,"effort":56298,"engaged":45575,"busy_local":43901,"busy_cloud":0},{"t":"2026-06-30T10:15:00+00:00","hands":5940,"wait":14287,"busy":45085,"effort":56483,"engaged":46873,"busy_local":45085,"busy_cloud":0},{"t":"2026-06-30T11:00:00+00:00","hands":6405,"wait":14287,"busy":45085,"effort":56533,"engaged":46873,"busy_local":45085,"busy_cloud":0},{"t":"2026-06-30T11:15:00+00:00","hands":6405,"wait":14548,"busy":45771,"effort":57733,"engaged":47559,"busy_local":45771,"busy_cloud":0},{"t":"2026-06-30T13:45:00+00:00","hands":6585,"wait":14548,"busy":45771,"effort":57733,"engaged":47559,"busy_local":45771,"busy_cloud":0},{"t":"2026-06-30T14:15:00+00:00","hands":6585,"wait":15082,"busy":47545,"effort":61281,"engaged":47559,"busy_local":45771,"busy_cloud":1774},{"t":"2026-06-30T14:45:00+00:00","hands":6765,"wait":15082,"busy":47545,"effort":61281,"engaged":47559,"busy_local":45771,"busy_cloud":1774},{"t":"2026-06-30T15:45:00+00:00","hands":6765,"wait":15082,"busy":47545,"effort":62285,"engaged":47559,"busy_local":46776,"busy_cloud":1774},{"t":"2026-06-30T16:00:00+00:00","hands":7422,"wait":15082,"busy":47545,"effort":62614,"engaged":47559,"busy_local":47153,"busy_cloud":1774},{"t":"2026-06-30T16:15:00+00:00","hands":7422,"wait":16649,"busy":53452,"effort":69139,"engaged":47559,"busy_local":47780,"busy_cloud":7681},{"t":"2026-06-30T16:30:00+00:00","hands":7957,"wait":16944,"busy":53914,"effort":69785,"engaged":47559,"busy_local":48242,"busy_cloud":7681},{"t":"2026-06-30T16:45:00+00:00","hands":8122,"wait":17162,"busy":54424,"effort":70820,"engaged":47559,"busy_local":48751,"busy_cloud":7681},{"t":"2026-06-30T17:00:00+00:00","hands":8613,"wait":17561,"busy":55661,"effort":72473,"engaged":47559,"busy_local":49989,"busy_cloud":7681},{"t":"2026-06-30T17:15:00+00:00","hands":8613,"wait":17718,"busy":55929,"effort":72666,"engaged":47559,"busy_local":50257,"busy_cloud":7681},{"t":"2026-06-30T17:30:00+00:00","hands":8613,"wait":18198,"busy":57129,"effort":73866,"engaged":54544,"busy_local":51457,"busy_cloud":7681},{"t":"2026-06-30T19:30:00+00:00","hands":8913,"wait":18198,"busy":57129,"effort":73951,"engaged":54544,"busy_local":51457,"busy_cloud":7681},{"t":"2026-06-30T19:45:00+00:00","hands":9326,"wait":18198,"busy":57129,"effort":75075,"engaged":54544,"busy_local":51457,"busy_cloud":7681},{"t":"2026-06-30T20:00:00+00:00","hands":9780,"wait":18631,"busy":58502,"effort":75642,"engaged":54544,"busy_local":52830,"busy_cloud":7681},{"t":"2026-06-30T20:15:00+00:00","hands":9942,"wait":19029,"busy":59372,"effort":76655,"engaged":54544,"busy_local":53700,"busy_cloud":7681},{"t":"2026-06-30T20:30:00+00:00","hands":9987,"wait":19363,"busy":60349,"effort":77435,"engaged":54544,"busy_local":54676,"busy_cloud":7681},{"t":"2026-06-30T20:45:00+00:00","hands":10189,"wait":19363,"busy":60349,"effort":78279,"engaged":54544,"busy_local":54676,"busy_cloud":7681},{"t":"2026-06-30T21:00:00+00:00","hands":10374,"wait":19837,"busy":61885,"effort":78972,"engaged":54544,"busy_local":56212,"busy_cloud":7681},{"t":"2026-06-30T21:15:00+00:00","hands":10427,"wait":19837,"busy":61885,"effort":79299,"engaged":54544,"busy_local":56212,"busy_cloud":7681},{"t":"2026-06-30T21:30:00+00:00","hands":10427,"wait":20165,"busy":62839,"effort":79873,"engaged":60958,"busy_local":57166,"busy_cloud":7681},{"t":"2026-07-01T00:45:00+00:00","hands":10607,"wait":20165,"busy":62839,"effort":79873,"engaged":60958,"busy_local":57166,"busy_cloud":7681},{"t":"2026-07-01T01:00:00+00:00","hands":10607,"wait":20435,"busy":63559,"effort":80593,"engaged":60958,"busy_local":57166,"busy_cloud":8401},{"t":"2026-07-01T09:15:00+00:00","hands":10787,"wait":20705,"busy":64279,"effort":82033,"engaged":60958,"busy_local":57166,"busy_cloud":9121},{"t":"2026-07-01T12:15:00+00:00","hands":10967,"wait":20705,"busy":64279,"effort":82033,"engaged":60958,"busy_local":57166,"busy_cloud":9121},{"t":"2026-07-01T12:45:00+00:00","hands":10967,"wait":21140,"busy":65656,"effort":83410,"engaged":60958,"busy_local":57166,"busy_cloud":10498},{"t":"2026-07-01T21:45:00+00:00","hands":11147,"wait":21140,"busy":65656,"effort":83410,"engaged":60958,"busy_local":57166,"busy_cloud":10498},{"t":"2026-07-01T22:45:00+00:00","hands":11147,"wait":22061,"busy":68980,"effort":86734,"engaged":60958,"busy_local":57166,"busy_cloud":13822},{"t":"2026-07-02T06:45:00+00:00","hands":11147,"wait":22061,"busy":68980,"effort":87387,"engaged":60958,"busy_local":57166,"busy_cloud":13822},{"t":"2026-07-02T07:00:00+00:00","hands":11147,"wait":22458,"busy":70210,"effort":87963,"engaged":60958,"busy_local":58396,"busy_cloud":13822},{"t":"2026-07-02T07:15:00+00:00","hands":11447,"wait":22458,"busy":70210,"effort":88235,"engaged":60958,"busy_local":58396,"busy_cloud":13822},{"t":"2026-07-02T07:30:00+00:00","hands":11447,"wait":22706,"busy":70843,"effort":88597,"engaged":60958,"busy_local":59029,"busy_cloud":13822},{"t":"2026-07-02T08:00:00+00:00","hands":11747,"wait":22976,"busy":71563,"effort":89333,"engaged":64692,"busy_local":59046,"busy_cloud":14542},{"t":"2026-07-02T22:15:00+00:00","hands":11927,"wait":22976,"busy":71563,"effort":89333,"engaged":64692,"busy_local":59046,"busy_cloud":14542},{"t":"2026-07-02T22:30:00+00:00","hands":11927,"wait":23326,"busy":72600,"effort":93481,"engaged":64692,"busy_local":59046,"busy_cloud":15579},{"t":"2026-07-02T23:00:00+00:00","hands":11934,"wait":23326,"busy":72600,"effort":94739,"engaged":64692,"busy_local":59046,"busy_cloud":15579},{"t":"2026-07-02T23:15:00+00:00","hands":12155,"wait":23939,"busy":74333,"effort":95163,"engaged":64692,"busy_local":60779,"busy_cloud":15579},{"t":"2026-07-02T23:30:00+00:00","hands":12169,"wait":23939,"busy":74333,"effort":95988,"engaged":64692,"busy_local":60779,"busy_cloud":15579},{"t":"2026-07-02T23:45:00+00:00","hands":12169,"wait":23939,"busy":74333,"effort":96995,"engaged":64692,"busy_local":60779,"busy_cloud":15579},{"t":"2026-07-03T00:00:00+00:00","hands":12290,"wait":24645,"busy":76797,"effort":97679,"engaged":64692,"busy_local":63243,"busy_cloud":15579},{"t":"2026-07-03T00:15:00+00:00","hands":12290,"wait":24909,"busy":77495,"effort":98311,"engaged":64692,"busy_local":63941,"busy_cloud":15579},{"t":"2026-07-03T00:30:00+00:00","hands":12590,"wait":25199,"busy":78293,"effort":99108,"engaged":64692,"busy_local":64739,"busy_cloud":15579},{"t":"2026-07-03T00:45:00+00:00","hands":13166,"wait":25356,"busy":78454,"effort":99532,"engaged":64692,"busy_local":64900,"busy_cloud":15579},{"t":"2026-07-03T01:00:00+00:00","hands":13532,"wait":25778,"busy":79214,"effort":100070,"engaged":64692,"busy_local":65660,"busy_cloud":15579},{"t":"2026-07-03T01:15:00+00:00","hands":13909,"wait":25953,"busy":79389,"effort":100368,"engaged":64692,"busy_local":65836,"busy_cloud":15579},{"t":"2026-07-03T01:30:00+00:00","hands":14048,"wait":26272,"busy":80303,"effort":101019,"engaged":74223,"busy_local":66749,"busy_cloud":15579},{"t":"2026-07-03T06:00:00+00:00","hands":14348,"wait":26272,"busy":80303,"effort":101503,"engaged":74223,"busy_local":66749,"busy_cloud":15579},{"t":"2026-07-03T06:15:00+00:00","hands":14348,"wait":26272,"busy":80303,"effort":102165,"engaged":74223,"busy_local":66749,"busy_cloud":15579},{"t":"2026-07-03T06:30:00+00:00","hands":14348,"wait":26758,"busy":81890,"effort":102606,"engaged":75810,"busy_local":68336,"busy_cloud":15579},{"t":"2026-07-03T07:30:00+00:00","hands":14648,"wait":26758,"busy":81890,"effort":102894,"engaged":75810,"busy_local":68336,"busy_cloud":15579},{"t":"2026-07-03T07:45:00+00:00","hands":14648,"wait":26758,"busy":81890,"effort":103572,"engaged":75810,"busy_local":68336,"busy_cloud":15579},{"t":"2026-07-03T08:00:00+00:00","hands":14648,"wait":27343,"busy":83869,"effort":104585,"engaged":75810,"busy_local":70315,"busy_cloud":15579},{"t":"2026-07-03T08:15:00+00:00","hands":14948,"wait":27343,"busy":83869,"effort":104585,"engaged":75810,"busy_local":70315,"busy_cloud":15579},{"t":"2026-07-03T08:30:00+00:00","hands":14953,"wait":27343,"busy":83869,"effort":105520,"engaged":75810,"busy_local":70315,"busy_cloud":15579},{"t":"2026-07-03T08:45:00+00:00","hands":14974,"wait":27812,"busy":85384,"effort":106074,"engaged":75810,"busy_local":71830,"busy_cloud":15579},{"t":"2026-07-03T09:00:00+00:00","hands":14974,"wait":28052,"busy":85984,"effort":106674,"engaged":81386,"busy_local":72430,"busy_cloud":15579},{"t":"2026-07-03T14:30:00+00:00","hands":14974,"wait":28292,"busy":86584,"effort":107274,"engaged":81387,"busy_local":73030,"busy_cloud":15579},{"t":"2026-07-04T08:00:00+00:00","hands":15154,"wait":28292,"busy":86584,"effort":107274,"engaged":81387,"busy_local":73030,"busy_cloud":15579},{"t":"2026-07-04T08:15:00+00:00","hands":15154,"wait":28562,"busy":87304,"effort":107994,"engaged":81387,"busy_local":73030,"busy_cloud":16299},{"t":"2026-07-04T11:30:00+00:00","hands":15334,"wait":28562,"busy":87304,"effort":107994,"engaged":81387,"busy_local":73030,"busy_cloud":16299},{"t":"2026-07-04T11:45:00+00:00","hands":15514,"wait":28562,"busy":87304,"effort":107994,"engaged":81387,"busy_local":73030,"busy_cloud":16299},{"t":"2026-07-04T12:00:00+00:00","hands":15514,"wait":28562,"busy":87304,"effort":114498,"engaged":81387,"busy_local":73030,"busy_cloud":17924},{"t":"2026-07-04T12:15:00+00:00","hands":15584,"wait":29292,"busy":89864,"effort":115228,"engaged":81387,"busy_local":74677,"busy_cloud":17924},{"t":"2026-07-04T12:30:00+00:00","hands":15584,"wait":29463,"busy":90191,"effort":115466,"engaged":81387,"busy_local":75004,"busy_cloud":17924},{"t":"2026-07-04T12:45:00+00:00","hands":15584,"wait":29463,"busy":90191,"effort":116306,"engaged":81387,"busy_local":75004,"busy_cloud":17924},{"t":"2026-07-04T13:00:00+00:00","hands":15584,"wait":30053,"busy":92188,"effort":117463,"engaged":86886,"busy_local":77001,"busy_cloud":17924},{"t":"2026-07-04T14:00:00+00:00","hands":15584,"wait":30360,"busy":93057,"effort":118332,"engaged":86886,"busy_local":77870,"busy_cloud":17924},{"t":"2026-07-04T14:15:00+00:00","hands":15584,"wait":30360,"busy":93057,"effort":119256,"engaged":86886,"busy_local":77870,"busy_cloud":17924},{"t":"2026-07-04T14:30:00+00:00","hands":15584,"wait":30360,"busy":93057,"effort":120202,"engaged":86886,"busy_local":77870,"busy_cloud":17924},{"t":"2026-07-04T14:45:00+00:00","hands":15584,"wait":31095,"busy":95635,"effort":120910,"engaged":89964,"busy_local":80448,"busy_cloud":17924}]};
+
+const TZ = 'Europe/Vienna';
+const $ = (s, p=document) => p.querySelector(s);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const hm = s => { const h = Math.floor(s/3600), m = Math.round(s%3600/60); return h ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m`; };
+const hrs1 = s => (s/3600).toFixed(1).replace(/\.0$/,'') + 'h';
+const fmt = (d, o) => new Intl.DateTimeFormat('en-US', {timeZone: TZ, ...o}).format(d);
+const T = iso => new Date(iso).getTime();
+
+const {totals, daily, sessions, commits, series} = DATA;
+const days = Object.keys(daily).sort();
+const localN = commits.filter(c => !c.cloud).length;
+const prompts = sessions.reduce((a,s) => a + (s.kind==='local' ? s.prompts : 0), 0);
+
+$('#range').textContent = `${fmt(T(commits[0].t),{month:'short',day:'numeric'})} – ${fmt(T(commits.at(-1).t),{month:'short',day:'numeric'})} 2026`;
+$('#deck').textContent = `${commits.length} commits from ${sessions.filter(s=>s.kind==='local').length} laptop sessions and ${sessions.filter(s=>s.kind==='cloud').length} cloud sessions. Three ways to count your side: hands on the keys, keys + attentive waiting, or wall-to-wall inside working blocks.`;
+$('#gen').textContent = `estimated from Claude Code transcripts + git history · generated ${DATA.generated.slice(0,16).replace('T',' ')} · knobs in crunch.py`;
+
+// ---- tiles ----
+const tok = sessions.reduce((a,s) => a + s.tokens, 0);
+[['you','--s-hands','You, in session', hm(totals.engaged), `${DATA.blocks.length} working blocks, wall-to-wall`],
+ ['you','--s-hands','You, hands-on', hm(totals.hands), `${prompts} prompts typed`],
+ ['you','--s-wait','You, waiting', hm(totals.wait), 'semi-attentive, discounted'],
+ ['','--s-claude','Claude, busy', hm(totals.busy), `${hrs1(totals.busy_local)} laptop · ${hrs1(totals.busy_cloud)} cloud · ${hrs1(totals.effort)} effort`],
+ ['',null,'Commits', commits.length, `${localN} local · ${commits.length-localN} cloud`],
+ ['',null,'Sessions', sessions.length, `${sessions.filter(s=>s.kind==='local').length} local · ${sessions.filter(s=>s.kind==='cloud').length} cloud`],
+ ['',null,'Words out', (tok/1e6).toFixed(1)+'M', 'Claude output tokens'],
+].forEach(([cls, cv, k, v, d]) => {
+  const t = el('div', 'tile' + (cls?' '+cls:''));
+  t.append(el('div','k', (cv?`<i style="background:var(${cv})"></i>`:'') + k),
+           el('div','v', String(v)), el('div','d', d));
+  $('#tiles').append(t);
+});
+
+// ---- shared tooltip ----
+function tipFor(){
+  const tip = el('div','tip'); document.body.append(tip);
+  return {   // fixed-position: cx/cy are viewport (client) coordinates
+    show(html, cx, cy){ tip.innerHTML = html; tip.style.opacity = 1;
+      const tw = tip.offsetWidth;
+      tip.style.left = Math.min(Math.max(6, cx - tw/2), innerWidth - tw - 6) + 'px';
+      tip.style.top = Math.max(4, cy - tip.offsetHeight - 14) + 'px'; },
+    hide(){ tip.style.opacity = 0; }
+  };
+}
+const NS = 'http://www.w3.org/2000/svg';
+const sv = (tag, at) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); return e; };
+
+// ---- cumulative chart ----
+function cumChart(){
+  const wrap = $('#cumwrap');
+  const W = 860, H = 310, L = 40, R = 96, TOP = 18, B = 40;
+  const t0 = T(series[0].t) - 3.6e6, t1 = T(series.at(-1).t) + 3.6e6;
+  const ymax = Math.ceil(totals.effort/3600/5)*5*3600;
+  const x = t => L + (t-t0)/(t1-t0)*(W-L-R);
+  const y = s => TOP + (1 - s/ymax)*(H-TOP-B);
+  const svg = sv('svg', {viewBox:`0 0 ${W} ${H}`, role:'img', 'aria-label':'Cumulative hours over the six days'});
+
+  for (let s = 0; s <= ymax; s += 5*3600){
+    svg.append(sv('line', {x1:L, x2:W-R, y1:y(s), y2:y(s), stroke:'var(--line)', 'stroke-width':s?0.6:1}));
+    svg.append(Object.assign(sv('text', {x:L-6, y:y(s)+3, 'text-anchor':'end', fill:'var(--faint)',
+      'font-size':9.5, 'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: s/3600+'h'}));
+  }
+  // midnights (local) — dotted, like the app's sunrise lines
+  days.forEach(d => {
+    const m = T(d + 'T00:00:00+02:00');
+    if (m <= t0 || m >= t1) return;
+    const X = x(m);
+    svg.append(sv('line', {x1:X, x2:X, y1:TOP, y2:H-B, stroke:'var(--line)', 'stroke-dasharray':'2 4'}));
+    svg.append(Object.assign(sv('text', {x:X+4, y:H-9, fill:'var(--faint)', 'font-size':9.5,
+      'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: fmt(m + 4.32e7, {weekday:'short', month:'numeric', day:'numeric'})}));
+  });
+  // commit rug
+  commits.forEach(c => {
+    const X = x(T(c.t));
+    svg.append(sv('line', {x1:X, x2:X, y1:H-B+3, y2:H-B+11,
+      stroke: c.cloud ? 'var(--s-claude)' : 'var(--brass)', 'stroke-width':1.4, opacity:.85}));
+  });
+
+  const SERIES = [
+    ['engaged','you, in session','var(--s-hands)','2 5'],
+    ['hands','you, hands-on','var(--s-hands)',''],
+    ['wait','you, waiting','var(--s-wait)',''],
+    ['busy','Claude, busy','var(--s-claude)',''],
+    ['effort','Claude, effort','var(--s-claude)','5 4'],
+  ];
+  SERIES.forEach(([k,,color,dash]) => {
+    let d = `M${x(t0)},${y(0)}`, prev = 0;
+    series.forEach(r => { d += `H${x(T(r.t))}V${y(r[k])}`; prev = r[k]; });
+    d += `H${x(t1)}`;
+    svg.append(sv('path', {d, fill:'none', stroke:color, 'stroke-width':2,
+      'stroke-dasharray':dash, 'stroke-linejoin':'round'}));
+    const yy = y(prev);
+    svg.append(sv('circle', {cx:x(t1), cy:yy, r:3, fill:color, stroke:'var(--paper)', 'stroke-width':2}));
+    const lab = sv('text', {x:x(t1)+7, y:yy+3, fill:'var(--ink)', 'font-size':10,
+      'font-family':'IBM Plex Mono,ui-monospace,monospace'});
+    lab.textContent = `${hrs1(prev)} ${({effort:'effort', engaged:'session'})[k] || k}`;
+    svg.append(lab);
+  });
+  // un-collide right labels
+  const labs = [...svg.querySelectorAll('text')].filter(t => +t.getAttribute('x') > W-R);
+  labs.sort((a,b) => +a.getAttribute('y') - +b.getAttribute('y'));
+  for (let i = 1; i < labs.length; i++){
+    const prev = +labs[i-1].getAttribute('y'), cur = +labs[i].getAttribute('y');
+    if (cur - prev < 12) labs[i].setAttribute('y', prev + 12);
+  }
+
+  const cross = sv('line', {y1:TOP, y2:H-B, stroke:'var(--muted)', 'stroke-width':1, opacity:0});
+  svg.append(cross);
+  const tip = tipFor(wrap);
+  const onmove = ev => {
+    const r = svg.getBoundingClientRect();
+    const px = (ev.clientX - r.left)/r.width*W;
+    if (px < L || px > W-R){ tip.hide(); cross.setAttribute('opacity',0); return; }
+    const t = t0 + (px-L)/(W-L-R)*(t1-t0);
+    let row = series[0];
+    for (const rr of series){ if (T(rr.t) <= t) row = rr; else break; }
+    const n = commits.filter(c => T(c.t) <= t).length;
+    cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('opacity', .5);
+    tip.show(`<b>${fmt(t,{weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false})}</b><br>` +
+      `you ${hm(row.hands)} + ${hm(row.wait)} waiting · ${hm(row.engaged)} in session<br>` +
+      `Claude ${hm(row.busy)} busy · ${hm(row.effort)} effort<br>` +
+      `${n} commit${n===1?'':'s'} landed`,
+      ev.clientX, ev.clientY);
+  };
+  svg.addEventListener('pointermove', onmove);
+  svg.addEventListener('pointerleave', () => { tip.hide(); cross.setAttribute('opacity',0); });
+  wrap.append(svg);
+}
+cumChart();
+
+// ---- daily bars ----
+function barChart(){
+  const wrap = $('#barwrap');
+  const W = 860, H = 230, L = 40, R = 10, TOP = 14, B = 26;
+  const KEYS = [['engaged',null,'you, in session'],['hands','var(--s-hands)','you, hands-on'],['wait','var(--s-wait)','you, waiting'],['busy','var(--s-claude)','Claude, busy']];
+  const ymax = Math.ceil(Math.max(...days.map(d => Math.max(daily[d].busy_local + daily[d].busy_cloud, daily[d].engaged)))/3600/2)*2*3600;
+  const y = s => TOP + (1 - s/ymax)*(H-TOP-B);
+  const svg = sv('svg', {viewBox:`0 0 ${W} ${H}`, role:'img', 'aria-label':'Hours per day'});
+  for (let s = 0; s <= ymax; s += 2*3600){
+    svg.append(sv('line', {x1:L, x2:W-R, y1:y(s), y2:y(s), stroke:'var(--line)', 'stroke-width':s?0.6:1}));
+    svg.append(Object.assign(sv('text', {x:L-6, y:y(s)+3, 'text-anchor':'end', fill:'var(--faint)',
+      'font-size':9.5,'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent:s/3600+'h'}));
+  }
+  const tip = tipFor(wrap);
+  const gw = (W-L-R)/days.length, bw = Math.min(26, (gw-28)/4);
+  days.forEach((d, i) => {
+    const cx = L + gw*i + gw/2;
+    KEYS.forEach(([k,color,name], j) => {
+      const v = daily[d][k], bx = cx + (j-1.5)*(bw+2) - bw/2;
+      const seg = (v0, v1, style, rounded) => {   // stack segment [v0, v1)
+        const gap = v0 ? 2 : 0, yb = y(v0) - gap, yt = y(v1) - gap;
+        if (yb - yt < 1) return null;
+        const r = rounded ? Math.min(3, yb-yt) : 0;
+        const p = sv('path', {d:`M${bx},${yb}V${yt+r}q0,${-r} ${r},${-r}h${bw-2*r}q${r},0 ${r},${r}V${yb}Z`, ...style});
+        p.addEventListener('pointerleave', () => tip.hide());
+        svg.append(p); return p;
+      };
+      const hover = (p, html) => p && p.addEventListener('pointerenter', ev =>
+        tip.show(`<b>${fmt(T(d+'T12:00:00Z'),{weekday:'short',month:'numeric',day:'numeric'})}</b><br>${html}`,
+          ev.clientX, ev.clientY));
+      if (k === 'busy'){
+        const vl = daily[d].busy_local, vc = daily[d].busy_cloud;
+        hover(seg(0, vl, {fill:'var(--s-claude)'}, !vc), `Claude on the laptop: ${hm(vl)}`);
+        hover(seg(vl, vl+vc, {fill:'var(--s-claude)', opacity:.45}, true), `Claude in the cloud: ~${hm(vc)}`);
+      } else if (color){
+        hover(seg(0, v, {fill:color}, true), `${name}: ${hm(v)}`);
+      } else {
+        hover(seg(0, v, {fill:'none', stroke:'var(--s-hands)', 'stroke-width':1.4, 'stroke-dasharray':'3 3'}, true), `${name}: ${hm(v)}`);
+      }
+    });
+    svg.append(Object.assign(sv('text', {x:cx, y:H-8, 'text-anchor':'middle', fill:'var(--muted)',
+      'font-size':10,'font-family':'IBM Plex Mono,ui-monospace,monospace'}),
+      {textContent: fmt(T(d+'T12:00:00Z'),{weekday:'short',month:'numeric',day:'numeric'})}));
+  });
+  wrap.append(svg);
+}
+barChart();
+
+// ---- code size ----
+function locChart(){
+  const wrap = $('#locwrap');
+  const W = 860, H = 230, L = 48, R = 96, TOP = 14, B = 40;
+  const t0 = T(series[0].t) - 3.6e6, t1 = T(series.at(-1).t) + 3.6e6;
+  const last = commits.at(-1).loc;
+  const ymax = Math.ceil(last/1000)*1000;
+  const x = t => L + (t-t0)/(t1-t0)*(W-L-R);
+  const y = v => TOP + (1 - v/ymax)*(H-TOP-B);
+  const svg = sv('svg', {viewBox:`0 0 ${W} ${H}`, role:'img', 'aria-label':'Lines of code over the six days'});
+  for (let v = 0; v <= ymax; v += 1000){
+    svg.append(sv('line', {x1:L, x2:W-R, y1:y(v), y2:y(v), stroke:'var(--line)', 'stroke-width':v?0.6:1}));
+    svg.append(Object.assign(sv('text', {x:L-6, y:y(v)+3, 'text-anchor':'end', fill:'var(--faint)',
+      'font-size':9.5,'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: v ? v/1000+'k' : '0'}));
+  }
+  days.forEach(d => {
+    const m = T(d + 'T00:00:00+02:00');
+    if (m <= t0 || m >= t1) return;
+    svg.append(sv('line', {x1:x(m), x2:x(m), y1:TOP, y2:H-B, stroke:'var(--line)', 'stroke-dasharray':'2 4'}));
+    svg.append(Object.assign(sv('text', {x:x(m)+4, y:H-9, fill:'var(--faint)', 'font-size':9.5,
+      'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: fmt(m + 4.32e7, {weekday:'short', month:'numeric', day:'numeric'})}));
+  });
+  let d0 = `M${x(t0)},${y(0)}`;
+  commits.forEach(c => { d0 += `H${x(T(c.t))}V${y(c.loc)}`; });
+  d0 += `H${x(t1)}`;
+  svg.append(sv('path', {d:d0, fill:'none', stroke:'var(--ink)', 'stroke-width':1.8, 'stroke-linejoin':'round'}));
+  svg.append(sv('circle', {cx:x(t1), cy:y(last), r:3, fill:'var(--ink)', stroke:'var(--paper)', 'stroke-width':2}));
+  svg.append(Object.assign(sv('text', {x:x(t1)+7, y:y(last)+3, fill:'var(--ink)', 'font-size':10,
+    'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: last.toLocaleString('en-US') + ' lines'}));
+
+  const cross = sv('line', {y1:TOP, y2:H-B, stroke:'var(--muted)', 'stroke-width':1, opacity:0});
+  svg.append(cross);
+  const tip = tipFor(wrap);
+  svg.addEventListener('pointermove', ev => {
+    const r = svg.getBoundingClientRect();
+    const px = (ev.clientX - r.left)/r.width*W;
+    if (px < L || px > W-R){ tip.hide(); cross.setAttribute('opacity',0); return; }
+    const t = t0 + (px-L)/(W-L-R)*(t1-t0);
+    let i = -1;
+    commits.forEach((c, j) => { if (T(c.t) <= t) i = j; });
+    cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('opacity', .5);
+    if (i < 0){ tip.show('<b>nothing committed yet</b>', ev.clientX, ev.clientY); return; }
+    const c = commits[i], delta = c.loc - (i ? commits[i-1].loc : 0);
+    tip.show(`<b>${c.loc.toLocaleString('en-US')} lines</b> after ${fmt(T(c.t),{weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false})}<br>` +
+      `${esc(c.subject)}<br>${delta >= 0 ? '+' : ''}${delta.toLocaleString('en-US')} net lines`,
+      ev.clientX, ev.clientY);
+  });
+  svg.addEventListener('pointerleave', () => { tip.hide(); cross.setAttribute('opacity',0); });
+  wrap.append(svg);
+  $('#locnow').textContent = `${last.toLocaleString('en-US')} lines · started at ${commits[0].loc.toLocaleString('en-US')}`;
+}
+locChart();
+
+// ---- ship log ----
+const byDay = {};
+commits.forEach(c => { const d = fmt(T(c.t), {year:'numeric',month:'2-digit',day:'2-digit'});
+  const key = d.slice(6)+'-'+d.slice(0,2)+'-'+d.slice(3,5); (byDay[key] ??= []).push(c); });
+Object.keys(byDay).sort().forEach(d => {
+  const cs = byDay[d], v = daily[d] || {hands:0,wait:0,busy:0};
+  const day = el('div','day');
+  const head = el('div','dayhead');
+  head.append(el('h3',null, fmt(T(d+'T12:00:00Z'),{weekday:'long',month:'long',day:'numeric'})),
+    el('div','sum', `${cs.length} commit${cs.length===1?'':'s'} · you ${hm(Math.max(v.engaged||0, v.hands+v.wait))} · Claude ${hm(v.busy)}`));
+  day.append(head);
+  cs.forEach(c => {
+    const row = el('div','commit');
+    row.append(el('span','t', fmt(T(c.t),{hour:'2-digit',minute:'2-digit',hour12:false})),
+               el('span','s', esc(c.subject)));
+    if (c.cloud) row.append(el('span','chipc','cloud'));
+    day.append(row);
+  });
+  $('#log').append(day);
+});
+
+// ---- sessions table ----
+$('#sesscount').textContent = `${sessions.length} total`;
+const tb = $('#sess tbody');
+sessions.forEach(s => {
+  const tr = el('tr');
+  tr.append(
+    el('td','mono', fmt(T(s.start),{weekday:'short',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})),
+    el('td',null, `<span class="kindchip${s.kind==='cloud'?' cloud':''}">${s.kind}</span>`),
+    el('td','r mono', s.kind==='cloud' ? `~${s.prompts}` : s.prompts),
+    el('td','r mono', hm(s.hands)),
+    el('td','r mono', hm(s.work)),
+    el('td','r mono', hm(Math.max(0, T(s.end)-T(s.start))/1000)));
+  tb.append(tr);
+});
+</script>
+
+</body>
+</html>
