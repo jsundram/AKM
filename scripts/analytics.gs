@@ -28,10 +28,12 @@ function doGet(e){
   return ContentService.createTextOutput("ok");
 }
 
-// =UID(name) in the sheet → the ping.js uid for that name. Paste the roster Name column into
-// a scratch tab and drag this down to build the who→name key; rebuild anytime the roster
-// changes. Must match ping.js exactly: SHA-256 over UTF-8, first 4 bytes, lowercase hex.
+// =UID(name) in the sheet → the ping.js uid for that name. Array-aware: =UID(A2:A) fills the
+// whole who→name key column in one call (blanks stay blank). Must match ping.js exactly:
+// SHA-256 over UTF-8, first 4 bytes, lowercase hex. UID("Jason Sundram") = "70f71792".
 function UID(name){
-  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, name, Utilities.Charset.UTF_8)
+  if (Array.isArray(name)) return name.map(UID);
+  if (!name) return "";
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(name), Utilities.Charset.UTF_8)
     .slice(0, 4).map(b => ((b + 256) % 256).toString(16).padStart(2, "0")).join("");
 }
