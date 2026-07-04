@@ -14,11 +14,11 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <title>AKM — About</title>
-<meta name="description" content="A pocket companion for the festival week: each day's schedule and weather, an offline map of the village, the roster, and a chart of who plays with whom.">
+<meta name="description" content="What's happening at AKM each day: the schedule, the weather, an offline map of the village, the roster, and who plays with whom.">
 <meta property="og:site_name" content="AKM">
 <meta property="og:type" content="website">
 <meta property="og:title" content="AKM — About">
-<meta property="og:description" content="A pocket companion for the festival week: each day's schedule and weather, an offline map of the village, the roster, and a chart of who plays with whom.">
+<meta property="og:description" content="What's happening at AKM each day: the schedule, the weather, an offline map of the village, the roster, and who plays with whom.">
 <meta property="og:url" content="https://jsundram.github.io/AKM/about.html">
 <meta property="og:image" content="https://jsundram.github.io/AKM/og.png">
 <meta property="og:image:width" content="1200">
@@ -43,7 +43,9 @@
     color:var(--brass);margin-bottom:8px}
   p{font-size:14px;color:var(--ink);margin:0 0 10px}
   p b{font-weight:500}
-  .who{font-family:"Fraunces",serif;font-style:italic;color:var(--muted);font-size:14px}
+  .cta{display:block;text-align:center;font-size:15px;font-weight:500;color:var(--paper);
+    background:var(--ink);border-radius:10px;padding:12px 16px;margin:18px 0 6px;text-decoration:none}
+  .cta:hover{color:var(--paper);opacity:.92}
   a{color:inherit;text-decoration:underline;text-decoration-thickness:.7px;
     text-underline-offset:2.5px;text-decoration-color:var(--faint)}
   a:hover{color:var(--brass-deep)}
@@ -75,33 +77,33 @@
   </header>
 
   <h1>About</h1>
-  <p>A pocket companion for the festival week: each day's schedule and weather, an offline
-  map of the village, the roster, and a chart of who plays with whom. I built it to make it
-  easier to see what's happening every day — and to help remember people's names.</p>
-  <p class="who">It's a personal project, not an official festival page; the schedule here
-  comes from the same sheets the organizers post. — Jason</p>
+  <p>This shows what's happening at AKM each day: rehearsals, meals, concerts, and the
+  weather, plus a map of the village, the roster, and a chart of who plays with whom.
+  I built it so I could see the day at a glance and keep everyone's names straight.
+  It's not an official festival page; it reads the same schedule sheets the organizers
+  post, so it's only as accurate as the sheet.</p>
+  <a class="cta" href="./index.html">Open today's schedule →</a>
 
   <section>
     <div class="lab">Your day</div>
-    <p>Pick yourself once and the day turns personal — the warm cards are <b>your</b>
-    rehearsals and private lessons, matched from the posted group assignments. <kbd>＋ add</kbd>
-    puts anything else on your timeline; those dashed cards live only on your phone.
-    Sharing a phone, or picked the wrong name? Switch anytime from the bottom of the Today page.</p>
-    <p>If a rehearsal looks off, the <b>source sheet ↗</b> link on the Today page is the
-    ground truth.</p>
+    <p>Pick your name once and your rehearsals and lessons get highlighted. <kbd>＋ add</kbd>
+    puts anything else on your timeline (a reading session, a hike); those entries never
+    leave your phone. Picked the wrong person, or sharing a phone? Use the switch link at
+    the bottom of the schedule.</p>
+    <p>If a rehearsal looks wrong, check the <b>source sheet ↗</b> link at the top of the
+    schedule. The sheet wins.</p>
   </section>
 
   <section>
-    <div class="lab">Fresh &amp; offline</div>
-    <p>Opening the app <b>is</b> the refresh — the "as of" line shows when it last pulled.
-    Once it loads on wifi it caches the whole week, so the schedule, map, and roster keep
-    working with no signal.</p>
+    <div class="lab">Offline</div>
+    <p>Opening the app refreshes it; the "as of" line says when it last pulled. Once it
+    loads on wifi, the whole week works without signal, map included.</p>
   </section>
 
   <section>
-    <div class="lab">On your home screen</div>
-    <p>iPhone: open this page in Safari, tap <kbd>Share</kbd> → <kbd>Add to Home Screen</kbd>.
-    Android: browser menu → <kbd>Add to Home screen</kbd>. It opens full-screen, like an app,
+    <div class="lab">Install</div>
+    <p>iPhone: in Safari, tap <kbd>Share</kbd> → <kbd>Add to Home Screen</kbd>.
+    Android: browser menu → <kbd>Add to Home screen</kbd>. After that it's full-screen
     and works offline.</p>
   </section>
 
@@ -115,13 +117,13 @@
   </section>
 
   <section>
-    <div class="lab">Private by design</div>
-    <p>No accounts, no server, no tracking. Who you are, the events you add, and your location
-    on the map never leave your phone. Roster details come from the festival's participant sheet.</p>
+    <div class="lab">Privacy</div>
+    <p>No accounts, no server, no analytics. Your name, the events you add, and your location
+    on the map stay on your phone. Roster details come from the festival's participant sheet.</p>
   </section>
 
   <section>
-    <div class="lab">App trouble?</div>
+    <div class="lab">Bugs</div>
     <p>For issues with the app, contact <a id="wa" href="./roster.html">Jason</a>.</p>
   </section>
 
