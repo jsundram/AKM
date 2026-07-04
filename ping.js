@@ -5,7 +5,7 @@
 // reversible only against the roster itself (=UID() in the sheet builds the key). URL_ empty =
 // endpoint not deployed yet: pings still queue (capped) but nothing is sent, nothing errors.
 (function(){
-  const URL_ = "";              // Apps Script /exec URL — paste after deploying scripts/analytics.gs
+  const URL_ = "https://script.google.com/macros/s/AKfycbzCjWSTVOhqusGhbFp23q0MZukSXjHIEouTf3AWe9uaT_GPbYq5yH4yaT8_bTssnvEC/exec";
   const TOK  = "akm-2026";      // matches TOK in analytics.gs; public in the repo, just filters scanners
   const KEY  = "akm-pings", CAP = 300, GAP = 5*60e3;
   const page = (location.pathname.split("/").pop() || "index").replace(".html","") || "index";
