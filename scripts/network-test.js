@@ -49,11 +49,6 @@ const get = u => new Promise((res, rej) =>
   }
   ok(ordered, "nodes sorted by instrument then first name");
 
-  // spot-check the three alias resolutions actually became edges
-  const has = n => g.nodes.some(x => x.name === n);
-  ok(has("Preet Saund") && has("Seah Katherine Yu") && has("Tanya Bannister") && has("Tanya Jenkin"),
-    "aliased names present (Preet Saund, Seah Katherine Yu, both Tanyas)");
-
   // Jason plays the three pieces we expect him in (Dvořák Qt, Fauré PQ, Bruch Octet)
   const ji = g.nodes.findIndex(x => x.name === "Jason Sundram");
   const jasonCo = ji >= 0 ? m[ji].reduce((a, b) => a + b, 0) : 0;

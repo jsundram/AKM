@@ -53,12 +53,10 @@
   const BOLD = new Set(["F", "AF", "TF"]);                      // faculty + both fellow types
   const boldType = t => String(t || "").split(/[^A-Za-z0-9]+/).some(k => BOLD.has(k));   // "F, W1" is still faculty
 
-  // Pieces sheet → roster name. Most tokens are full names or unambiguous first names; these are the
-  // stragglers: drifted spellings (Preetcham/Preetcharn), a two-word short form (Seah Yu), and a bare
-  // first name that collides (two Tanyas). Prefer fixing these in the sheet over growing this table —
-  // an alias silently breaks if the roster is renamed (the resolver can't tell a real name from a typo).
-  const ALIAS = { "Preetcham Saund": "Preet Saund", "Preetcharn Saund": "Preet Saund",
-    "Seah Yu": "Seah Katherine Yu", "Tanya": "Tanya Bannister" };
+  // The pieces sheet uses informal names; resolve() reconciles them to the roster by exact match or
+  // unambiguous first name only — no alias table, so no participant names live in this public repo,
+  // and any name that won't reconcile fails loudly in the harness instead of being guessed. Fix such
+  // names in the sheet (the source of truth), not here.
   const stripTag = t => t.replace(/\s*\((?:W1|W2)\)\s*$/i, "").trim();
 
   // gviz wrapper → table rows as string arrays (Node fetch path; the browser JSONP
@@ -107,15 +105,14 @@
     const byName = new Set(roster.map(p => p.name));
     const byFirst = new Map();
     roster.forEach(p => { const k = p.first.toLowerCase(); (byFirst.get(k) || byFirst.set(k, []).get(k)).push(p.name); });
-    const names = roster.map(p => p.name);
+    // exact roster name, or an unambiguous first name — nothing fuzzier. Anything else (a typo, a
+    // drifted spelling, a first name two people share) returns null → surfaced as unmatched below,
+    // never mis-attributed to the wrong person.
     const resolve = tok => {
       const t = stripTag(tok);
-      if (ALIAS[t]) return ALIAS[t];
       if (byName.has(t)) return t;
       const f = byFirst.get(t.toLowerCase());
-      if (f && f.length === 1) return f[0];
-      const pref = names.filter(n => n.toLowerCase().startsWith(t.toLowerCase()));
-      return pref.length === 1 ? pref[0] : null;
+      return (f && f.length === 1) ? f[0] : null;
     };
     const wt = new Map(), present = new Set(), unresolved = new Set();
     for (const players of pieces) {
@@ -466,7 +463,9 @@
       GRAPH = graph;
       let pairs = 0;
       graph.matrix.forEach((row, i) => row.forEach((w, j) => { if (j > i && w) pairs++; }));
-      $("#count").textContent = `${graph.nodes.length} musicians · ${pairs} connections`;
+      const unmatched = (graph.unresolved || []).length;   // surface broken data instead of dropping it silently
+      $("#count").textContent = `${graph.nodes.length} musicians · ${pairs} connections`
+        + (unmatched ? ` · ${unmatched} unmatched` : "");
       $("#msg").hidden = true;
       render();
     }
