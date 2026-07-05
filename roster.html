@@ -47,7 +47,6 @@
   h1{font-family:"Fraunces",serif;font-weight:500;font-size:30px;letter-spacing:-.015em;margin:16px 0 2px}
   .sub{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
     font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.04em;color:var(--faint);margin-bottom:16px}
-  .sub .src{color:var(--muted);text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line);white-space:nowrap}
 
   .doc{background:var(--doc);color:var(--doc-ink);border:1px solid var(--doc-box);border-radius:10px;overflow:hidden}
   table{width:100%;border-collapse:collapse;table-layout:fixed}
@@ -78,6 +77,18 @@
     text-transform:uppercase;color:#7A8794;padding-top:2px}
   .dl .v{color:var(--doc-ink)}
   .dl .v a{color:#2A6F97;text-decoration:underline;word-break:break-all}
+  /* Pieces: a bulleted list; tap (mobile) / hover (desktop) a piece to reveal the rest of its group */
+  .pcs{display:flex;flex-direction:column;gap:0}
+  .pcs .pc{display:block;width:100%;text-align:left;font:inherit;font-size:11.5px;line-height:1.35;
+    color:var(--doc-ink);background:none;border:0;padding:2px 0 2px 13px;position:relative;cursor:pointer}
+  .pcs .pc::before{content:"•";position:absolute;left:2px;color:var(--doc-box)}
+  @media (hover:hover){ .pcs .pc:hover{color:#2A6F97} }
+  .pcs .co{display:none;font-size:10.5px;color:#5A6B78;line-height:1.35;padding:0 0 3px 13px}
+  .pcs .pl.on .co{display:block}
+  @media (hover:hover){ .pcs .pl:hover .co{display:block} }
+  .wk{font-family:"IBM Plex Mono",monospace;font-size:8px;letter-spacing:.05em;color:#7A8794;
+    border:1px solid var(--doc-line);border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:1px}
+  .co .wk{margin-left:3px}
   .wa{display:inline-flex;vertical-align:middle;opacity:.9;line-height:0}
   .wa:hover{opacity:1}
   .wa svg{display:block}
@@ -103,7 +114,7 @@
     <nav><a href="./index.html">Today</a><a href="./map.html">Map</a><span aria-current="page">Roster</span><a href="./network.html">Network</a></nav>
   </header>
   <h1>Roster</h1>
-  <div class="sub"><span id="count">…</span><a class="src" id="editlink" target="_blank" rel="noopener">source sheet ↗</a></div>
+  <div class="sub"><span id="count">…</span></div>
   <div class="doc">
     <table>
       <colgroup><col class="c-n"><col class="c-nm"><col class="c-wa"><col class="c-in"><col class="c-ty"><col class="c-ht"></colgroup>
@@ -150,9 +161,6 @@ const mapLink = hotel => { const t = mapTarget(hotel);   // link to the canonica
 // this device belongs to (the schedule page's picker); anonymous until someone's picked
 const ME_NAME = Roster.me() || "";
 const ME_FIRST = ME_NAME.split(/\s+/)[0] || "";
-// the Notes column is Jason's private annotations about people — render its text only to him
-// (URLs mined from it — name/coach bio links — stay for everyone; they expose a link, not the prose)
-const NOTES_OK = ME_NAME === "Jason Sundram";
 const WA_MSG = ME_FIRST ? `Hi {first}, it's ${ME_FIRST} from AKM ` : "Hi {first}! ";
 const WA_SVG = '<svg viewBox="0 0 32 32" width="14" height="14" aria-hidden="true"><path fill="#25D366" d="M16 .6C7.5.6.6 7.5.6 16c0 2.8.8 5.5 2.1 7.8L.5 31.5l7.9-2.1c2.2 1.2 4.8 1.9 7.6 1.9 8.5 0 15.4-6.9 15.4-15.4S24.5.6 16 .6z"/><path fill="#fff" d="M23.1 19.3c-.4-.2-2.3-1.1-2.6-1.3-.3-.1-.6-.2-.8.2-.2.3-.9 1.2-1.2 1.5-.2.2-.4.2-.8.1-.4-.2-1.6-.6-3.1-1.9-1.1-1-1.9-2.3-2.1-2.7-.2-.4 0-.6.2-.8l.5-.6c.2-.2.2-.4.4-.6.1-.3 0-.5 0-.7-.1-.2-.8-2.1-1.2-2.8-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.5 3.8 6 5.3.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 2.3-.9 2.6-1.8.3-.9.3-1.7.2-1.8z"/></svg>';
 function waLink(p){
@@ -187,15 +195,45 @@ function heads(){ document.querySelectorAll("thead th[data-k]").forEach(th=>{
   th.querySelector(".ar").textContent = on ? (sortDir>0?"▲":"▼") : "";
 }); }
 function render(people){ PEOPLE=people; paint(); }
+
+// Pieces are one ` | `-joined string per person; invert them into base-piece → the people who play
+// it (with any per-person week tag), so tapping a piece can show the rest of that group. Built from
+// the roster we already have — no extra fetch. A piece groups by its name minus the (W1)/(W2) tag,
+// so a sub (Dvořák op.81: Sharayu W1 / Korn W2) still collapses to one group.
+const WK = /\s*\((W1|W2)\)\s*$/;
+const splitWk = s => ({ base: s.replace(WK,"").trim(), tag: (s.match(WK)||[])[1] || "" });
+const wkChip = t => t ? ` <span class="wk">${t}</span>` : "";
+const pieceList = s => (s||"").split(/\s*\|\s*/).map(x=>x.trim()).filter(Boolean);
+let PIECEMAP = new Map();
+function buildPieceMap(people){
+  PIECEMAP = new Map();
+  for(const p of people) for(const s of pieceList(p.pieces)){
+    const {base,tag} = splitWk(s);
+    (PIECEMAP.get(base) || PIECEMAP.set(base,[]).get(base)).push({name:p.name, tag});
+  }
+}
+function piecesBlock(p){
+  const items = pieceList(p.pieces); if(!items.length) return "";
+  const rows = items.map(s=>{
+    const {base,tag} = splitWk(s);
+    const co = (PIECEMAP.get(base)||[]).filter(x=>x.name!==p.name).map(x=>esc(x.name)+wkChip(x.tag));
+    const co_html = co.length ? "with "+co.join(" · ") : "no one else on the roster";
+    return `<div class="pl"><button class="pc" type="button" aria-expanded="false">${esc(base)}${wkChip(tag)}</button>`+
+           `<div class="co">${co_html}</div></div>`;
+  }).join("");
+  return `<div class="dl"><span class="k">Pieces</span><div class="v pcs">${rows}</div></div>`;
+}
+
 function paint(){
   const tb=$("#rows"); tb.innerHTML="";
   $("#msg").hidden=true;
   heads();
+  buildPieceMap(PEOPLE);
   const people = sortKey ? [...PEOPLE].sort(cmp) : PEOPLE;
   for(const p of people){
     const fill = HOTEL_COLORS[p.hotel] || DEFAULT_FILL;
     const you = !!ME_NAME && p.name===ME_NAME;
-    const exp = !!(p.pieces || p.from || (NOTES_OK && p.notes));   // expandable only if there's more to show
+    const exp = !!(p.pieces || p.from);   // expandable only if there's more to show
     const tr=document.createElement("tr");
     tr.style.background = fill;
     tr.className = (you?"you ":"") + (exp?"exp":"");
@@ -212,7 +250,7 @@ function paint(){
       const dr=document.createElement("tr");
       dr.className="detail"; dr.hidden=true; dr.style.background=fill;
       const dl=(k,v)=>v?`<div class="dl"><span class="k">${k}</span><span class="v">${linkify(v)}</span></div>`:"";
-      dr.innerHTML=`<td colspan="6">${dl("From",p.from)}${dl("Pieces",p.pieces)}${NOTES_OK?dl("Notes",p.notes):""}</td>`;
+      dr.innerHTML=`<td colspan="6">${dl("From",p.from)}${piecesBlock(p)}</td>`;
       tb.appendChild(dr);
       tr.addEventListener("click", ()=>{ const open=dr.hidden; dr.hidden=!open; tr.classList.toggle("open",open); });
     }
@@ -231,7 +269,9 @@ async function pull(){
 function boot(){
   $("#wah").innerHTML = WA_SVG;     // the WhatsApp column's header is the icon itself, no text
   document.querySelectorAll("thead th[data-k]").forEach(th=>th.onclick=()=>sortBy(th.dataset.k));
-  editlink.href = `https://docs.google.com/spreadsheets/d/${Roster.SID}/edit?gid=${Roster.GID}#gid=${Roster.GID}`;
+  // tap a piece → reveal/hide the rest of its group (desktop also gets it on hover, via CSS)
+  $("#rows").addEventListener("click", e=>{ const b=e.target.closest(".pc"); if(!b) return;
+    b.setAttribute("aria-expanded", b.parentElement.classList.toggle("on")); });
   const cached = Roster.cached();
   if(cached) render(cached);
   else if(navigator.onLine) msg("Loading roster…");
