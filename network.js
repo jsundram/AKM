@@ -54,10 +54,11 @@
   const boldType = t => String(t || "").split(/[^A-Za-z0-9]+/).some(k => BOLD.has(k));   // "F, W1" is still faculty
 
   // Pieces sheet → roster name. Most tokens are full names or unambiguous first names; these are the
-  // ones that don't: an informal first name ("Steve" = the director, Steve Buck), a drifted spelling
-  // (Preetcham/Preetcharn), a two-word alias, and a bare first name that collides (two Tanyas).
+  // stragglers: drifted spellings (Preetcham/Preetcharn), a two-word short form (Seah Yu), and a bare
+  // first name that collides (two Tanyas). Prefer fixing these in the sheet over growing this table —
+  // an alias silently breaks if the roster is renamed (the resolver can't tell a real name from a typo).
   const ALIAS = { "Preetcham Saund": "Preet Saund", "Preetcharn Saund": "Preet Saund",
-    "Seah Yu": "Seah Katherine Yu", "Tanya": "Tanya Bannister", "Steve": "Stephen Buck" };
+    "Seah Yu": "Seah Katherine Yu", "Tanya": "Tanya Bannister" };
   const stripTag = t => t.replace(/\s*\((?:W1|W2)\)\s*$/i, "").trim();
 
   // gviz wrapper → table rows as string arrays (Node fetch path; the browser JSONP
