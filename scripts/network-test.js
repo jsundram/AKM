@@ -41,7 +41,7 @@ const get = u => new Promise((res, rej) =>
   ok(diag, "matrix zero diagonal");
 
   // ordering: instrument-rank non-decreasing, first-name A→Z within a family
-  const rank = s => C.INST_ORDER.indexOf(C.instLabel(s));
+  const rank = s => { const i = C.INST_ORDER.indexOf(C.instLabel(s)); return i < 0 ? 99 : i; };  // blank instrument sorts last, as buildGraph does
   let ordered = true;
   for (let i = 1; i < g.nodes.length; i++) {
     const a = g.nodes[i - 1], b = g.nodes[i], ra = rank(a.instrument), rb = rank(b.instrument);
