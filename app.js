@@ -87,6 +87,38 @@ function coachMap(people){
   return out;
 }
 
+// The Repertoire tab (in the roster's spreadsheet) carries each piece's rehearsal-cohort letter per
+// week — Group-W1 / Group-W2. Pull it (gviz JSONP) and build norm(piece name) → {1:letter, 2:letter},
+// so mineOf() can map a schedule block's Group letter to the one piece I actually play there.
+const REP_GID = "244347893";
+function repJsonp(){
+  return new Promise((res,rej)=>{
+    const cb = "__rp"+Math.random().toString(36).slice(2);
+    const s = document.createElement("script");
+    const to = setTimeout(()=>{cleanup(); rej(new Error("timeout"));}, 15000);
+    function cleanup(){ clearTimeout(to); delete window[cb]; s.remove(); }
+    window[cb] = d => { cleanup(); res(d); };
+    s.onerror = () => { cleanup(); rej(new Error("script")); };
+    s.src = `https://docs.google.com/spreadsheets/d/${Roster.SID}/gviz/tq?gid=${REP_GID}&tqx=out:json;responseHandler:${cb}`;
+    document.head.appendChild(s);
+  });
+}
+function pieceGroups(gv){
+  const t = gv && gv.table; if(!t) return {};
+  let rows = (t.rows||[]).map(r => (r.c||[]).map(c => c ? String(c.v ?? c.f ?? "").trim() : ""));
+  let hdr = (t.cols||[]).map(c => (c.label||"").toLowerCase()), start = 0;
+  if(!hdr.includes("piece")){ const h = rows.findIndex(r => r.some(x => x.toLowerCase()==="piece"));
+    hdr = (rows[h]||[]).map(x => x.toLowerCase()); start = h+1; }
+  const pi = hdr.indexOf("piece"); if(pi<0) return {};
+  const g1 = hdr.findIndex(x=>x.includes("w1")), g2 = hdr.findIndex(x=>x.includes("w2"));
+  const out = {};
+  for(const r of rows.slice(start)){
+    const piece = (r[pi]||"").replace(/\s*\((?:W1|W2)\)\s*$/i,"").trim(); if(!piece) continue;
+    out[norm(piece)] = { 1:(g1>=0?r[g1]:"")||"", 2:(g2>=0?r[g2]:"")||"" };
+  }
+  return out;
+}
+
 // ---- parse one day's grid ----
 // User-agnostic: every rehearsal cell (with its block's Group letter) and every private-lesson slot
 // is kept; whose they are is decided at render time by mineOf()/lessonsOf() against the picked identity.
@@ -205,8 +237,9 @@ const fams = s => { const l=(s||"").trim().toLowerCase();
     : l.startsWith("va") ? ["va"] : l.startsWith("v") ? ["v"] : l.startsWith("b") ? ["bass"]
     : l.startsWith("p") ? ["p"] : l.startsWith("c") ? ["cl"] : l.startsWith("o") ? ["ob"] : []); };
 const teaches = (stu, coach) => [...stu].some(f=>coach.has(f));
-function userCtx(people, name){
+function userCtx(people, name, pg){
   const p = name && (people||[]).find(x=>x.name===name); if(!p) return null;
+  pg = pg || PIECEGRP;
   const first = p.name.split(/\s+/)[0];
   const nick = ((p.notes||"").match(/goes by (\w+)/i)||[])[1];
   const groups = {}, wk = {};
@@ -216,10 +249,20 @@ function userCtx(people, name){
                       : (people||[]).some(x=>hasTok(x.type,"W2") && (x.pieces||"").includes(piece)) ? 2 : 0;
   const m = (p.pieces||"").match(/^\s*([A-Z]+)\s*:\s*([\s\S]+)/);
   if(m){ const ps=m[2].split("|").map(x=>x.trim()); [...m[1]].forEach((g,i)=>{ if(ps[i]){ groups[g]=ps[i]; wk[g]=wkOf(ps[i]); } }); }
+  // my pieces, from the roster's `Pieces` cell — a `|`-list, each with its (W1)/(W2) tag (tolerate a
+  // legacy "ABD:" prefix). Then key each to its rehearsal-cohort *letter* per week, looked up in the
+  // Repertoire's Group-W1/Group-W2 by piece name (pg). byGroup[week][letter] = my piece there — so a
+  // "Group E" block only ever considers the one piece I actually play in Group E (no name-collision).
+  const mine = (p.pieces||"").replace(/^\s*[A-Z]+\s*:\s*/,"").split("|").map(x=>x.trim()).filter(Boolean)
+    .map(s=>{ const mw=s.match(/\((W1|W2)\)\s*$/i);
+      return { name:s.replace(/\s*\((W1|W2)\)\s*$/i,"").trim(), week:mw?(mw[1].toUpperCase()==="W1"?1:2):0 }; });
+  const byGroup = {1:{}, 2:{}};   // honour a per-person week tag: a (W1) piece is mine in week 1 only
+  for(const mp of mine){ const g=(pg||{})[norm(mp.name)]; if(!g) continue;
+    if(mp.week!==2 && g[1]) byGroup[1][g[1]]=mp; if(mp.week!==1 && g[2]) byGroup[2][g[2]]=mp; }
   const idy = q => ({ first:q.name.split(/\s+/)[0].toLowerCase(),
                       nick:(((q.notes||"").match(/goes by (\w+)/i)||[])[1]||"").toLowerCase(),
                       fams:fams(q.instrument) });
-  return { name:p.name, first, hotel:p.hotel, type:(p.type||"").trim(), groups, wk, fams:fams(p.instrument),
+  return { name:p.name, first, hotel:p.hotel, type:(p.type||"").trim(), groups, wk, mine, byGroup, fams:fams(p.instrument),
            week: hasTok(p.type,"W1") ? 1 : hasTok(p.type,"W2") ? 2 : 0,   // attending one week only?
            re: new RegExp(`\\b(${[first,nick].filter(Boolean).join("|")})\\b`,"i"),
            rivals: (people||[]).filter(x=>x!==p && takesLessons(x.type)).map(idy),   // who else a slot name could mean
@@ -253,14 +296,14 @@ function fits(cellW, canonW){
 }
 function mineOf(day, u){
   if(!u) return [];
-  const wk = weekOf(day);
-  if(wk && u.week && u.week!==wk) return [];        // not at the festival this week
+  const dw = weekOf(day);
+  if(dw && u.week && u.week!==dw) return [];         // not at the festival this week
+  const bg = (u.byGroup && u.byGroup[dw||2]) || {};  // my {group letter → piece} for this week
   const out=[];
   for(const [s,e,piece,room,coach,tag,grp] of (day.rehearsals||[])){
-    const target = grp && u.groups[grp]; if(!target) continue;
-    if(wk && u.wk[grp] && u.wk[grp]!==wk) continue;  // this group's week is over (or hasn't started)
-    const cw = words(piece), tw = words(target);
-    if(!fits(cw,tw)) continue;
+    const target = grp && bg[grp]; if(!target) continue;   // only the one piece I play in this block's group
+    const cw = words(piece), tw = words(target.name);
+    if(!fits(cw,tw)) continue;                             // guards the informal grid title against my canonical name
     const want = new Set(tw), score = overlap(new Set(cw), want);
     const peers = (day.rehearsals||[]).filter(r=>r[0]===s && r[6]===grp && r[2]!==piece);
     if(!peers.every(r=>overlap(toks(r[2]),want)<score)) continue;
@@ -535,7 +578,7 @@ function schedHead(c){
 }
 
 // ---- cache + state ----
-let BANK={}, COACHES={}, USER=null, today=viennaToday(), sel=today;
+let BANK={}, COACHES={}, PIECEGRP={}, USER=null, today=viennaToday(), sel=today;
 const load = () => { try{return JSON.parse(localStorage.getItem(CK))||{}}catch{return {}} };
 const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
 
@@ -640,6 +683,7 @@ function render(){
     && Math.abs(now - (+w.curAt.slice(11,13) + +w.curAt.slice(14,16)/60)) < 1.5) ? w.cur : null;
   const people = Roster.cached();
   COACHES = coachMap(people);
+  PIECEGRP = c.pieceGrp || {};
   USER = userCtx(people, Roster.me());
   let html;
   if(!day){
@@ -702,6 +746,7 @@ async function refresh(){
   const c=load(); c.sched=c.sched||{}; c.wx=c.wx||{};
   try{ const wx=await weatherRange(); Object.assign(c.wx,wx); }catch(e){ /* keep old wx */ }
   try{ await Roster.pull(); }catch(e){ /* keep the cached roster */ }   // shared cache; primes the roster page
+  try{ const pg=pieceGroups(await repJsonp()); if(Object.keys(pg).length) c.pieceGrp=pg; }catch(e){ /* keep old */ }
   for(const day of festDays()){
     try{ const rows=rowsFrom(await jsonp(day)); const p=parse(rows);
          if(p.rehearsals.length||p.meals.length||p.allhands.length||p.evening.length||p.slots.length) c.sched[day]=p; }
