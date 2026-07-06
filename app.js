@@ -574,8 +574,21 @@ const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
 // online pull, so anything living there would be wiped. localStorage survives refresh + SW updates
 // (code swaps, data doesn't) — only clearing site data / uninstall loses it. Merged in at render.
 const MK = "akm-mine";
-const loadMine = () => { try{return JSON.parse(localStorage.getItem(MK))||{}}catch{return {}} };
-const saveMine = m => { try{localStorage.setItem(MK,JSON.stringify(m))}catch{} };
+// self-added events are per-identity: key by the picked name so switching users doesn't bleed events.
+// (no identity picked → the bare key, same as before.)
+const mineKey = () => { const me = (typeof Roster!=="undefined" && Roster.me) ? Roster.me() : null; return me ? MK+":"+me : MK; };
+function loadMine(){
+  try{
+    const k = mineKey();
+    let raw = localStorage.getItem(k);
+    if(raw==null && k!==MK){                        // one-time: adopt pre-identity events (flat akm-mine) into the first identity that loads
+      const flat = localStorage.getItem(MK);
+      if(flat!=null){ localStorage.setItem(k, flat); localStorage.removeItem(MK); raw = flat; }
+    }
+    return JSON.parse(raw)||{};
+  }catch{ return {}; }
+}
+const saveMine = m => { try{localStorage.setItem(mineKey(),JSON.stringify(m))}catch{} };
 let editIdx = null;   // index into loadMine()[sel] while editing an existing event; null = adding a new one
 const pad2 = t => { const [h,m]=t.split(":"); return h.padStart(2,"0")+":"+m; };   // "9:00" → "09:00" for <input type=time>
 const unpad = t => t.replace(/^0(?=\d:)/,"");                                       // "09:00" → "9:00" to match the sheet's style
