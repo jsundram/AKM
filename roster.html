@@ -47,12 +47,20 @@
   h1{font-family:"Fraunces",serif;font-weight:500;font-size:30px;letter-spacing:-.015em;margin:16px 0 2px}
   .sub{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
     font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.04em;color:var(--faint);margin-bottom:16px}
+  .sub .nsort{font:inherit;letter-spacing:inherit;color:var(--muted);background:none;border:0;cursor:pointer;padding:0;
+    text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line);white-space:nowrap}
+  .sub .nsort:hover{color:var(--brass-deep)}
 
   .doc{background:var(--doc);color:var(--doc-ink);border:1px solid var(--doc-box);border-radius:10px;overflow:hidden}
   table{width:100%;border-collapse:collapse;table-layout:fixed}
   thead th{background:var(--doc-head);color:#fff;font-weight:600;font-size:11px;letter-spacing:.02em;
     text-align:left;padding:6px 10px;cursor:pointer;user-select:none;white-space:nowrap}
   thead th .ar{font-size:8px;margin-left:3px;color:#AEBDC9}
+  th .ti{font-size:11px;line-height:1;color:#AEBDC9;background:none;border:0;cursor:pointer;padding:0;margin-left:4px;vertical-align:baseline}
+  th .ti:hover{color:#fff}
+  .typelegend{margin:0 0 12px;padding:8px 11px;font-family:"IBM Plex Mono",monospace;font-size:9.5px;line-height:1.7;
+    letter-spacing:.02em;color:#5A6B78;background:#F4F6F8;border:1px solid var(--doc-line);border-radius:8px}
+  .typelegend b{color:var(--doc-ink);font-weight:600}
   col.c-n{width:6%} col.c-nm{width:33%} col.c-wa{width:7%} col.c-in{width:15%} col.c-ty{width:12%} col.c-ht{width:27%}
   th.wa-h{cursor:default;text-align:center;padding-left:0;padding-right:0}
   th.wa-h svg{display:block;margin:0 auto}
@@ -114,11 +122,12 @@
     <nav><a href="./index.html">Today</a><a href="./map.html">Map</a><span aria-current="page">Roster</span><a href="./network.html">Network</a></nav>
   </header>
   <h1>Roster</h1>
-  <div class="sub"><span id="count">…</span></div>
+  <div class="sub"><span id="count">…</span><button class="nsort" id="nsort" type="button">sort by last name</button></div>
+  <div class="typelegend" id="tlegend" hidden></div>
   <div class="doc">
     <table>
       <colgroup><col class="c-n"><col class="c-nm"><col class="c-wa"><col class="c-in"><col class="c-ty"><col class="c-ht"></colgroup>
-      <thead><tr><th class="n" data-k="n">#<span class="ar"></span></th><th data-k="name">Name<span class="ar"></span></th><th class="wa-h" id="wah" aria-label="WhatsApp"></th><th data-k="instrument">Instr.<span class="ar"></span></th><th data-k="type">Type<span class="ar"></span></th><th data-k="hotel">Hotel<span class="ar"></span></th></tr></thead>
+      <thead><tr><th class="n" data-k="n">#<span class="ar"></span></th><th data-k="name">Name<span class="ar"></span></th><th class="wa-h" id="wah" aria-label="WhatsApp"></th><th data-k="instrument">Instr.<span class="ar"></span></th><th data-k="type">Type<button class="ti" id="ti" type="button" aria-label="What the type codes mean">ⓘ</button><span class="ar"></span></th><th data-k="hotel">Hotel<span class="ar"></span></th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
     <div id="msg" hidden></div>
@@ -133,8 +142,8 @@ const DEFAULT_FILL = "#F2F4F6";
 const HOTEL_COLORS = {
   "Lesachtalerhof":"#E7F0F7","Ferienwohnung Wilhelmer":"#EEEAF7","Musikhof Lexer":"#E3F2EC",
   "Haus Anita":"#F7F0DF","Gästehaus Ortner":"#F9E8DF","Haus Simona":"#DFF1F1",
-  "Haus Salcher":"#F8F3D9","Haus Lanzinger":"#E8F2DF","Obermosterer AirBNB":"#F7E4E8",
-  "Kultursaal Apartment":"#E1F1F6","Kleines Berghotel":"#ECEEF1","Obermosterer Apartment":"#EEE6F1",
+  "Haus Salcher":"#F8F3D9","Haus Lanzinger":"#E8F2DF","Obernosterer AirBNB":"#F7E4E8",
+  "Kultursaal Apartment":"#E1F1F6","Kleines Berghotel":"#ECEEF1","Obernosterer Apartment":"#EEE6F1",
 };
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const linkify = s => esc(s).replace(/(https?:\/\/[^\s]+)/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
@@ -150,8 +159,8 @@ async function loadPlaces(){
   }catch{ /* offline + uncached: links just won't render until the map data is around */ }
 }
 const PIN = '<svg class="pin" viewBox="0 0 24 24" width="9" height="9" aria-hidden="true"><path fill="currentColor" d="M12 2C8.1 2 5 5.1 5 9c0 5 7 13 7 13s7-8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
-// a few roster names don't match a map POI verbatim (Obermosterer OCR drift, the Kultursaal
-// apartment) — the canonicalization lives in roster-data.js, shared with the map's "your base"
+// a few hotel names don't match a map POI verbatim (Obernosterer, the Kultursaal apartment) —
+// the canonicalization lives in roster-data.js, shared with the map's "your base"
 const mapTarget = hotel => { const c = Roster.hotelPoi(hotel);
   return PLACES.has((c||"").toLowerCase()) ? c : null; };
 const mapLink = hotel => { const t = mapTarget(hotel);   // link to the canonical POI, keep the printed name
@@ -170,18 +179,23 @@ function waLink(p){
   const msg = encodeURIComponent(WA_MSG.replace("{first}", first));
   return `<a class="wa" href="https://wa.me/${num}?text=${msg}" target="_blank" rel="noopener" title="WhatsApp ${esc(first)}" aria-label="Message ${esc(first)} on WhatsApp" onclick="event.stopPropagation()">${WA_SVG}</a>`;
 }
-let PEOPLE=[], sortKey=null, sortDir=1;     // null = sheet order (by number)
+let PEOPLE=[], sortKey=null, sortDir=1, nameLast=false;   // null = sheet order (by number); nameLast = sort Name by surname
 const TYPE_RANK={DIR:0,MGR:1,F:2,AF:3,TF:4,W1:5,W2:6,G:7};  // staff, faculty/fellows/weeks, then guests (G); blanks last
+// Type-code meanings — one source for the header legend (ⓘ) and each cell's hover title.
+const TYPE_LABEL={DIR:"Executive Director","A.MGR":"Administrative Manager","O.MGR":"Operations Manager",
+  F:"Faculty",AF:"AKM Fellow",TF:"Teaching Fellow",W1:"Week 1",W2:"Week 2",G:"Guest (non-playing)"};
+const typeTitle = t => (t||"").split(",").map(x=>TYPE_LABEL[x.trim()]||x.trim()).filter(Boolean).join(" · ");
 // instruments collapse to a fixed set, shown + sorted in this order; nothing else
-const INST_ORDER=["V","V/VA","VA","VC","Bass","Piano","Clar."];
+const INST_ORDER=["V","V/VA","VA","VC","Bass","Piano","Clarinet"];
 function instLabel(s){ s=(s||"").trim(); if(!s) return ""; const l=s.toLowerCase();
   return l==="v/va"?"V/VA" : l.startsWith("vc")?"VC" : l.startsWith("va")?"VA" : l.startsWith("v")?"V"
-       : l.startsWith("b")?"Bass" : l.startsWith("p")?"Piano" : l.startsWith("c")?"Clar." : s; }
+       : l.startsWith("b")?"Bass" : l.startsWith("p")?"Piano" : l.startsWith("c")?"Clarinet" : s; }
 const instRank = s => { const k=instLabel(s), i=INST_ORDER.indexOf(k); return i>=0?i:(k?50:99); };
 function key(p){
   if(sortKey==="n") return parseFloat(p.n)||0;
   // Type can compound ("F, W1" = week-1-only faculty) — rank by the first recognized token
   if(sortKey==="type"){ const k=((p.type||"").match(/[A-Z]+\d*/g)||[]).find(t=>t in TYPE_RANK); return k?TYPE_RANK[k]:8; }
+  if(sortKey==="name" && nameLast){ const n=(p.name||"").trim(); return (n?n.split(/\s+/).pop():"~").toLowerCase(); }  // surname = last token
   return (p[sortKey]||"~").toLowerCase();    // blanks sort last
 }
 function cmp(a,b){
@@ -243,7 +257,7 @@ function paint(){
       `<td>${nm}${you?'<span class="youtag">you</span>':''}</td>`+
       `<td class="wa-cell">${waLink(p)}</td>`+
       `<td class="in">${esc(instLabel(p.instrument))||"·"}</td>`+
-      `<td class="ty">${esc(p.type)}</td>`+
+      `<td class="ty" title="${esc(typeTitle(p.type))}">${esc(p.type)}</td>`+
       `<td class="ht">${mapLink(p.hotel)}${exp?'<span class="caret">›</span>':''}</td>`;
     tb.appendChild(tr);
     if(exp){
@@ -272,6 +286,10 @@ function boot(){
   // tap a piece → reveal/hide the rest of its group (desktop also gets it on hover, via CSS)
   $("#rows").addEventListener("click", e=>{ const b=e.target.closest(".pc"); if(!b) return;
     b.setAttribute("aria-expanded", b.parentElement.classList.toggle("on")); });
+  $("#nsort").onclick = () => { nameLast=!nameLast; sortKey="name"; sortDir=1;
+    $("#nsort").textContent = "sort by "+(nameLast?"first":"last")+" name"; paint(); };
+  $("#tlegend").innerHTML = Object.entries(TYPE_LABEL).map(([k,v])=>`<b>${esc(k)}</b> ${esc(v)}`).join(" · ");
+  $("#ti").onclick = e => { e.stopPropagation(); $("#tlegend").hidden = !$("#tlegend").hidden; };  // Type code legend
   const cached = Roster.cached();
   if(cached) render(cached);
   else if(navigator.onLine) msg("Loading roster…");

@@ -37,7 +37,8 @@ POIS = [
     {"name": "Haus Anita",              "cat": "lodging", "st": "Liesing", "hn": "47"},
     {"name": "Gästehaus Ortner",        "cat": "lodging", "st": "Liesing", "hn": "8"},
     {"name": "Haus Lanzinger",          "cat": "lodging", "st": "Liesing", "hn": "21"},
-    {"name": "Haus Obernosterer",       "cat": "lodging", "st": "Liesing", "hn": "25"},
+    {"name": "Haus Obernosterer",       "cat": "lodging", "st": "Liesing", "hn": "25"},  # Obernosterer *Apartment* lodging
+    {"name": "Obernosterer AirBNB",      "cat": "lodging", "st": "Liesing", "hn": "50"},  # separate building next door to Haus Obernosterer
     {"name": "Kleines Berghotel",       "cat": "lodging", "st": "Klebas",  "hn": "7"},
     {"name": "Akademie", "was": "Kultursaal", "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A1", "A2", "A3", "A4", "AH"]},  # the Volksmusik Akademie (VMA); the A-rooms + AH are inside it
     {"name": "Kultursaal", "was": "Badstubn", "cat": "venue", "also": "food", "st": "Klebas", "hn": "30", "osm": "Badstubn", "aliases": ["KS", "Badstubn"]},  # KS / "Kultursaal" in the schedule mean THIS building (the Badstub'n gasthaus, Klebas 30)
