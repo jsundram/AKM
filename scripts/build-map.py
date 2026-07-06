@@ -145,8 +145,10 @@ def build(els):
             if t.get("name") and at: labels.append({"t": t["name"], "xy": at, "k": "water"})
         elif t.get("natural") == "water":
             p = line(g); water.append({"k": "body", "p": p})
-            nm = t.get("name") or ("Badeteich" if t.get("sport") == "swimming" else None)
-            if nm: labels.append({"t": nm, "xy": centroid(g), "k": "water"})
+            if t.get("sport") == "swimming":                # the swimming pond: small feature, English label + smaller "pond" font
+                labels.append({"t": "Pool", "xy": centroid(g), "k": "pond"})
+            elif t.get("name"):                             # a named lake/pond keeps the river-size water label
+                labels.append({"t": t["name"], "xy": centroid(g), "k": "water"})
         elif t.get("leisure") == "park" or t.get("landuse") in ("cemetery", "grass", "meadow", "village_green"):
             land.append({"k": "green", "p": line(g)})
         elif "building" in t and w["id"] not in poi_ids:

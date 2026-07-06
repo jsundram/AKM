@@ -102,10 +102,11 @@
   #svg .glab{paint-order:stroke;stroke:var(--paper);stroke-width:3px;text-anchor:middle}
   #svg .glab.hamlet{fill:var(--muted);font-family:"Fraunces",serif;font-size:17px;letter-spacing:.02em;opacity:.7}
   #svg .glab.water{fill:var(--water-line);font-style:italic;font-size:12px;letter-spacing:.04em;opacity:.9}
+  #svg .glab.pond{fill:var(--water-line);font-style:italic;font-size:8px;letter-spacing:.03em;opacity:.9}  /* a small pool, not a river */
   #svg .glab.road{fill:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;opacity:.82}
   #svg .rdpath{fill:none;stroke:none}
   .mode-aerial #svg .glab{fill:#fff;stroke:rgba(0,0,0,.6)}
-  .mode-aerial #svg .glab.water{fill:#cfe9f5}
+  .mode-aerial #svg .glab.water,.mode-aerial #svg .glab.pond{fill:#cfe9f5}
   #svg .rl{filter:sepia(.12) saturate(.85) brightness(1.02)}   /* warm the grayscale relief */
 
   .markers{position:absolute;inset:0;pointer-events:none}
