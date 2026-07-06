@@ -63,6 +63,7 @@
   .legend .l-mine{background:var(--gold)} .legend .l-lodge{background:var(--pin-lodge)}
   .legend .l-venue{background:var(--pin-venue)} .legend .l-food{background:var(--pin-food)}
   .legend .l-both{background:linear-gradient(135deg,var(--pin-lodge) 50%,var(--pin-food) 50%)}
+  .legend .l-both-vl{background:linear-gradient(135deg,var(--pin-venue) 50%,var(--pin-lodge) 50%)}
 
   #map{position:relative;flex:1;min-height:0;overflow:hidden;border:1px solid var(--line);
     border-radius:13px;background:var(--valley);cursor:grab;touch-action:none}
@@ -86,8 +87,7 @@
   #svg .fp-mine{fill:var(--fp-mine);stroke:var(--brass-deep);stroke-width:2px}
   /* dual-role footprints wear the same diagonal split as their pin (gradient stops via CSS vars) */
   #svg .s-lodging{stop-color:var(--pin-lodge)} #svg .s-venue{stop-color:var(--pin-venue)} #svg .s-food{stop-color:var(--pin-food)}
-  #svg .fp-split-lodging{fill:url(#split-lodging);fill-opacity:.3;stroke:url(#split-lodging)}
-  #svg .fp-split-venue{fill:url(#split-venue);fill-opacity:.3;stroke:url(#split-venue)}
+  #svg .fp-split{fill-opacity:.3}   /* fill + stroke set inline to the (cat,also) split gradient */
   #svg .rl,#svg .ae{display:none}
   #svg image{image-rendering:auto}
   .mode-relief #svg .rl{display:block}
@@ -125,7 +125,7 @@
   .cat-venue .dot{background:var(--pin-venue)} .cat-food .dot{background:var(--pin-food)}
   /* a place with two roles (hotel + restaurant, hall + gasthaus) wears both colours */
   .cat-lodging.also-food:not(.mine) .dot{background:linear-gradient(135deg,var(--pin-lodge) 50%,var(--pin-food) 50%)}
-  .cat-venue.also-food:not(.mine) .dot{background:linear-gradient(135deg,var(--pin-venue) 50%,var(--pin-food) 50%)}
+  .cat-venue.also-lodging:not(.mine) .dot{background:linear-gradient(135deg,var(--pin-venue) 50%,var(--pin-lodge) 50%)}
   .mk.mine .dot{width:18px;height:18px;background:var(--gold);box-shadow:0 0 0 3px var(--valley),0 1px 4px rgba(20,30,30,.45)}
   .lab{display:none;padding:3px 6px 4px;border:1px solid var(--line);border-radius:5px;color:var(--ink);
     background:rgba(249,250,249,.94);box-shadow:0 1px 3px rgba(20,30,30,.14);
@@ -218,6 +218,7 @@
     <b><i class="l-venue"></i>venue</b>
     <b><i class="l-food"></i>food</b>
     <b><i class="l-both"></i>lodging + food</b>
+    <b><i class="l-both-vl"></i>venue + lodging</b>
   </div>
 
   <div id="map" aria-label="Map of Liesing and Klebas">

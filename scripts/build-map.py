@@ -41,7 +41,7 @@ POIS = [
     {"name": "Obernosterer AirBNB",      "cat": "lodging", "st": "Liesing", "hn": "50"},  # separate building next door to Haus Obernosterer
     {"name": "Kleines Berghotel",       "cat": "lodging", "st": "Klebas",  "hn": "7"},
     {"name": "Akademie", "was": "Kultursaal", "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A1", "A2", "A3", "A4", "AH"]},  # the Volksmusik Akademie (VMA); the A-rooms + AH are inside it
-    {"name": "Kultursaal", "was": "Badstubn", "cat": "venue", "also": "food", "st": "Klebas", "hn": "30", "osm": "Badstubn", "aliases": ["KS", "Badstubn"]},  # KS / "Kultursaal" in the schedule mean THIS building (the Badstub'n gasthaus, Klebas 30)
+    {"name": "Kultursaal", "was": "Badstubn", "cat": "venue", "also": "lodging", "st": "Klebas", "hn": "30", "osm": "Badstubn", "aliases": ["KS", "Badstubn"]},  # KS / "Kultursaal" in the schedule mean THIS building (Badstub'n, Klebas 30): concert venue + the Kultursaal apartment (lodging)
     {"name": "Werner",                   "cat": "venue", "st": "Liesing", "hn": "30"},   # yellow house down the street from Musikhof Lexer (the WERNER rehearsal room)
     {"name": "Band Room",                "cat": "venue", "st": "Liesing", "hn": "20"},   # the BAND ROOM rehearsal space; name lowercases to the schedule's room code, so the chip links without an alias
     {"name": "Theatre",                  "cat": "venue", "st": "Liesing", "hn": "5"},    # the THEATRE rehearsal room; name lowercases to the schedule's room code, so the chip links without an alias

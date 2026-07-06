@@ -63,20 +63,19 @@ function drawScene(d) {
     if (o.a || o.n) e.__info = o;                  // address/name shown on tap
     scene.appendChild(e);
   });
-  const defs = el("defs");                         // diagonal split gradients for dual-role footprints,
-  for (const cat of ["lodging", "venue"]) {        // stop colours themed via CSS (s-* classes)
-    const g = el("linearGradient");
-    g.setAttribute("id", "split-" + cat);
+  const defs = el("defs");                         // diagonal split gradients for dual-role footprints — one per
+  for (const pair of [...new Set(d.pois.filter(p => p.also && !p.mine).map(p => p.cat + "-" + p.also))]) {
+    const g = el("linearGradient"); g.setAttribute("id", "split-" + pair);   // (cat,also) pair; stop colours via CSS (s-*)
     ["x1,0", "y1,0", "x2,1", "y2,1"].forEach(a => { const [k, v] = a.split(","); g.setAttribute(k, v); });
-    for (const cls of [cat, "food"]) {
-      const s = el("stop", "s-" + cls); s.setAttribute("offset", "0.5"); g.appendChild(s);
-    }
+    for (const cls of pair.split("-")) { const s = el("stop", "s-" + cls); s.setAttribute("offset", "0.5"); g.appendChild(s); }
     defs.appendChild(g);
   }
   scene.appendChild(defs);
   d.pois.forEach(p => {                            // highlighted footprints under the pins
     if (!p.fp) return;
-    const e = el("polygon", "fp fp-" + (p.mine ? "mine" : p.cat) + (p.also && !p.mine ? " fp-split-" + p.cat : ""));
+    const split = p.also && !p.mine;
+    const e = el("polygon", "fp " + (p.mine ? "fp-mine" : split ? "fp-split" : "fp-" + p.cat));
+    if (split) { const u = "url(#split-" + p.cat + "-" + p.also + ")"; e.setAttribute("fill", u); e.setAttribute("stroke", u); }
     e.setAttribute("points", pts(p.fp));
     scene.appendChild(e);
   });
