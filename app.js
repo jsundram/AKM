@@ -333,6 +333,14 @@ function lessonsOf(day, u){
 // coach, and first names are unique within those — so a name match is safe (the non-coach "Tanya"
 // never reaches here). Rendered cool, never brass: coaching isn't your own playing.
 const isCoach = t => hasTok(t,"F") || hasTok(t,"DIR") || hasTok(t,"TF");
+// which half of a split block the viewer coaches — a shared block writes one coach line per half
+// ("Yoojin 1st half - C" / "Chad 1st half/Tanya 2nd half"), so read the half off *your* token, not
+// the cell's. 1, 2, or 0 (whole block). ("- C (half)" without a 1st/2nd is dropped upstream — it
+// doesn't say which half, so it can't be split; flag it in the sheet as 1st/2nd if it should show.)
+function coachHalf(coach, re){
+  const tok = (coach||"").split(/\s*[\/&,]\s*|\s+and\s+/).find(t=>re.test(t)) || "";
+  return /\b(1st|first)\s+half\b/i.test(tok) ? 1 : /\b(2nd|second)\s+half\b/i.test(tok) ? 2 : 0;
+}
 function coachingOf(day, u){
   if(!u || !isCoach(u.type)) return [];
   const wk = weekOf(day);
@@ -340,7 +348,12 @@ function coachingOf(day, u){
   const played = new Set(mineOf(day,u).map(m=>m[0]+"|"+m[2]));
   return (day.rehearsals||[])
     .filter(([s,,piece,,coach]) => coach && u.re.test(coach) && !played.has(s+"|"+piece))
-    .map(([s,e,piece,room,coach])=>[s,e,piece,room,coach]);
+    .map(([s,e,piece,room,coach])=>{
+      const h = coachHalf(coach, u.re);             // split a shared block at its midpoint so the two
+      if(h && e){ const mid = hhmm(Math.round((mins(s)+mins(e))/2));   // halves read as sequential, not a clash
+        return h===1 ? [s,mid,piece,room,coach,1] : [mid,e,piece,room,coach,2]; }
+      return [s,e,piece,room,coach,0];
+    });
 }
 const title = s => s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 
@@ -525,11 +538,12 @@ function timeline(day,w){
   }
   // pieces you coach but sit out — cool, never brass. A co-coached cell ("Gijs/Nathan") drops you from
   // the "with" line so it reads as your co-coach, not yourself.
-  for(const [s,e,piece,room,coach] of day.coaching||[]){
+  for(const [s,e,piece,room,coach,half] of day.coaching||[]){
     const others = (coach||"").split(/\s*[\/&,]\s*|\s+and\s+/).map(x=>x.trim()).filter(x=>x && !(USER&&USER.re.test(x))).join("/");
     const cw = others?`<span class="coach">with ${coachLink(others)}</span>`:"";
     const chip = room?placeChip(room):"";
-    ev.push([s,`<div class="row coach-row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card coachcard"><div class="kicker"><span>Coaching</span></div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
+    const hl = half?`<span class="pc">${half===1?"first half":"second half"}</span>`:"";
+    ev.push([s,`<div class="row coach-row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card coachcard"><div class="kicker"><span>Coaching</span>${hl}</div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
   }
   for(const [s,e,kind,venue] of day.meals)
     ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);

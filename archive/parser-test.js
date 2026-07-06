@@ -16,7 +16,8 @@ const gv = { table: { rows: [
   // (the D.956 string quintet) and "Schubert Piano Quintet" (D.667). The grid's informal "Cello" vs
   // the canonical "String" makes both cells tie on {schubert,quintet} — the argmax must lean on fits()
   // so each player gets only their own quintet (wk-2 2026-07 parked both in one Group D and dropped both).
-  R(N, "9:00 - 10:15\nGroup B", "Schubert Cello Quintet\nYoanna - P", "Grieg Quartet\nClaudia - C", "Prokofiev Quintet\nEmi - P\nChad - C", "Casarrubios Piano Trio\nSteve - C", "Schubert Piano Trio\nTanya - C", "Schumann Piano Trio\nNathan - P", "Shostakovich Quartet no. 9\nGijs - C", "Dvorak Quartet\nYoojin - C", "Schubert Piano Quintet\nMira - P", "Claudia\nPrivate Lessons\n9:00 - Korn\n9:30 - Chia\n10:00 - Steph"),
+  // Grieg + Dvořák carry split-block coach lines ("2nd half" / "1st half") — coachingOf splits the time
+  R(N, "9:00 - 10:15\nGroup B", "Schubert Cello Quintet\nYoanna - P", "Grieg Quartet\nClaudia 2nd half - C", "Prokofiev Quintet\nEmi - P\nChad - C", "Casarrubios Piano Trio\nSteve - C", "Schubert Piano Trio\nTanya - C", "Schumann Piano Trio\nNathan - P", "Shostakovich Quartet no. 9\nGijs - C", "Dvorak Quartet\nYoojin 1st half - C", "Schubert Piano Quintet\nMira - P", "Claudia\nPrivate Lessons\n9:00 - Korn\n9:30 - Chia\n10:00 - Steph"),
   // the sheet's live curveball: a new room (A4) appears in the header, a faculty rehearsal is
   // parked in a room column mid-day, and the cell mixes a coach line with an "in A4" note
   R(N, "11:50 - 12:40\nGroup A", "Faculty Rehearsal\nSchumann Marchenerzahlungen", N, N, N, N, "Faculty Rehearsal\nRavel Duo", N, N, "Elgar Piano Quintet\nGijs - P (half)\nin A4"),
@@ -136,6 +137,11 @@ const checks = [
   // coachingOf must surface only Grieg, never double-list the two she plays.
   ["coach sees Grieg (runs it) but not Fauré/Debussy (plays them)", (c => c.length === 1 && c[0][2] === "Grieg Quartet" && c[0][3] === "A2")(coachingOf(day, userCtx(roster, "Claudia Ajmone-Marsan")))],
   ["Yoojin (F) coaches the Dvořák Quartet he sits out", (c => c.length === 1 && c[0][2] === "Dvorak Quartet")(coachingOf(day, userCtx(roster, "Yoojin Jang")))],
+  // split-block coaching: read the half off YOUR token, then split the block at its midpoint so the
+  // two halves read sequential (9:00–9:38 / 9:38–10:15), not as a clash. Players still see the whole block.
+  ["Yoojin coaches Dvořák's 1st half — time-split + labelled", (c => c[0][0] === "9:00" && c[0][1] === "9:38" && c[0][5] === 1)(coachingOf(day, userCtx(roster, "Yoojin Jang")))],
+  ["Claudia coaches Grieg's 2nd half — time-split from the midpoint", (c => c[0][0] === "9:38" && c[0][1] === "10:15" && c[0][5] === 2)(coachingOf(day, userCtx(roster, "Claudia Ajmone-Marsan")))],
+  ["a whole-block coaching card keeps its full time (half = 0)", (c => c.some(x => x[2] === "Dvorak Quartet" && x[5] === 1) && coachingOf(day, userCtx(roster, "Jesus Morales")).every(x => x[5] === 0))(coachingOf(day, userCtx(roster, "Yoojin Jang")))],
   ["a non-coach gets no coaching cards", coachingOf(day, userCtx(roster, "Felicia Weiss")).length === 0],
   ["W1-only coach gets no coaching cards in week two", coachingOf(w2day, userCtx(roster, "Claudia Ajmone-Marsan")).length === 0],
 ];

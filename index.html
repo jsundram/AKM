@@ -32,7 +32,7 @@
   :root{
     --paper:#E9EDEC; --haze:#DFE5E3; --ink:#172526; --muted:#5F7072; --faint:#8C9A9B;
     --line:#CBD3D1; --warm:#F4ECDD; --warm-line:#E2D2B2; --brass:#9A6B22; --brass-deep:#7C5417;
-    --sky:#84A8BE; --shower:#6E7D84;
+    --sky:#84A8BE; --shower:#6E7D84; --coach:#276199;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%}
@@ -120,11 +120,11 @@
   .meta .coach a{color:inherit;text-decoration:underline;text-decoration-thickness:.7px;text-underline-offset:2px;text-decoration-color:var(--muted)}
   /* coaching — pieces a coach runs but doesn't play in. Cool sky accent, deliberately NOT brass
      (brass is reserved for your own playing); solid card, not dashed (a fixed commitment). */
-  .coach-row .dot{background:var(--paper);border-color:var(--sky);left:-13px;width:11px;height:11px;box-shadow:0 0 0 3px var(--paper)}
+  .coach-row .dot{background:var(--paper);border-color:var(--coach);left:-13px;width:11px;height:11px;box-shadow:0 0 0 3px var(--paper)}
   .coachcard{background:var(--haze);border-color:var(--line)}
-  .coachcard .kicker{color:var(--sky)}
-  .coachcard .roomchip{color:var(--shower);background:transparent;border-color:var(--line)}
-  .coachcard a.roomchip:hover{background:transparent;border-color:var(--sky)}
+  .coachcard .kicker,.coachcard .kicker .pc{color:var(--coach)}
+  .coachcard .roomchip{color:var(--coach);background:transparent;border-color:var(--line)}
+  .coachcard a.roomchip:hover{background:transparent;border-color:var(--coach)}
   /* a place that's on the offline map → tap to open it there */
   a.maplink{text-decoration:none;cursor:pointer}
   a.roomchip,a.rm{display:inline-flex;align-items:center;gap:3px}
@@ -193,7 +193,7 @@
     :root{
       --paper:#0F1817; --haze:#172221; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
       --line:#2C3938; --warm:#272015; --warm-line:#4A3D23;
-      --brass:#D9A24C; --brass-deep:#E8C481; --sky:#7FB2CE; --shower:#9AA7AB;
+      --brass:#D9A24C; --brass-deep:#E8C481; --sky:#7FB2CE; --shower:#9AA7AB; --coach:#79B8E8;
     }
     .wx{background:linear-gradient(180deg,#172221,#0F1817)}
     .roomchip,.fact .ftag{background:#2E2616}
