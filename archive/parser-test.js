@@ -12,7 +12,11 @@ const gv = { table: { rows: [
   R(N, "9:30 - 10:20", "Full Festival Informational Meeting\n(Lesachtalerhof Terrace)"),
   R(N, N, "A1", "A2", "AH", "KS", "BAND\nROOM", "THEATRE", "CHAPEL", "WERNER", "A4"),
   // Group B carries someone else's private-lessons block (no Jason) — must NOT surface
-  R(N, "9:00 - 10:15\nGroup B", "Schubert Cello Quintet\nYoanna - P", "Grieg Quartet\nClaudia - C", "Prokofiev Quintet\nEmi - P\nChad - C", "Casarrubios Piano Trio\nSteve - C", "Schubert Piano Trio\nTanya - C", "Schumann Piano Trio\nNathan - P", "Shostakovich Quartet no. 9\nGijs - C", "Dvorak Quartet\nYoojin - C", N, "Claudia\nPrivate Lessons\n9:00 - Korn\n9:30 - Chia\n10:00 - Steph"),
+  // Group B also holds two same-composer quintets of DIFFERENT families: "Schubert Cello Quintet"
+  // (the D.956 string quintet) and "Schubert Piano Quintet" (D.667). The grid's informal "Cello" vs
+  // the canonical "String" makes both cells tie on {schubert,quintet} — the argmax must lean on fits()
+  // so each player gets only their own quintet (wk-2 2026-07 parked both in one Group D and dropped both).
+  R(N, "9:00 - 10:15\nGroup B", "Schubert Cello Quintet\nYoanna - P", "Grieg Quartet\nClaudia - C", "Prokofiev Quintet\nEmi - P\nChad - C", "Casarrubios Piano Trio\nSteve - C", "Schubert Piano Trio\nTanya - C", "Schumann Piano Trio\nNathan - P", "Shostakovich Quartet no. 9\nGijs - C", "Dvorak Quartet\nYoojin - C", "Schubert Piano Quintet\nMira - P", "Claudia\nPrivate Lessons\n9:00 - Korn\n9:30 - Chia\n10:00 - Steph"),
   // the sheet's live curveball: a new room (A4) appears in the header, a faculty rehearsal is
   // parked in a room column mid-day, and the cell mixes a coach line with an "in A4" note
   R(N, "11:50 - 12:40\nGroup A", "Faculty Rehearsal\nSchumann Marchenerzahlungen", N, N, N, N, "Faculty Rehearsal\nRavel Duo", N, N, "Elgar Piano Quintet\nGijs - P (half)\nin A4"),
@@ -58,6 +62,12 @@ const roster = [
     pieces: "B: Schubert Piano Trio no. 1 in Bb major, D. 898" },
   { name: "Kian Woo", type: "", instrument: "Piano", hotel: "", notes: "",
     pieces: "A: Elgar Piano Quintet in A minor, op. 84" },
+  // the two colliding quintets, one player each — the string player's canonical name says "String",
+  // the grid cell says "Cello"; the piano player's is the D.667. Neither may claim the other's cell.
+  { name: "Nora Vance", type: "", instrument: "VC", hotel: "", notes: "",
+    pieces: "B: Schubert String Quintet in C major, D. 956" },
+  { name: "Dana Poole", type: "", instrument: "Piano", hotel: "", notes: "",
+    pieces: "B: Schubert Piano Quintet in A major, D. 667" },
 ];
 const w2day = { ...parse(rowsFrom(gv)), eyebrow: "Week Two" };   // same grid, week-two masthead
 const me = userCtx(roster, "Jason Sundram");
@@ -93,6 +103,9 @@ const checks = [
   // (ensemble/instrument mismatch), nor a Schumann player anything (no composer token in the block)
   ["sextet player claims nothing in group E", mineOf(day, userCtx(roster, "Yoojin Jang")).length === 0],
   ["wrong-composer player claims nothing", mineOf(day, userCtx(roster, "Felix Nobody")).length === 0],
+  // colliding same-composer quintets: the fits() guard (cello≈string, piano≠string) breaks the tie
+  ["D.956 string player gets the Cello Quintet, not the Piano Quintet", (m => m.length === 1 && m[0][2] === "Schubert Cello Quintet")(mineOf(day, userCtx(roster, "Nora Vance")))],
+  ["D.667 piano player gets the Piano Quintet, not the Cello Quintet", (m => m.length === 1 && m[0][2] === "Schubert Piano Quintet")(mineOf(day, userCtx(roster, "Dana Poole")))],
   // lesson diminutive: the 9:30 slot says "Chia" — unambiguous prefix of Chia-Hsuan
   ["Chia-Hsuan gets the 'Chia' lesson slot", lessonsOf(day, userCtx(roster, "Chia-Hsuan Lin")).map(l => l.join("|")).join() === "9:30|10:00|Claudia|"],
   // ambiguous "Steph": the coach's instrument decides — violinist Claudia's slot is Stephen's,

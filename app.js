@@ -281,7 +281,11 @@ function mineOf(day, u){
     const cw = words(piece), tw = words(target.name);
     if(!fits(cw,tw)) continue;                             // guards the informal grid title against my canonical name
     const want = new Set(tw), score = overlap(new Set(cw), want);
-    const peers = (day.rehearsals||[]).filter(r=>r[0]===s && r[6]===grp && r[2]!==piece);
+    // argmax only among siblings that *could* be my piece (pass the same fits() guard) — else a
+    // different-family neighbour parked in the same group ties on {composer, ensemble} and kills a real
+    // match: wk-2 put "Schubert Cello Quintet" (D.956, mine) and "Schubert Piano Quintet" in one Group D,
+    // and the grid's "Cello" vs my canonical "String" made both score 2 → tie → dropped.
+    const peers = (day.rehearsals||[]).filter(r=>r[0]===s && r[6]===grp && r[2]!==piece && fits(words(r[2]),tw));
     if(!peers.every(r=>overlap(toks(r[2]),want)<score)) continue;
     out.push([s,e,piece,room,coach,tag,norm(piece).split(" ")[0]]);   // last = composer key for the coda
   }
