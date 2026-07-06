@@ -477,9 +477,15 @@ function timeline(day,w){
   const ev=[];
   for(const [s,e,piece,venue] of day.allhands)
     ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}${progLink(s,piece)}</div></div></div>`]);
-  // your unscheduled blocks, explicit — free time, not brass; tap to turn one into an event
-  for(const [s,e] of day.free||[])
+  // the sheet's own practice/reading blocks — computed once; they carry the free-room tally
+  const evb = evblocks(day), evbSpans = evb.map(b=>[mins(b.s), b.e?mins(b.e):mins(b.s)+60]);
+  // your unscheduled blocks, explicit — free time, not brass; tap to turn one into an event.
+  // Skip any the sheet already advertises as a practice block (that row has the rooms, so prefer it).
+  for(const [s,e] of day.free||[]){
+    const a=mins(s), z=e?mins(e):a+60;
+    if(evbSpans.some(([x,y])=>x<z&&a<y)) continue;
     ev.push([s,`<div class="row free">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card freecard" data-free="${s}|${e}"><div class="kicker"><span>Unscheduled</span><span class="pc">＋ add</span></div><div class="piece">Practice Time / Free Reading</div></div></div></div>`]);
+  }
   for(const [s,e,piece,room,coach,tag] of day.mine){
     const pc = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
     const chip = room?placeChip(room):"";
@@ -493,14 +499,15 @@ function timeline(day,w){
   }
   for(const [s,e,kind,venue] of day.meals)
     ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
-  for(const b of evblocks(day)){
+  for(const b of evb){
     // (day.rooms is absent only on a pre-upgrade cached day — skip the room tally until the refresh lands)
     let note = !(day.rooms||[]).length ? "Practice rooms"
       : b.free.length ? `<b>Free rooms:</b> ${b.free.map(r=>esc(r)).join(", ")}` : "All rooms booked";
     if(b.closed.length) note += ` · ${b.closed.map(r=>esc(r)).join(", ")} closed`;
     note += " — sign up in the Akademie.";
     const tg = mins(b.s)>=1020 ? "Evening · your time" : "Open block · your time";   // a practice block isn't always after dinner
-    ev.push([b.s,`<div class="row"><div class="time"><span class="s">${b.s}</span></div><div class="body ev"><span class="dot"></span><div class="tag">${tg}</div><div class="what">${esc(b.label)}</div><div class="roomnote">${note}</div></div></div>`]);
+    // same tap-to-add affordance as your personal free slots, but keeps the room tally (it's communal — shown to everyone)
+    ev.push([b.s,`<div class="row free">${tline(b.s,b.e)}<div class="body"><span class="dot"></span><div class="card freecard" data-free="${b.s}|${b.e}"><div class="kicker"><span>${tg}</span><span class="pc">＋ add</span></div><div class="piece">${esc(b.label)}</div><div class="roomnote">${note}</div></div></div></div>`]);
   }
   for(const [i,m] of (loadMine()[sel]||[]).entries()) ev.push([m.s, selfCardHtml(m,i)]);
   ev.sort((a,b)=>mins(a[0])-mins(b[0]));
