@@ -2,7 +2,7 @@
 // Exercises the ported parser against the real Tuesday grid structure. parse() is user-agnostic;
 // whose day it is comes from userCtx (roster row) + mineOf/lessonsOf, exercised here as Jason.
 require("../roster-data.js");   // defines globalThis.Roster; app.js fams() now derives from Roster.instKind
-const { parse, rowsFrom, evblocks, userCtx, mineOf, lessonsOf, freeOf } = require("../app.js");
+const { parse, rowsFrom, evblocks, userCtx, mineOf, lessonsOf, coachingOf, freeOf } = require("../app.js");
 const R = (...vals) => ({ c: vals.map(v => v === null ? null : { v: String(v) }) });
 const N = null;
 
@@ -131,6 +131,13 @@ const checks = [
   // a W1-annotated player gets nothing at all on a Week Two day
   ["Jason week two: Fauré gone, Dvořák+Bruch stay", mineOf(w2day, me).map(e => e[2]).join(",") === "Dvorak Quartet,Bruch Octet"],
   ["W1 player claims nothing in week two", mineOf(w2day, userCtx(roster, "Angelina Freeman")).length === 0 && mineOf(day, userCtx(roster, "Angelina Freeman")).length === 1],
+  // faculty view: a coach sees pieces they RUN but don't play. Claudia (F) coaches Grieg (—she doesn't
+  // play it), and also Fauré/Debussy (which she plays) — the latter are her brass playing cards, so
+  // coachingOf must surface only Grieg, never double-list the two she plays.
+  ["coach sees Grieg (runs it) but not Fauré/Debussy (plays them)", (c => c.length === 1 && c[0][2] === "Grieg Quartet" && c[0][3] === "A2")(coachingOf(day, userCtx(roster, "Claudia Ajmone-Marsan")))],
+  ["Yoojin (F) coaches the Dvořák Quartet he sits out", (c => c.length === 1 && c[0][2] === "Dvorak Quartet")(coachingOf(day, userCtx(roster, "Yoojin Jang")))],
+  ["a non-coach gets no coaching cards", coachingOf(day, userCtx(roster, "Felicia Weiss")).length === 0],
+  ["W1-only coach gets no coaching cards in week two", coachingOf(w2day, userCtx(roster, "Claudia Ajmone-Marsan")).length === 0],
 ];
 let pass = 0;
 for (const [n, r] of checks) { console.log((r ? "PASS" : "FAIL") + "  " + n); pass += r ? 1 : 0; }

@@ -118,6 +118,13 @@
     background:#EFE2C8;border:1px solid var(--warm-line);border-radius:5px;padding:1px 6px;letter-spacing:.02em}
   .meta .coach b{color:var(--ink);font-weight:500}
   .meta .coach a{color:inherit;text-decoration:underline;text-decoration-thickness:.7px;text-underline-offset:2px;text-decoration-color:var(--muted)}
+  /* coaching — pieces a coach runs but doesn't play in. Cool sky accent, deliberately NOT brass
+     (brass is reserved for your own playing); solid card, not dashed (a fixed commitment). */
+  .coach-row .dot{background:var(--paper);border-color:var(--sky);left:-13px;width:11px;height:11px;box-shadow:0 0 0 3px var(--paper)}
+  .coachcard{background:var(--haze);border-color:var(--line)}
+  .coachcard .kicker{color:var(--sky)}
+  .coachcard .roomchip{color:var(--shower);background:transparent;border-color:var(--line)}
+  .coachcard a.roomchip:hover{background:transparent;border-color:var(--sky)}
   /* a place that's on the offline map → tap to open it there */
   a.maplink{text-decoration:none;cursor:pointer}
   a.roomchip,a.rm{display:inline-flex;align-items:center;gap:3px}

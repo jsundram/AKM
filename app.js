@@ -326,6 +326,22 @@ function lessonsOf(day, u){
     return !!c && teaches(u.fams,c.fams) && !rivals.some(r=>teaches(r.fams,c.fams));
   }).map(([s,e,coach,room])=>[s,e,coach,room]);
 }
+// pieces you COACH but don't play — the deferred faculty view. Every rehearsal cell already names its
+// coach ("Gijs", "Gijs/Nathan", "Chad 1st half") with a P/C tag (P = coach plays, C = observes only),
+// so match your first name/nick against it. Skip blocks you already play (they're brass playing cards),
+// leaving just the coach-only ones (the C-tagged Dvořák a violist runs but sits out). Only F/DIR/TF
+// coach, and first names are unique within those — so a name match is safe (the non-coach "Tanya"
+// never reaches here). Rendered cool, never brass: coaching isn't your own playing.
+const isCoach = t => hasTok(t,"F") || hasTok(t,"DIR") || hasTok(t,"TF");
+function coachingOf(day, u){
+  if(!u || !isCoach(u.type)) return [];
+  const wk = weekOf(day);
+  if(wk && u.week && u.week!==wk) return [];        // not at the festival this week
+  const played = new Set(mineOf(day,u).map(m=>m[0]+"|"+m[2]));
+  return (day.rehearsals||[])
+    .filter(([s,,piece,,coach]) => coach && u.re.test(coach) && !played.has(s+"|"+piece))
+    .map(([s,e,piece,room,coach])=>[s,e,piece,room,coach]);
+}
 const title = s => s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 
 // ---- weather ----
@@ -506,6 +522,14 @@ function timeline(day,w){
     const cw = coach?`<span class="coach">with ${coachLink(coach)}</span>`:"";
     const chip = placeChip(room||"LESSONS");
     ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your private lesson</span><span class="pc">be ready</span></div><div class="piece">Private lesson</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
+  }
+  // pieces you coach but sit out — cool, never brass. A co-coached cell ("Gijs/Nathan") drops you from
+  // the "with" line so it reads as your co-coach, not yourself.
+  for(const [s,e,piece,room,coach] of day.coaching||[]){
+    const others = (coach||"").split(/\s*[\/&,]\s*|\s+and\s+/).map(x=>x.trim()).filter(x=>x && !(USER&&USER.re.test(x))).join("/");
+    const cw = others?`<span class="coach">with ${coachLink(others)}</span>`:"";
+    const chip = room?placeChip(room):"";
+    ev.push([s,`<div class="row coach-row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card coachcard"><div class="kicker"><span>Coaching</span></div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
   }
   for(const [s,e,kind,venue] of day.meals)
     ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
@@ -753,7 +777,8 @@ function render(){
     html = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + `<div class="tl-empty">${head}</div>`;
   } else {
     day.mine = mineOf(day,USER); day.lessons = lessonsOf(day,USER);   // whose day this is, decided here
-    day.free = freeOf(day, [...day.mine, ...day.lessons, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
+    day.coaching = coachingOf(day,USER);                              // + pieces a coach runs but sits out
+    day.free = freeOf(day, [...day.mine, ...day.lessons, ...day.coaching, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
     const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
     html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
       + (USER && USER.name===JASON ? coda(day,BANK,dnum) : "");   // grace notes: his easter egg only
@@ -849,4 +874,4 @@ async function boot(){
 }
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
-  userCtx, mineOf, lessonsOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };
+  userCtx, mineOf, lessonsOf, coachingOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };
