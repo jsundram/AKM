@@ -257,6 +257,10 @@ function userCtx(people, name, pg){
     .map(s=>{ const mw=s.match(/\((W1|W2)\)\s*$/i);
       return { name:s.replace(/\s*\((W1|W2)\)\s*$/i,"").trim(), week:mw?(mw[1].toUpperCase()==="W1"?1:2):0 }; });
   const byGroup = {1:{}, 2:{}};   // honour a per-person week tag: a (W1) piece is mine in week 1 only
+  // legacy: a roster still using the "ABD:" group-prefix (groups/wk) — build byGroup straight from it
+  // (its group's week comes from wkOf). Live rosters have no prefix; they use the pieces list + pg next.
+  for(const L in groups){ const w=wk[L], mp={name:groups[L].replace(/\s*\((W1|W2)\)\s*$/i,"").trim(), week:w};
+    if(w!==2) byGroup[1][L]=mp; if(w!==1) byGroup[2][L]=mp; }
   for(const mp of mine){ const g=(pg||{})[norm(mp.name)]; if(!g) continue;
     if(mp.week!==2 && g[1]) byGroup[1][g[1]]=mp; if(mp.week!==1 && g[2]) byGroup[2][g[2]]=mp; }
   const idy = q => ({ first:q.name.split(/\s+/)[0].toLowerCase(),
