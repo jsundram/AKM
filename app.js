@@ -137,8 +137,14 @@ function parse(rows){
         day.meals.push([to24(m[1],m[2]), "", "Dinner sign-up", where]); }
       continue;
     }
+    // the row's banner = first cell with a time — but the time is sometimes split into its own column
+    // with the "LUNCH @ …" banner sitting in a *later* cell, past private-lesson cells that also carry
+    // a time (Tue 7/7). Keep the first time-cell as a fallback, but prefer one that names a block
+    // (LUNCH/CONCERT/GROUP/…) so a bare "13:00 - 14:30" — or a lessons cell — can't hide the meal.
+    const BANNER = /LUNCH|DINNER|BREAKFAST|CONCERT|PRACTICE BLOCK|FREE READING|GROUP/i;
     let li=-1, lab="";
-    for(let i=0;i<cells.length;i++){ const dl=despace(cells[i]); if(/\d{1,2}:\d{2}/.test(dl)){ li=i; lab=dl; break; } }
+    for(let i=0;i<cells.length;i++){ const dl=despace(cells[i]); if(!/\d{1,2}:\d{2}/.test(dl)) continue;
+      if(li<0){ li=i; lab=dl; } if(BANNER.test(dl)){ li=i; lab=dl; break; } }
     if(li<0) continue;
     const tm = lab.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/) || lab.match(/(\d{1,2}:\d{2})/);
     const start=tm[1], end=tm[2]||"";

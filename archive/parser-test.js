@@ -24,7 +24,9 @@ const gv = { table: { rows: [
   // Group C: Jason's block is shoved into the WERNER column (no LESSONS column here) — must surface his
   // 10:55 (not Maya's 10:25) and report WERNER as the room he reports to
   R(N, "10:25 - 11:40\nGroup C", "Beethoven String Trio\nIlinca - P", "Korngold Suite\nYoanna - P", "Mozart Clarinet Quintet\nJesus - P", "Faure Piano Quartet\nClaudia - P", "Schumann Piano Quartet\nSteve - C", "Ravel Piano Trio\nJames - P", "Jacob Oboe Quartet\nChad - C", "Jesus\nPrivate Lessons\n10:25 - Maya\n10:55 - Jason\n11:25 - Steph"),
-  R(N, "1 3 : 0 0 - 1 4 : 3 0\nL U N C H @ Mascha Wirt"),
+  // the sheet sometimes splits the time into its own column with the banner in a later cell, PAST a
+  // private-lesson cell that also has a time (Tue 7/7 lunch) — the label must skip to the LUNCH banner
+  R(N, "13:00 - 14:30", "Nathan\nPrivate Lessons\n14:00 - Robert", N, N, "1 3 : 0 0 - 1 4 : 3 0\nL U N C H @ Mascha Wirt"),
   R(N, N, "A1", "A2", "AH", "KS", "BAND ROOM", "THEATRE", "CHAPEL", "WERNER"),
   R(N, "14:30 - 15:45\nGroup E", "Beethoven Piano Trio\nJesus - P (half)", "Brahms Clarinet Quintet\nChad/Ilinca - P", "Dvorak Piano Quintet\nJames - P", "Bruch Octet\nGijs/Nathan - P", "Loeffler Two Rhapsodies\nTanya - C", "Reinecke Trio", "Debussy Quartet\nClaudia - P"),
   R(N, "17:20 - 19:00\nPractice Block / Free Reading", N, N, "Faculty Rehearsal\nWebern Langsamer Satz", "Faculty Rehearsal\nFaure Piano Quartet"),
