@@ -120,7 +120,7 @@ python3 scripts/build-map.py        # vector + labels + meta.bbox
 uv run scripts/build-terrain.py     # map-relief.jpg (Terrarium DEM hillshade) + map-aerial.jpg (basemap.at ortho)
 ```
 
-**Not** in the pre-commit hook (network + slow; town geometry is ~static). `map-data.json` and both JPEGs are committed. **Attribution is required and per-layer** — `map.html` swaps it with the active base: Map → "© OpenStreetMap" (ODbL); Relief → "AWS Terrain Tiles"; Aerial → "© basemap.at · CC BY". Keep all three. (Esri/Google aerial imagery can't be bundled offline — basemap.at's CC BY orthophoto is why Aerial can be baked in.)
+**Not** in the pre-commit hook (network + slow; town geometry is ~static). `map-data.json` and both JPEGs are committed. `build-map.py` writes `map-data.json` **one feature per line** (`write_json`: compact leaves so a road's int-coord array stays inline, but every road/building/label/POI on its own line) — so it greps by name and git-diffs per feature; a plain `json.dump(indent=…)` would explode the coordinate arrays into tens of thousands of lines. **Attribution is required and per-layer** — `map.html` swaps it with the active base: Map → "© OpenStreetMap" (ODbL); Relief → "AWS Terrain Tiles"; Aerial → "© basemap.at · CC BY". Keep all three. (Esri/Google aerial imagery can't be bundled offline — basemap.at's CC BY orthophoto is why Aerial can be baked in.)
 
 ## Gotchas
 

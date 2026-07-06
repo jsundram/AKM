@@ -24,6 +24,19 @@ S, W, N, E = 46.679, 12.797, 46.705, 12.835
 OUT = __file__.rsplit("/", 2)[0] + "/map-data.json"
 API = "https://overpass-api.de/api/interpreter"
 
+def write_json(data, f):
+    # one feature per line: compact leaves (a road's int coord array stays inline, not exploded), but
+    # every road/building/label/POI on its own line — so map-data.json greps by name and git-diffs per
+    # feature. Full json.dump(indent=…) would blow the coordinate arrays into tens of thousands of lines.
+    j = lambda x: json.dumps(x, separators=(",", ":"), ensure_ascii=False)
+    rows = []
+    for k, v in data.items():
+        if isinstance(v, list):
+            rows.append(f'{j(k)}:[\n' + ",\n".join("  " + j(x) for x in v) + '\n]')
+        else:
+            rows.append(f'{j(k)}:{j(v)}')
+    f.write("{\n" + ",\n".join(rows) + "\n}\n")
+
 # the places that matter. hn/st → anchor to a building footprint; osm → anchor to a named feature.
 # names mirror roster.html so the two pages agree. mine = Jason's base (the one warm-brass accent).
 # "was" = the pin's previous name, so a rename flows through the --offline reconcile (it matches
@@ -228,7 +241,7 @@ def run_offline(reason):
         return
     promoted, need_net = promote_offline(data)
     with open(OUT, "w") as f:
-        json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
+        write_json(data, f)
     for name, addr in promoted:
         print(f"  promoted {name} ← baked building {addr}")
     print(f"{reason}: reconciled POIS offline — {len(promoted)} promoted, {len(data['pois'])} POIs total")
@@ -245,7 +258,7 @@ def main():
         return run_offline(f"offline / fetch failed ({e})")   # auto-fall back instead of leaving it stale
     data, missed = build(els)
     with open(OUT, "w") as f:
-        json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
+        write_json(data, f)
     print(f"wrote {OUT}: {len(data['buildings'])} buildings, {len(data['roads'])} roads, "
           f"{len(data['water'])} water, {len(data['land'])} land, {len(data['pois'])} POIs")
     if missed:
