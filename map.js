@@ -7,7 +7,7 @@ const NS = "http://www.w3.org/2000/svg";
 const el = (t, c) => { const e = document.createElementNS(NS, t); if (c) e.setAttribute("class", c); return e; };
 const pts = p => { let s = ""; for (let i = 0; i < p.length; i += 2) s += p[i] + "," + p[i + 1] + " "; return s; };
 const XL = "http://www.w3.org/1999/xlink";
-const MINZ = 1, MAXZ = 20;                          // zoom clamp ×fitS: out-floor is fit-to-extent (edges touch), in only from there
+const MINZ = 1, MAXZ = 20;                          // zoom clamp ×fitS: out-floor is the fill-the-area fit, in only from there
 const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
 function roadLabel(o, i) {                          // curved name following the road, flipped to read L→R
@@ -175,10 +175,26 @@ function scale() {
   $("#sl-lab").textContent = m >= 1000 ? m / 1000 + " km" : m + " m";
 }
 
+// keep a translate so the viewport [0,viewport] maps inside the bbox [0,span]; if the bbox is
+// narrower than the viewport (only on a pathological aspect ratio), centre it instead
+const clampPan = (t, viewport, span) => span <= viewport ? (viewport - span) / 2 : Math.min(0, Math.max(viewport - span, t));
+
 function fit() {
   const r = map.getBoundingClientRect(); W = r.width; H = r.height;
-  fitS = Math.min(W / D.meta.w, H / D.meta.h);       // contain: binding axis fills the area (edges touch); the rest of the bbox stays visible
-  view = { s: fitS, tx: (W - fitS * D.meta.w) / 2, ty: (H - fitS * D.meta.h) / 2 };
+  const { w, h } = D.meta;
+  const sCover = Math.max(W / w, H / h);             // COVER: fill the whole area on any surface (no letterbox gray)…
+  const P = pins.map(({ p }) => p.xy).filter(Boolean);
+  let cx = w / 2, cy = h / 2, sPins = Infinity;
+  if (P.length) {                                    // …but never zoom in past the point where every pin is visible
+    const xs = P.map(a => a[0]), ys = P.map(a => a[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    cx = (x0 + x1) / 2; cy = (y0 + y1) / 2;
+    sPins = Math.min(W / (x1 - x0), H / (y1 - y0));  // pins cluster in the centre, so on real screens sCover wins
+  }
+  fitS = Math.min(sCover, sPins);
+  view.s = fitS;                                     // centre on the pins, then clamp so the viewport stays inside the bbox
+  view.tx = clampPan(W / 2 - fitS * cx, W, fitS * w);
+  view.ty = clampPan(H / 2 - fitS * cy, H, fitS * h);
   render();
 }
 
@@ -304,5 +320,9 @@ fetch("./map-data.json").then(r => r.json()).then(d => {
   D = d; myBase(d); drawScene(d); makeMarkers(d); setMode("map"); fit();
   let at = ""; try { at = decodeURIComponent(location.hash.slice(1)); } catch {}
   focusPoi(at); locate();
-  new ResizeObserver(() => { const r = map.getBoundingClientRect(); W = r.width; H = r.height; render(); }).observe(map);
+  new ResizeObserver(() => {                          // rotation / window resize: re-fill if untouched, else keep the user's zoom
+    const atFit = Math.abs(view.s - fitS) < 1e-6;
+    const r = map.getBoundingClientRect(); W = r.width; H = r.height;
+    if (atFit) fit(); else render();
+  }).observe(map);
 });
