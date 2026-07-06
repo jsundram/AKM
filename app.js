@@ -682,8 +682,11 @@ function setupAdd(){
     else if(e.key==="Backspace" && !winp.value && whoTokens.length){ whoTokens.pop(); renderChips(); }
     else if((e.key==="ArrowDown"||e.key==="ArrowUp") && !a.hidden){ e.preventDefault(); navAc(e.key==="ArrowDown"?1:-1); }
     else if(e.key==="Escape" && !a.hidden){ e.stopPropagation(); hideAc(); } };
-  winp.onblur=()=>setTimeout(hideAc,150);   // let a suggestion click land before hiding
-  $("#whoac").onclick=e=>{ const b=e.target.closest("button"); if(b){ addToken(b.dataset.t); winp.focus(); } };
+  winp.onblur=()=>setTimeout(hideAc,150);   // tapping empty space dismisses; a suggestion is committed on pointerdown, before blur
+  // pointerdown, not click: on touch the click is synthesised late — after onblur has emptied the list — so the tap misses.
+  // preventDefault keeps focus on the input (no blur race, keyboard stays up) and lands the chip on the first tap.
+  $("#whoac").onpointerdown=e=>{ const b=e.target.closest("button"); if(!b) return;
+    e.preventDefault(); addToken(b.dataset.t); winp.focus(); };
   $("#whobox").onclick=e=>{ const x=e.target.closest(".wchip button");
     if(x){ whoTokens.splice(+x.dataset.i,1); renderChips(); } else if(!e.target.closest(".wac")) winp.focus(); };
 }
