@@ -721,6 +721,11 @@ function chips(){
     el.onclick=()=>{ sel=day; render(); };
     box.appendChild(el);
   }
+  // centre the selected day — by late in the festival "today" is off the right edge (and the rebuild
+  // above reset scroll to 0). rects, so it's independent of the chips' offsetParent.
+  const on = box.querySelector(".on");
+  if(on){ const b=box.getBoundingClientRect(), o=on.getBoundingClientRect();
+    box.scrollLeft += (o.left - b.left) - (box.clientWidth - o.width)/2; }
 }
 function net(on){ const d=$("#netdot"); if(d) d.classList.toggle("off",!on); }   // #netdot lives in the rendered schedule header
 
