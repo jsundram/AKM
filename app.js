@@ -373,7 +373,7 @@ async function weatherRange(){
 // ---- render (mirrors the template markup) ----
 // °F is what we fetch + cache; a tap on the readout toggles the displayed unit (persisted), while the
 // curve geometry stays in °F — a linear F→C shift, so the shape is identical either way; only labels convert.
-let WXU = (typeof localStorage!=="undefined" && localStorage.getItem("akm-wx-unit")) || "F";
+let WXU = "F"; try{ WXU = localStorage.getItem("akm-wx-unit") || "F"; }catch{}   // guard: Node 25 defines a non-functional localStorage global
 const wxT = f => WXU==="C" ? Math.round((f-32)*5/9) : Math.round(f);
 function svg(w,now,cur){
   const t=w.t, W=340,H=86,L=12,R=328,T=12,B=60;
@@ -833,7 +833,7 @@ async function boot(){
   setupWho();
   // #app is repainted on every render; delegate so the add button + per-card delete/edit survive repaints
   $("#app").addEventListener("click", e=>{
-    if(e.target.closest("#wxunit")){ WXU = WXU==="C"?"F":"C"; localStorage.setItem("akm-wx-unit",WXU); render(); return; }
+    if(e.target.closest("#wxunit")){ WXU = WXU==="C"?"F":"C"; try{localStorage.setItem("akm-wx-unit",WXU)}catch{} render(); return; }
     if(e.target.closest("#whobtn")){ openWho(); return; }
     if(e.target.closest("#addself")){ openAdd(); return; }
     const fr=e.target.closest("[data-free]"); if(fr){ const [s,en]=fr.dataset.free.split("|"); openAdd(null,{s,e:en}); return; }
