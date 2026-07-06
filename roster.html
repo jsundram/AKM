@@ -188,7 +188,7 @@ const typeTitle = t => (t||"").split(",").map(x=>TYPE_LABEL[x.trim()]||x.trim())
 // instruments collapse to a fixed set, shown + sorted in this order; nothing else
 const INST_ORDER=["V","V/VA","VA","VC","Bass","Piano","Clarinet"];
 function instLabel(s){ s=(s||"").trim(); if(!s) return ""; const l=s.toLowerCase();
-  return l==="v/va"?"V/VA" : l.startsWith("vc")?"VC" : l.startsWith("va")?"VA" : l.startsWith("v")?"V"
+  return l==="v/va"?"V/VA" : l.startsWith("vc")||l.startsWith("ce")?"VC" : l.startsWith("va")?"VA" : l.startsWith("v")?"V"
        : l.startsWith("b")?"Bass" : l.startsWith("p")?"Piano" : l.startsWith("c")?"Clarinet" : s; }
 const instRank = s => { const k=instLabel(s), i=INST_ORDER.indexOf(k); return i>=0?i:(k?50:99); };
 function key(p){
