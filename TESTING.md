@@ -31,6 +31,26 @@ posted tab × every roster person; assert every W1 cell is claimed, every lesson
 to exactly one person, and W2 claims are only two-week groups). Rebuild it from the exports —
 `parse`, `rowsFrom`, `userCtx`, `mineOf`, `lessonsOf` are all `require`-able.
 
+## On-device preview of uncommitted code
+
+For anything touch-specific (the Node harnesses can't see a real touchscreen — e.g. a
+`click`/`pointerdown` handler that only misfires on iOS), test the **working tree** on a
+real phone *before* pushing, and rule out "is this my code or a stale cache?" at the same
+time. Serve the repo and tunnel it out — plain LAN serving (`http://<laptop-ip>:8000`) is
+usually blocked by the macOS firewall or wifi client-isolation, so the phone can't reach it:
+
+```
+python3 -m http.server 8000 --bind 0.0.0.0    # serves the working tree, all interfaces
+ngrok http 8000                               # public HTTPS URL (authtoken already configured)
+# grab the url: curl -s localhost:4040/api/tunnels | python3 -c 'import sys,json;print(json.load(sys.stdin)["tunnels"][0]["public_url"])'
+```
+
+Open the ngrok URL on the phone (tap through the free-tier interstitial once). It serves
+files straight from disk, so every reload is the latest code. A **Private tab** is the
+cleanest test — iOS Safari doesn't register the service worker there, so nothing is cached.
+This is exactly how the WITH-field chip fix was confirmed on iOS (`touchstart`/`mousedown`,
+committed in the first touch event before blur clears the list — `pointerdown` alone missed).
+
 ## Manual, before sharing (~30 min, two devices)
 
 Machine-verified already — don't re-test content correctness: all 60 people × all 11 days
