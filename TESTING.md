@@ -8,9 +8,15 @@ before sharing with new people or after anything that touches identity, matching
 ## Automated
 
 ```
-node archive/parser-test.js     # 30/30 — grid parsing + multi-user matching on the real Tuesday fixture
-node scripts/network-test.js    # 15/15 — pieces↔roster join + both graph layouts, against the live sheets
+node archive/parser-test.js     # 36/36 — grid parsing + multi-user matching on a synthetic fixture (offline; runs anywhere)
+node scripts/network-test.js    # 14/14 — pieces↔roster co-performance join + both graph layouts, against the live sheets
+node scripts/schedule-test.js   #  6/6  — the schedule personalizes (mineOf non-empty, no over-claims), wk-1 + wk-2, live
 ```
+
+The two live tests pull the real sheets (public gviz) to catch what the offline fixture can't — the
+sheets drifting from what the code expects (a roster `Pieces` reformat once blanked every schedule).
+Both are **network-gated: they skip (exit 0) rather than fail when the sheets are unreachable** (offline
+or a locked-down sandbox); the roster is PII, so there are no committed fixtures to fall back to.
 
 The parser fixture encodes the sheet's real quirks — wrapped room headers ("BAND\nROOM"),
 letter-spaced banners, double-coach cells, private-lesson blocks parked in room columns,

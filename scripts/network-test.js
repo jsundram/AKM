@@ -18,8 +18,14 @@ const get = u => new Promise((res, rej) =>
 
 (async () => {
   const [pArg, rArg] = process.argv.slice(2);
-  const piecesRaw = pArg ? fs.readFileSync(pArg, "utf8") : await get(url("244347893"));
-  const rosterRaw = rArg ? fs.readFileSync(rArg, "utf8") : await get(url("800090339"));
+  let piecesRaw, rosterRaw;
+  try {                                          // live fetch is network-gated; skip (not fail) when offline
+    piecesRaw = pArg ? fs.readFileSync(pArg, "utf8") : await get(url("244347893"));
+    rosterRaw = rArg ? fs.readFileSync(rArg, "utf8") : await get(url("800090339"));
+  } catch (e) {
+    if (pArg && rArg) throw e;                   // fixtures were passed but unreadable → a real failure
+    console.log("skipped — sheets unreachable (" + e.message + ")"); process.exit(0);
+  }
 
   const roster = C.parseRoster(C.unwrap(rosterRaw));
   const pieces = C.pieceRows(C.unwrap(piecesRaw));
