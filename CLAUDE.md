@@ -90,6 +90,17 @@ git config core.hooksPath .githooks
 
 Run it by hand anytime: `python3 scripts/update-gids.py`. gids are stable across tab rename/reorder; only a from-scratch rebuild of the sheet changes them.
 
+## buildlog (meta dashboard, laptop-only refresh)
+
+`buildlog/` is the build-time dashboard (Jason's hours three ways vs Claude's, laptop vs cloud, commits, LOC growth) at `/buildlog/` — noindex, **not** SW-precached, no roster data. Every number is computed in-page from one embedded `DATA` blob, so refreshing = re-baking that blob: `buildlog/crunch.py` derives it from the **local Claude Code transcripts** (`~/.claude/projects/…AKM/*.jsonl`) + git history. Transcripts never leave this laptop, so **a cloud session cannot refresh this page** — and time spent on *other* machines isn't measured (their commits/LOC still count; cloud sessions are reconstructed from `Claude-Session` commit trailers). `buildlog/update.py` runs crunch → splice → commit → push; it's idempotent (skips when only the generated-timestamp moved), network-tolerant, and self-expires after 2026-07-13. A launchd job runs it nightly at 23:45 (missed runs fire on next wake):
+
+```
+launchctl bootstrap gui/501 ~/Library/LaunchAgents/com.akm.buildlog.plist   # install
+launchctl bootout gui/501/com.akm.buildlog                                  # remove
+```
+
+Log: `~/Library/Logs/akm-buildlog.log`. Run by hand anytime: `python3 buildlog/update.py`.
+
 ## map data (baked, hand-run)
 
 `scripts/build-map.py` (stdlib-only, PEP 723) fetches the Liesing/Klebas bbox from the Overpass API, slims it to roads/buildings/water/land + the festival POIs, projects lat/lon → integer metres, and writes `map-data.json`. It's network-tolerant like the gid script: on fetch failure it leaves the existing file untouched and exits 0. (The default `overpass-api.de` endpoint is often overloaded — if it 504s/times out, temporarily point `API` at `https://overpass.openstreetmap.fr/api/interpreter` for the run, then revert.)
