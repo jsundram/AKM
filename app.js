@@ -167,15 +167,17 @@ function parse(rows){
       const lines = cell.split("\n").map(x=>x.trim()).filter(Boolean);
       const text = lines.join(" ");
       const fac = /^faculty/i.test(text);
-      let coach="", tag="";
+      let coach="", tag="", partial=false;
       // coach lines ("Emi - P", "Chad - C") can sit anywhere below the piece, mixed with notes
       // ("in A4" — redundant, the column names the room): collect every coach (names join "/",
       // coachLink links each; the tag is the first-listed, playing coach's), drop the room notes,
-      // and what's left is the piece
+      // and what's left is the piece. A trailing "(half)" ("Jesus - C (half)") = the coach is only
+      // here for half the block — kept out of the name (so it stays a clean match) as a `partial` flag.
       const kept = lines.filter((l,li)=>{
         if(li===0) return true;
         const mt = fac ? null : l.match(/^(.*?)\s*[-–]\s*([PC])\b/);
-        if(mt){ coach = coach ? coach+"/"+mt[1].trim() : mt[1].trim(); tag = tag||mt[2]; return false; }
+        if(mt){ coach = coach ? coach+"/"+mt[1].trim() : mt[1].trim(); tag = tag||mt[2];
+          if(/\(\s*half\s*\)/i.test(l)) partial=true; return false; }
         return !/^in\s+[A-Z][A-Z0-9 ]*$/i.test(l);
       });
       const piece = kept.join(" ").replace(/^faculty\s+(rehearsal|reading)\s*/i,"").trim();
@@ -187,7 +189,7 @@ function parse(rows){
       // block (routing it through `evening` fabricated a phantom "free rooms" block at 10:50)
       if(fac){ day.fac.push([start,end,piece,cols[i]]); continue; }
       if(/private\s+lesson/i.test(text)) continue;   // lesson blocks were slot-parsed above, not a rehearsal
-      day.rehearsals.push([start,end,piece,cols[i],coach,tag,grp]);
+      day.rehearsals.push([start,end,piece,cols[i],coach,tag,grp,partial]);
     }
   }
   // the notes block is repeated in the sheet (top + bottom), so the sign-up reminder lands twice — dedupe
@@ -276,7 +278,7 @@ function mineOf(day, u){
   if(dw && u.week && u.week!==dw) return [];         // not at the festival this week
   const bg = (u.byGroup && u.byGroup[dw||2]) || {};  // my {group letter → piece} for this week
   const out=[];
-  for(const [s,e,piece,room,coach,tag,grp] of (day.rehearsals||[])){
+  for(const [s,e,piece,room,coach,tag,grp,partial] of (day.rehearsals||[])){
     const target = grp && bg[grp]; if(!target) continue;   // only the one piece I play in this block's group
     const cw = words(piece), tw = words(target.name);
     if(!fits(cw,tw)) continue;                             // guards the informal grid title against my canonical name
@@ -287,7 +289,7 @@ function mineOf(day, u){
     // and the grid's "Cello" vs my canonical "String" made both score 2 → tie → dropped.
     const peers = (day.rehearsals||[]).filter(r=>r[0]===s && r[6]===grp && r[2]!==piece && fits(words(r[2]),tw));
     if(!peers.every(r=>overlap(toks(r[2]),want)<score)) continue;
-    out.push([s,e,piece,room,coach,tag,norm(piece).split(" ")[0]]);   // last = composer key for the coda
+    out.push([s,e,piece,room,coach,tag,norm(piece).split(" ")[0],partial]);   // [6]=composer key (coda), [7]=half-length coaching
   }
   return out;
 }
@@ -348,11 +350,11 @@ function coachingOf(day, u){
   const played = new Set(mineOf(day,u).map(m=>m[0]+"|"+m[2]));
   return (day.rehearsals||[])
     .filter(([s,,piece,,coach]) => coach && u.re.test(coach) && !played.has(s+"|"+piece))
-    .map(([s,e,piece,room,coach])=>{
+    .map(([s,e,piece,room,coach,tag,grp,partial])=>{
       const h = coachHalf(coach, u.re);             // split a shared block at its midpoint so the two
       if(h && e){ const mid = hhmm(Math.round((mins(s)+mins(e))/2));   // halves read as sequential, not a clash
-        return h===1 ? [s,mid,piece,room,coach,1] : [mid,e,piece,room,coach,2]; }
-      return [s,e,piece,room,coach,0];
+        return h===1 ? [s,mid,piece,room,coach,1,partial] : [mid,e,piece,room,coach,2,partial]; }
+      return [s,e,piece,room,coach,0,partial];      // [5]=which half (0/1/2), [6]=lone "(half)" = partial block
     });
 }
 const title = s => s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
@@ -525,8 +527,9 @@ function timeline(day,w){
     if(evbSpans.some(([x,y])=>x<z&&a<y)) continue;
     ev.push([s,`<div class="row free">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card freecard" data-free="${s}|${e}"><div class="kicker"><span>Unscheduled</span><span class="pc">＋ add</span></div><div class="piece">Practice Time / Free Reading</div></div></div></div>`]);
   }
-  for(const [s,e,piece,room,coach,tag] of day.mine){
-    const pc = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
+  for(const [s,e,piece,room,coach,tag,,partial] of day.mine){
+    const role = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
+    const pc = [role, partial?"half":""].filter(Boolean).join(" · ");     // "(half)" = coach here for half the block
     const chip = room?placeChip(room):"";
     const cw = coach?`<span class="coach">with ${coachLink(coach)}</span>`:"";
     ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your rehearsal</span><span class="pc">${pc}</span></div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
@@ -538,11 +541,12 @@ function timeline(day,w){
   }
   // pieces you coach but sit out — cool, never brass. A co-coached cell ("Gijs/Nathan") drops you from
   // the "with" line so it reads as your co-coach, not yourself.
-  for(const [s,e,piece,room,coach,half] of day.coaching||[]){
+  for(const [s,e,piece,room,coach,half,partial] of day.coaching||[]){
     const others = (coach||"").split(/\s*[\/&,]\s*|\s+and\s+/).map(x=>x.trim()).filter(x=>x && !(USER&&USER.re.test(x))).join("/");
     const cw = others?`<span class="coach">with ${coachLink(others)}</span>`:"";
     const chip = room?placeChip(room):"";
-    const hl = half?`<span class="pc">${half===1?"first half":"second half"}</span>`:"";
+    const label = half===1?"first half":half===2?"second half":partial?"half":"";   // 1st/2nd = time-split; lone "(half)" = partial, no split
+    const hl = label?`<span class="pc">${label}</span>`:"";
     ev.push([s,`<div class="row coach-row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card coachcard"><div class="kicker"><span>Coaching</span>${hl}</div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
   }
   for(const [s,e,kind,venue] of day.meals)

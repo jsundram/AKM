@@ -26,7 +26,7 @@ const gv = { table: { rows: [
   R(N, "10:25 - 11:40\nGroup C", "Beethoven String Trio\nIlinca - P", "Korngold Suite\nYoanna - P", "Mozart Clarinet Quintet\nJesus - P", "Faure Piano Quartet\nClaudia - P", "Schumann Piano Quartet\nSteve - C", "Ravel Piano Trio\nJames - P", "Jacob Oboe Quartet\nChad - C", "Jesus\nPrivate Lessons\n10:25 - Maya\n10:55 - Jason\n11:25 - Steph"),
   R(N, "1 3 : 0 0 - 1 4 : 3 0\nL U N C H @ Mascha Wirt"),
   R(N, N, "A1", "A2", "AH", "KS", "BAND ROOM", "THEATRE", "CHAPEL", "WERNER"),
-  R(N, "14:30 - 15:45\nGroup E", "Beethoven Piano Trio\nJesus - P", "Brahms Clarinet Quintet\nChad/Ilinca - P", "Dvorak Piano Quintet\nJames - P", "Bruch Octet\nGijs/Nathan - P", "Loeffler Two Rhapsodies\nTanya - C", "Reinecke Trio", "Debussy Quartet\nClaudia - P"),
+  R(N, "14:30 - 15:45\nGroup E", "Beethoven Piano Trio\nJesus - P (half)", "Brahms Clarinet Quintet\nChad/Ilinca - P", "Dvorak Piano Quintet\nJames - P", "Bruch Octet\nGijs/Nathan - P", "Loeffler Two Rhapsodies\nTanya - C", "Reinecke Trio", "Debussy Quartet\nClaudia - P"),
   R(N, "17:20 - 19:00\nPractice Block / Free Reading", N, N, "Faculty Rehearsal\nWebern Langsamer Satz", "Faculty Rehearsal\nFaure Piano Quartet"),
   R(N, "1 9 : 0 0\nD I N N E R @ Lesachtalerhof"),
   R(N, "2 0 : 0 0\nF A C U L T Y   C O N C E R T @ Kultursaal"),
@@ -142,6 +142,10 @@ const checks = [
   ["Yoojin coaches Dvořák's 1st half — time-split + labelled", (c => c[0][0] === "9:00" && c[0][1] === "9:38" && c[0][5] === 1)(coachingOf(day, userCtx(roster, "Yoojin Jang")))],
   ["Claudia coaches Grieg's 2nd half — time-split from the midpoint", (c => c[0][0] === "9:38" && c[0][1] === "10:15" && c[0][5] === 2)(coachingOf(day, userCtx(roster, "Claudia Ajmone-Marsan")))],
   ["a whole-block coaching card keeps its full time (half = 0)", (c => c.some(x => x[2] === "Dvorak Quartet" && x[5] === 1) && coachingOf(day, userCtx(roster, "Jesus Morales")).every(x => x[5] === 0))(coachingOf(day, userCtx(roster, "Yoojin Jang")))],
+  // a lone "(half)" ("Jesus - P (half)") = coach here for half the block, unsplittable (no 1st/2nd) —
+  // surfaced as a `partial` flag on BOTH the coach's card and every player's card, name kept clean
+  ["lone '(half)' flags the coach's card (Jesus's Beethoven)", coachingOf(day, userCtx(roster, "Jesus Morales")).some(c => c[2] === "Beethoven Piano Trio" && c[5] === 0 && c[6] === true)],
+  ["lone '(half)' flags a player's card, coach name stays clean (Kian's Elgar)", (m => m[0][4] === "Gijs" && m[0][7] === true)(mineOf(day, userCtx(roster, "Kian Woo")))],
   ["a non-coach gets no coaching cards", coachingOf(day, userCtx(roster, "Felicia Weiss")).length === 0],
   ["W1-only coach gets no coaching cards in week two", coachingOf(w2day, userCtx(roster, "Claudia Ajmone-Marsan")).length === 0],
 ];
