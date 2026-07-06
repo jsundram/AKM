@@ -371,6 +371,10 @@ async function weatherRange(){
 }
 
 // ---- render (mirrors the template markup) ----
+// °F is what we fetch + cache; a tap on the readout toggles the displayed unit (persisted), while the
+// curve geometry stays in °F — a linear F→C shift, so the shape is identical either way; only labels convert.
+let WXU = (typeof localStorage!=="undefined" && localStorage.getItem("akm-wx-unit")) || "F";
+const wxT = f => WXU==="C" ? Math.round((f-32)*5/9) : Math.round(f);
 function svg(w,now,cur){
   const t=w.t, W=340,H=86,L=12,R=328,T=12,B=60;
   const dom = cur!=null ? t.concat(cur) : t;   // keep an off-curve live dot in frame
@@ -385,8 +389,8 @@ function svg(w,now,cur){
   if(w.shower){const a=xat(w.shower[0]),b=xat(w.shower[1]);
     s+=`<rect x="${a.toFixed(1)}" y="${T}" width="${(b-a).toFixed(1)}" height="${B-T}" fill="#6E7D84" opacity="0.13"/><text x="${((a+b)/2).toFixed(1)}" y="${T+9}" font-size="7.5" fill="#6E7D84" text-anchor="middle" letter-spacing="0.5">SHOWERS</text>`;}
   s+=`<path d="${d} L${R} ${B} L${L} ${B} Z" fill="url(#fg)"/><path d="${d}" fill="none" stroke="url(#tg)" stroke-width="2.2" stroke-linecap="round"/>`;
-  s+=`<circle cx="${xat(hi_i).toFixed(1)}" cy="${yat(t[hi_i]).toFixed(1)}" r="2.6" fill="#C5792B"/><text x="${xat(hi_i).toFixed(1)}" y="${(yat(t[hi_i])-6).toFixed(1)}" font-size="9" fill="#C5792B" text-anchor="middle" font-weight="500">H ${w.hi}°</text>`;
-  s+=`<circle cx="${xat(lo_i).toFixed(1)}" cy="${yat(t[lo_i]).toFixed(1)}" r="2.6" fill="#7E96A6"/><text x="${xat(lo_i).toFixed(1)}" y="${(yat(t[lo_i])-6).toFixed(1)}" font-size="9" fill="#7E96A6" text-anchor="middle" font-weight="500">L ${w.lo}°</text>`;
+  s+=`<circle cx="${xat(hi_i).toFixed(1)}" cy="${yat(t[hi_i]).toFixed(1)}" r="2.6" fill="#C5792B"/><text x="${xat(hi_i).toFixed(1)}" y="${(yat(t[hi_i])-6).toFixed(1)}" font-size="9" fill="#C5792B" text-anchor="middle" font-weight="500">H ${wxT(w.hi)}°</text>`;
+  s+=`<circle cx="${xat(lo_i).toFixed(1)}" cy="${yat(t[lo_i]).toFixed(1)}" r="2.6" fill="#7E96A6"/><text x="${xat(lo_i).toFixed(1)}" y="${(yat(t[lo_i])-6).toFixed(1)}" font-size="9" fill="#7E96A6" text-anchor="middle" font-weight="500">L ${wxT(w.lo)}°</text>`;
   // daylight bounds: dotted vertical + sun glyph (top) + time (axis) at sunrise/sunset
   const hm=t=>{const[a,b]=t.split(":").map(Number);return a+b/60;};
   const tl=t=>t.replace(/^0/,"");
@@ -404,7 +408,7 @@ function svg(w,now,cur){
       s+=`<circle cx="${x.toFixed(1)}" cy="${yat(tv).toFixed(1)}" r="2" fill="none" stroke="#566069" stroke-width="1" opacity="0.4"/>`;
     s+=`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${x.toFixed(1)}" y2="${B}" stroke="#566069" stroke-width="1" opacity="0.55"/>`;
     s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#566069" stroke="#fff" stroke-width="1.4"/>`;
-    s+=`<text x="${x.toFixed(1)}" y="${Math.max(y-7,9).toFixed(1)}" font-size="9" fill="#566069" text-anchor="middle" font-weight="600">${Math.round(temp)}°</text>`;
+    s+=`<text x="${x.toFixed(1)}" y="${Math.max(y-7,9).toFixed(1)}" font-size="9" fill="#566069" text-anchor="middle" font-weight="600">${wxT(temp)}°</text>`;
   }
   return s+"</svg>";
 }
@@ -420,7 +424,7 @@ function wxcard(w,now,cur){
   const precip = w.thunder?"Thunderstorms possible":w.shower?"Showers possible":w.drizzle?"Drizzle possible":"";
   const sub = precip ? `${precip}${whenPhrase(w.shower)}.` : `${w.sky||"Dry"}.`;
   const src = w.src ? `<div class="wx-src">forecast via ${w.src}</div>` : "";
-  return `<div class="wx"><div class="wx-top"><div class="wx-temp">${w.hi}°<small> / ${w.lo}°F</small></div><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w,now,cur)}</div>${src}</div>`;
+  return `<div class="wx"><div class="wx-top"><button class="wx-temp" id="wxunit" type="button" title="tap for °${WXU==="C"?"F":"C"}">${wxT(w.hi)}°<small> / ${wxT(w.lo)}°<u>${WXU}</u></small></button><div class="wx-sum"><b>${sub}</b><br>light wind</div></div><div class="wx-curve">${svg(w,now,cur)}</div>${src}</div>`;
 }
 // places that exist on the offline map (POI names + room-code aliases, from map-data.json) become
 // "→ map" links; everything else stays plain text. Same source of truth the map itself uses.
@@ -829,6 +833,7 @@ async function boot(){
   setupWho();
   // #app is repainted on every render; delegate so the add button + per-card delete/edit survive repaints
   $("#app").addEventListener("click", e=>{
+    if(e.target.closest("#wxunit")){ WXU = WXU==="C"?"F":"C"; localStorage.setItem("akm-wx-unit",WXU); render(); return; }
     if(e.target.closest("#whobtn")){ openWho(); return; }
     if(e.target.closest("#addself")){ openAdd(); return; }
     const fr=e.target.closest("[data-free]"); if(fr){ const [s,en]=fr.dataset.free.split("|"); openAdd(null,{s,e:en}); return; }
