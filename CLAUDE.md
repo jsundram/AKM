@@ -60,14 +60,14 @@ Alpine palette; Fraunces (display) / IBM Plex Mono (data) / Inter (body) — **l
 The parser has a Node harness (pure functions are exported when `app.js` is required outside a browser):
 
 ```
-node archive/parser-test.js   # passes 36/36 on the real Tuesday grid (incl. morning all-hands above the room grid, a private lesson, per-block evening free rooms, multi-user piece matching, stale-letter false-positive guards, coach-instrument lesson tie-breaks, week gating, the wrapped room header, concert banner rows, header-learned new rooms, and daytime faculty cells)
+node archive/parser-test.js   # passes 42/42 on the real Tuesday grid (incl. morning all-hands above the room grid, a private lesson, per-block evening free rooms, multi-user piece matching, stale-letter false-positive guards incl. two same-composer quintets colliding in one group, coach-instrument lesson tie-breaks, the faculty coaching view (coach-not-play, excludes played, week-gated), week gating, the wrapped room header, concert banner rows, header-learned new rooms, and daytime faculty cells)
 ```
 
 That harness is **offline + synthetic**, so it runs anywhere — but by construction it can't see the *live sheets drifting from what the code expects* (a roster `Pieces` reformat once dropped the group-prefix `userCtx` parsed, silently blanking **every** user's schedule while these fixtures stayed green). Two **live** smoke tests close that gap by pulling the real sheets (public gviz, no auth):
 
 ```
 node scripts/network-test.js    # the pieces↔roster co-performance join (0 unmatched); SVG previews gitignored (PII)
-node scripts/schedule-test.js   # the schedule personalizes — mineOf non-empty + nobody over-claims — on a wk-1 and a wk-2 grid
+node scripts/schedule-test.js   # the schedule personalizes — mineOf non-empty + nobody over-claims — on a wk-1 and a wk-2 grid, and coaching cards stay faculty-only (no student leak)
 ```
 
 Both are **network-gated: they skip (`exit 0`), never fail, when the sheets are unreachable** (offline, or a locked-down cloud sandbox). There are deliberately *no committed fixtures* to fall back to — the roster is PII. So they assert when data is reachable and stay quiet otherwise.

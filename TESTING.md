@@ -8,10 +8,10 @@ before sharing with new people or after anything that touches identity, matching
 ## Automated
 
 ```
-node archive/parser-test.js     # 36/36 — grid parsing + multi-user matching on a synthetic fixture (offline; runs anywhere)
+node archive/parser-test.js     # 42/42 — grid parsing + multi-user matching + faculty coaching view, synthetic fixture (offline; runs anywhere)
 node scripts/inst-test.js       # 35/35 — the shared instrument classifier (Roster.instKind) + network's Winds grouping (offline)
 node scripts/network-test.js    # 14/14 — pieces↔roster co-performance join + both graph layouts, against the live sheets
-node scripts/schedule-test.js   # 15/15 — the schedule personalizes (mineOf non-empty, no over-claims), every festival day, live
+node scripts/schedule-test.js   # 17/17 — schedule personalizes (mineOf non-empty, no over-claims) + coaching stays faculty-only, every festival day, live
 ```
 
 The two live tests pull the real sheets (public gviz) to catch what the offline fixture can't — the
