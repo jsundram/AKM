@@ -465,7 +465,9 @@ function wxcard(w,now,cur){
 let PLACES = new Set();
 async function loadPlaces(){
   try{ const d=await (await fetch("./map-data.json")).json();
-    for(const p of d.pois){ PLACES.add(p.name.toLowerCase()); (p.aliases||[]).forEach(a=>PLACES.add(a.toLowerCase())); }
+    // a POI can carry a dual name ("GH Wilhelmer / Mascha Wirt" — the "/" is a line-break on the pin);
+    // index each half too, so the schedule's "Mascha Wirt" still links to it.
+    for(const p of d.pois){ const n=p.name.toLowerCase(); n.split(" / ").forEach(x=>PLACES.add(x.trim())); PLACES.add(n); (p.aliases||[]).forEach(a=>PLACES.add(a.toLowerCase())); }
     const m=d.meta||{}, b=m.bbox, k=d.pois.find(p=>p.name==="Kultursaal");   // forecast at the Kultursaal venue: invert its POI xy → lat/lon
     if(b&&k){ LAT=b[2]-(k.xy[1]/m.h)*(b[2]-b[0]); LON=b[1]+(k.xy[0]/m.w)*(b[3]-b[1]); }
   }catch{ /* offline + uncached: links just won't render until the map data is around */ }

@@ -104,7 +104,8 @@ function makeMarkers(d) {
 function focusPoi(key) {
   if (!key) return;
   const k = key.trim().toLowerCase();
-  const hit = pins.find(({ p }) => p.name.toLowerCase() === k || (p.aliases || []).some(a => a.toLowerCase() === k));
+  const hit = pins.find(({ p }) => { const n = p.name.toLowerCase();   // match the full name, either half of a "A / B" dual name, or an alias
+    return n === k || n.split(" / ").some(x => x.trim() === k) || (p.aliases || []).some(a => a.toLowerCase() === k); });
   if (!hit) return;
   hit.mk.classList.add("on", "focus");
   view.s = Math.min(fitS * MAXZ, fitS * 5);

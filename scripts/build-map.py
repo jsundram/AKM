@@ -39,13 +39,13 @@ POIS = [
     {"name": "Haus Lanzinger",          "cat": "lodging", "st": "Liesing", "hn": "21"},
     {"name": "Haus Obernosterer",       "cat": "lodging", "st": "Liesing", "hn": "25"},  # Obernosterer *Apartment* lodging
     {"name": "Obernosterer AirBNB",      "cat": "lodging", "st": "Liesing", "hn": "50"},  # separate building next door to Haus Obernosterer
-    {"name": "Kleines Berghotel",       "cat": "lodging", "st": "Klebas",  "hn": "7"},
+    {"name": "Kleines Berghotel",       "cat": "lodging", "st": "Klebas",  "hn": "7", "aliases": ["Berghotel"]},  # schedule shortens it to "Berghotel"
     {"name": "Akademie", "was": "Kultursaal", "cat": "venue", "st": "Liesing", "hn": "15", "aliases": ["A1", "A2", "A3", "A4", "AH"]},  # the Volksmusik Akademie (VMA); the A-rooms + AH are inside it
     {"name": "Kultursaal", "was": "Badstubn", "cat": "venue", "also": "lodging", "st": "Klebas", "hn": "30", "osm": "Badstubn", "aliases": ["KS", "Badstubn"]},  # KS / "Kultursaal" in the schedule mean THIS building (Badstub'n, Klebas 30): concert venue + the Kultursaal apartment (lodging)
     {"name": "Werner",                   "cat": "venue", "st": "Liesing", "hn": "30"},   # yellow house down the street from Musikhof Lexer (the WERNER rehearsal room)
     {"name": "Band Room",                "cat": "venue", "st": "Liesing", "hn": "20"},   # the BAND ROOM rehearsal space; name lowercases to the schedule's room code, so the chip links without an alias
     {"name": "Theatre",                  "cat": "venue", "st": "Liesing", "hn": "5"},    # the THEATRE rehearsal room; name lowercases to the schedule's room code, so the chip links without an alias
-    {"name": "Pfarrkirche Hl. Nikolaus", "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus", "aliases": ["CHAPEL"]},  # CHAPEL rehearsal room
+    {"name": "Pfarrkirche Hl. Nikolaus", "cat": "venue", "osm": "Pfarrkirche Heiliger Nikolaus", "aliases": ["CHAPEL", "Liesingkirche"]},  # CHAPEL rehearsal room; the schedule's concert venue "Liesingkirche" is this church
     {"name": "GH Wilhelmer / Mascha Wirt", "cat": "food", "st": "Liesing", "hn": "24"},  # slash → line break in the label
     {"name": "Steineckenalm",            "cat": "food", "way": 438758257},  # Jausenstation up the Steinecken-Weg; OSM names it only as a node, so anchor the footprint by way id
 ]
