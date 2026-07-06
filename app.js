@@ -87,37 +87,10 @@ function coachMap(people){
   return out;
 }
 
-// The Repertoire tab (in the roster's spreadsheet) carries each piece's rehearsal-cohort letter per
-// week — Group-W1 / Group-W2. Pull it (gviz JSONP) and build norm(piece name) → {1:letter, 2:letter},
-// so mineOf() can map a schedule block's Group letter to the one piece I actually play there.
-const REP_GID = "244347893";
-function repJsonp(){
-  return new Promise((res,rej)=>{
-    const cb = "__rp"+Math.random().toString(36).slice(2);
-    const s = document.createElement("script");
-    const to = setTimeout(()=>{cleanup(); rej(new Error("timeout"));}, 15000);
-    function cleanup(){ clearTimeout(to); delete window[cb]; s.remove(); }
-    window[cb] = d => { cleanup(); res(d); };
-    s.onerror = () => { cleanup(); rej(new Error("script")); };
-    s.src = `https://docs.google.com/spreadsheets/d/${Roster.SID}/gviz/tq?gid=${REP_GID}&tqx=out:json;responseHandler:${cb}`;
-    document.head.appendChild(s);
-  });
-}
-function pieceGroups(gv){
-  const t = gv && gv.table; if(!t) return {};
-  let rows = (t.rows||[]).map(r => (r.c||[]).map(c => c ? String(c.v ?? c.f ?? "").trim() : ""));
-  let hdr = (t.cols||[]).map(c => (c.label||"").toLowerCase()), start = 0;
-  if(!hdr.includes("piece")){ const h = rows.findIndex(r => r.some(x => x.toLowerCase()==="piece"));
-    hdr = (rows[h]||[]).map(x => x.toLowerCase()); start = h+1; }
-  const pi = hdr.indexOf("piece"); if(pi<0) return {};
-  const g1 = hdr.findIndex(x=>x.includes("w1")), g2 = hdr.findIndex(x=>x.includes("w2"));
-  const out = {};
-  for(const r of rows.slice(start)){
-    const piece = (r[pi]||"").replace(/\s*\((?:W1|W2)\)\s*$/i,"").trim(); if(!piece) continue;
-    out[norm(piece)] = { 1:(g1>=0?r[g1]:"")||"", 2:(g2>=0?r[g2]:"")||"" };
-  }
-  return out;
-}
+// The user's pieces + each piece's rehearsal-cohort letters (Group-W1/W2) now come from the shared
+// Repertoire join in roster-data.js: Roster.cached() derives each person's `pieces` string, and
+// Roster.pieceGroups() gives norm(piece) → {1,2} — so mineOf() maps a block's Group letter to the one
+// piece the user plays there. Nothing here reads the roster sheet's (now vestigial) Pieces column.
 
 // ---- parse one day's grid ----
 // User-agnostic: every rehearsal cell (with its block's Group letter) and every private-lesson slot
@@ -687,7 +660,7 @@ function render(){
     && Math.abs(now - (+w.curAt.slice(11,13) + +w.curAt.slice(14,16)/60)) < 1.5) ? w.cur : null;
   const people = Roster.cached();
   COACHES = coachMap(people);
-  PIECEGRP = c.pieceGrp || {};
+  PIECEGRP = Roster.pieceGroups();
   USER = userCtx(people, Roster.me());
   let html;
   if(!day){
@@ -754,8 +727,7 @@ async function refresh(){
   if(!navigator.onLine) return;
   const c=load(); c.sched=c.sched||{}; c.wx=c.wx||{};
   try{ const wx=await weatherRange(); Object.assign(c.wx,wx); }catch(e){ /* keep old wx */ }
-  try{ await Roster.pull(); }catch(e){ /* keep the cached roster */ }   // shared cache; primes the roster page
-  try{ const pg=pieceGroups(await repJsonp()); if(Object.keys(pg).length) c.pieceGrp=pg; }catch(e){ /* keep old */ }
+  try{ await Roster.pull(); }catch(e){ /* keep the cached roster */ }   // pulls roster + repertoire; primes both pages
   for(const day of festDays()){
     try{ const rows=rowsFrom(await jsonp(day)); const p=parse(rows);
          if(p.rehearsals.length||p.meals.length||p.allhands.length||p.evening.length||p.slots.length) c.sched[day]=p; }
