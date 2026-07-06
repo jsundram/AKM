@@ -477,8 +477,11 @@ function timeline(day,w){
   const ev=[];
   for(const [s,e,piece,venue] of day.allhands)
     ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}${progLink(s,piece)}</div></div></div>`]);
-  // the sheet's own practice/reading blocks — computed once; they carry the free-room tally
-  const evb = evblocks(day), evbSpans = evb.map(b=>[mins(b.s), b.e?mins(b.e):mins(b.s)+60]);
+  // the sheet's own practice/reading blocks — but once you add your own event over one it *becomes*
+  // that event, so drop any block a self-added event overlaps (same dedup day.free already does).
+  const selfSpans = (loadMine()[sel]||[]).map(m=>[mins(m.s), m.e?mins(m.e):mins(m.s)+60]);
+  const evb = evblocks(day).filter(b=>{ const a=mins(b.s), z=b.e?mins(b.e):a+60; return !selfSpans.some(([x,y])=>x<z&&a<y); });
+  const evbSpans = evb.map(b=>[mins(b.s), b.e?mins(b.e):mins(b.s)+60]);
   // your unscheduled blocks, explicit — free time, not brass; tap to turn one into an event.
   // Skip any the sheet already advertises as a practice block (that row has the rooms, so prefer it).
   for(const [s,e] of day.free||[]){
