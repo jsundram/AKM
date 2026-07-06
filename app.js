@@ -682,11 +682,13 @@ function setupAdd(){
     else if(e.key==="Backspace" && !winp.value && whoTokens.length){ whoTokens.pop(); renderChips(); }
     else if((e.key==="ArrowDown"||e.key==="ArrowUp") && !a.hidden){ e.preventDefault(); navAc(e.key==="ArrowDown"?1:-1); }
     else if(e.key==="Escape" && !a.hidden){ e.stopPropagation(); hideAc(); } };
-  winp.onblur=()=>setTimeout(hideAc,150);   // tapping empty space dismisses; a suggestion is committed on pointerdown, before blur
-  // pointerdown, not click: on touch the click is synthesised late — after onblur has emptied the list — so the tap misses.
-  // preventDefault keeps focus on the input (no blur race, keyboard stays up) and lands the chip on the first tap.
-  $("#whoac").onpointerdown=e=>{ const b=e.target.closest("button"); if(!b) return;
-    e.preventDefault(); addToken(b.dataset.t); winp.focus(); };
+  winp.onblur=()=>setTimeout(hideAc,150);   // tapping empty space dismisses; a suggestion is committed below, before blur
+  // Commit the pick on the FIRST touch/mouse event, before the input blurs. click is too late on touch (fires
+  // after onblur empties the list); and preventDefault here keeps focus on the input, so the keyboard stays up
+  // and hideAc never races the tap. touchstart needs {passive:false} for preventDefault to take effect.
+  const pick=e=>{ const b=e.target.closest("button"); if(!b) return; e.preventDefault(); addToken(b.dataset.t); winp.focus(); };
+  $("#whoac").addEventListener("mousedown", pick);
+  $("#whoac").addEventListener("touchstart", pick, {passive:false});
   $("#whobox").onclick=e=>{ const x=e.target.closest(".wchip button");
     if(x){ whoTokens.splice(+x.dataset.i,1); renderChips(); } else if(!e.target.closest(".wac")) winp.focus(); };
 }
