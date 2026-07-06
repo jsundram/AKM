@@ -28,6 +28,23 @@
   };
   const hotelPoi = h => HOTEL_POI[(h||"").toLowerCase()] || h;
 
+  // Single source of truth for "what instrument is this string?" — abbreviations AND full names,
+  // most-specific first (viola/cello start with "v", so they're checked before the "v"→violin catch).
+  // Unknown → "" (never a wrong guess). Each page maps the kind to its own label / family / colour.
+  //   v · va · vc · bass · piano · clarinet · oboe · v/va (plays both) · "" (unknown/blank)
+  function instKind(s){
+    const l = (s||"").trim().toLowerCase(); if(!l) return "";
+    if(l==="v/va") return "v/va";
+    if(l.startsWith("vc")||l.startsWith("ce")||l.startsWith("vlc")||l.startsWith("violonc")) return "vc";   // VC · Cello · Violoncello
+    if(l.startsWith("va")||l.startsWith("vla")||l.startsWith("viola")) return "va";                          // VA · VA1 · Viola
+    if(l.startsWith("v")) return "v";                                                                        // V · V1…V4 · Vln · Violin
+    if(l.startsWith("bass")||l==="b"||l.startsWith("cb")||l.startsWith("db")||l.startsWith("contrab")||l.startsWith("double")) return "bass";
+    if(l.startsWith("cl")) return "clarinet";                                                                // Cl · Clar · Clarinet
+    if(l.startsWith("ob")||l==="o") return "oboe";                                                           // Ob · Oboe
+    if(l.startsWith("p")) return "piano";
+    return "";                                                                                               // don't guess an unknown into a wrong instrument
+  }
+
   function jsonp(gid){
     return new Promise((res,rej)=>{
       const cb = "__r"+Math.random().toString(36).slice(2);
@@ -128,6 +145,6 @@
     _memo = null;                                               // invalidate the join
     return cached() || people;
   }
-  g.Roster = { SID, GID, KEY, REP_GID, parse, cached, pull, me, setMe, hotelPoi, pieceGroups, derive };
+  g.Roster = { SID, GID, KEY, REP_GID, parse, cached, pull, me, setMe, hotelPoi, pieceGroups, derive, instKind };
   if(typeof module !== "undefined") module.exports = g.Roster;   // Node: schedule-test.js exercises derive()
 })(typeof window !== "undefined" ? window : globalThis);

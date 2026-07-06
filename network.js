@@ -15,6 +15,7 @@
 (function () {
   const isNode = typeof window === "undefined";
   const d3 = isNode ? require("./d3.v7.min.js") : window.d3;
+  const Roster = isNode ? require("./roster-data.js") : window.Roster;   // shared instrument classifier
 
   const SID = "1j__RMUvFWQlX9UuT-Uxkw7BkqWHCQkbR_hKsTyNwiyo";
   const PIECES_GID = "244347893";
@@ -24,20 +25,11 @@
   // scripts/network-test.js renders a stable ego view without a browser.
   const MINE = isNode ? "Jason Sundram" : (()=>{ try { return localStorage.getItem("akm-me") || ""; } catch { return ""; } })();
 
-  // Instruments collapse to this fixed set, shown + ordered as in roster.html
-  // (V before V/VA before VA…); Cello folds into VC, clarinet + oboe into Winds.
+  // Instruments collapse to this fixed set, ordered V before V/VA before VA…; the shared classifier
+  // (Roster.instKind) resolves the raw string, then clarinet + oboe fold together into Winds here.
   const INST_ORDER = ["V", "V/VA", "VA", "VC", "Bass", "Piano", "Winds"];
-  function instLabel(s) {
-    s = (s || "").trim(); if (!s) return ""; const l = s.toLowerCase();
-    return l === "v/va" ? "V/VA"
-      : l.startsWith("vc") || l.startsWith("ce") ? "VC"     // VC, Cello
-      : l.startsWith("va") ? "VA"                            // VA, VA1
-      : l.startsWith("v") ? "V"                              // V, V1…V4, V1/V2
-      : l.startsWith("b") ? "Bass"
-      : l.startsWith("p") ? "Piano"
-      : l.startsWith("o") || l.startsWith("c") ? "Winds"     // Oboe, Clar, Clar.
-      : s;
-  }
+  const NLABEL = {v:"V","v/va":"V/VA",va:"VA",vc:"VC",bass:"Bass",piano:"Piano",clarinet:"Winds",oboe:"Winds"};
+  const instLabel = s => { const k = Roster.instKind(s); return k ? NLABEL[k] : ""; };
   const instRank = s => { const i = INST_ORDER.indexOf(instLabel(s)); return i < 0 ? 99 : i; };
 
   // Hues spread for separation — VA (green) and VC (terracotta) deliberately far apart,

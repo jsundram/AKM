@@ -1,6 +1,7 @@
 // Parser unit test. Run from repo root:  node archive/parser-test.js
 // Exercises the ported parser against the real Tuesday grid structure. parse() is user-agnostic;
 // whose day it is comes from userCtx (roster row) + mineOf/lessonsOf, exercised here as Jason.
+require("../roster-data.js");   // defines globalThis.Roster; app.js fams() now derives from Roster.instKind
 const { parse, rowsFrom, evblocks, userCtx, mineOf, lessonsOf, freeOf } = require("../app.js");
 const R = (...vals) => ({ c: vals.map(v => v === null ? null : { v: String(v) }) });
 const N = null;

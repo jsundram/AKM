@@ -204,11 +204,10 @@ function parse(rows){
 // Type cells can compound ("F, W1" = week-1-only faculty) — always test by token, never equality
 const hasTok = (t,k) => new RegExp(`\\b${k}\\b`).test(t||"");
 const takesLessons = t => !hasTok(t,"F") && !hasTok(t,"DIR");   // F/DIR give lessons; AF/TF/MGR also take them
-// instrument families, for lesson-name ties: a cellist doesn't take lessons from violin faculty
-const fams = s => { const l=(s||"").trim().toLowerCase();
-  return new Set(l==="v/va" ? ["v","va"] : l.startsWith("vc")||l.startsWith("ce") ? ["vc"]
-    : l.startsWith("va") ? ["va"] : l.startsWith("v") ? ["v"] : l.startsWith("b") ? ["bass"]
-    : l.startsWith("p") ? ["p"] : l.startsWith("c") ? ["cl"] : l.startsWith("o") ? ["ob"] : []); };
+// instrument families, for lesson-name ties: a cellist doesn't take lessons from violin faculty.
+// Derives from the shared classifier (Roster.instKind) so roster/schedule/network stay in lockstep.
+const KFAM = {v:["v"],"v/va":["v","va"],va:["va"],vc:["vc"],bass:["bass"],piano:["p"],clarinet:["cl"],oboe:["ob"]};
+const fams = s => new Set(KFAM[Roster.instKind(s)] || []);
 const teaches = (stu, coach) => [...stu].some(f=>coach.has(f));
 function userCtx(people, name, pg){
   const p = name && (people||[]).find(x=>x.name===name); if(!p) return null;
