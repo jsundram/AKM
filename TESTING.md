@@ -10,7 +10,7 @@ before sharing with new people or after anything that touches identity, matching
 ```
 node archive/parser-test.js     # 36/36 — grid parsing + multi-user matching on a synthetic fixture (offline; runs anywhere)
 node scripts/network-test.js    # 14/14 — pieces↔roster co-performance join + both graph layouts, against the live sheets
-node scripts/schedule-test.js   #  6/6  — the schedule personalizes (mineOf non-empty, no over-claims), wk-1 + wk-2, live
+node scripts/schedule-test.js   # 15/15 — the schedule personalizes (mineOf non-empty, no over-claims), every festival day, live
 ```
 
 The two live tests pull the real sheets (public gviz) to catch what the offline fixture can't — the

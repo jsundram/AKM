@@ -13,3 +13,6 @@ __pycache__/
 # network diagram previews (bake in participant names — regenerate locally)
 network-preview-*.svg
 network-ego-*.svg
+
+# local dev scratch (e.g. _settest.html preselects an identity to skip the picker)
+_*.html
