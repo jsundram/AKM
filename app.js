@@ -363,6 +363,15 @@ function coachingOf(day, u){
       return [s,e,piece,room,coach,0,partial];      // [5]=which half (0/1/2), [6]=lone "(half)" = partial block
     });
 }
+// the teaching side of the faculty view: the private lessons you GIVE. lessonsOf() surfaces a lesson to
+// its student; this surfaces the same slot to the coach named on it (F/DIR/TF, week-gated, unique first
+// name → safe match). Returns [start, end, student, room] — mirrors lessonsOf's shape but keeps the name.
+function teachingOf(day, u){
+  if(!u || !isCoach(u.type)) return [];
+  const wk = weekOf(day);
+  if(wk && u.week && u.week!==wk) return [];
+  return (day.slots||[]).filter(([,,coach]) => coach && u.re.test(coach)).map(([s,e,,room,student])=>[s,e,student,room]);
+}
 const title = s => s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 
 // ---- weather ----
@@ -556,6 +565,12 @@ function timeline(day,w){
     const label = half===1?"first half":half===2?"second half":partial?"half":"";   // 1st/2nd = time-split; lone "(half)" = partial, no split
     const hl = label?`<span class="pc">${label}</span>`:"";
     ev.push([s,`<div class="row coach-row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card coachcard"><div class="kicker"><span>Coaching</span>${hl}</div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
+  }
+  // private lessons you give — same cool treatment as coaching, named with the student
+  for(const [s,e,student,room] of day.teaching||[]){
+    const chip = placeChip(room||"LESSONS");
+    const sw = student?`<span class="coach">with ${esc(student)}</span>`:"";
+    ev.push([s,`<div class="row coach-row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card coachcard"><div class="kicker"><span>Teaching</span></div><div class="piece">Private lesson</div><div class="meta">${chip}${sw}</div></div></div></div>`]);
   }
   for(const [s,e,kind,venue] of day.meals)
     ev.push([s,`<div class="row meal">${tline(s,e)}<div class="body"><span class="dot"></span><div class="what">${kind}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
@@ -804,7 +819,8 @@ function render(){
   } else {
     day.mine = mineOf(day,USER); day.lessons = lessonsOf(day,USER);   // whose day this is, decided here
     day.coaching = coachingOf(day,USER);                              // + pieces a coach runs but sits out
-    day.free = freeOf(day, [...day.mine, ...day.lessons, ...day.coaching, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
+    day.teaching = teachingOf(day,USER);                             // + private lessons a coach gives
+    day.free = freeOf(day, [...day.mine, ...day.lessons, ...day.coaching, ...day.teaching, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
     const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
     html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
       + (USER && USER.name===JASON ? coda(day,BANK,dnum) : "");   // grace notes: his easter egg only
@@ -900,4 +916,4 @@ async function boot(){
 }
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
-  userCtx, mineOf, lessonsOf, coachingOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };
+  userCtx, mineOf, lessonsOf, coachingOf, teachingOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };

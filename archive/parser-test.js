@@ -2,7 +2,7 @@
 // Exercises the ported parser against the real Tuesday grid structure. parse() is user-agnostic;
 // whose day it is comes from userCtx (roster row) + mineOf/lessonsOf, exercised here as Jason.
 require("../roster-data.js");   // defines globalThis.Roster; app.js fams() now derives from Roster.instKind
-const { parse, rowsFrom, evblocks, userCtx, mineOf, lessonsOf, coachingOf, freeOf } = require("../app.js");
+const { parse, rowsFrom, evblocks, userCtx, mineOf, lessonsOf, coachingOf, teachingOf, freeOf } = require("../app.js");
 const R = (...vals) => ({ c: vals.map(v => v === null ? null : { v: String(v) }) });
 const N = null;
 
@@ -150,6 +150,10 @@ const checks = [
   ["lone '(half)' flags a player's card, coach name stays clean (Kian's Elgar)", (m => m[0][4] === "Gijs" && m[0][7] === true)(mineOf(day, userCtx(roster, "Kian Woo")))],
   ["a non-coach gets no coaching cards", coachingOf(day, userCtx(roster, "Felicia Weiss")).length === 0],
   ["W1-only coach gets no coaching cards in week two", coachingOf(w2day, userCtx(roster, "Claudia Ajmone-Marsan")).length === 0],
+  // teaching view: a coach sees the private lessons they GIVE (student named), the mirror of lessonsOf
+  ["a coach sees the lessons they teach (Jesus: 3 slots, named)", (t => t.length === 3 && t.map(x => x[2]).join() === "Maya,Jason,Steph" && t[0][3] === "WERNER")(teachingOf(day, userCtx(roster, "Jesus Morales")))],
+  ["a non-coach teaches nothing", teachingOf(day, userCtx(roster, "Felicia Weiss")).length === 0],
+  ["W1-only coach teaches nothing in week two", teachingOf(w2day, userCtx(roster, "Claudia Ajmone-Marsan")).length === 0],
 ];
 let pass = 0;
 for (const [n, r] of checks) { console.log((r ? "PASS" : "FAIL") + "  " + n); pass += r ? 1 : 0; }

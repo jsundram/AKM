@@ -62,11 +62,11 @@ function festTabs() {                                          // "Mon 7/6" … 
   ok(Object.keys(PG).length > 30, `repertoire → pieces derived (${Object.keys(PG).length} pieces mapped to groups)`);
   ok(D.unresolved.length === 0, `every repertoire player reconciles to the roster (${D.unresolved.length} unmatched${D.unresolved.length ? ": " + [...new Set(D.unresolved)].join(", ") : ""})`);
 
-  // faculty view: coaching cards are for F/DIR/TF only — a student must never see one (the gate leans on
-  // coach first names being unique within coaches; a leak means that broke or a non-coach shares a name)
+  // faculty view: coaching + teaching cards are for F/DIR/TF only — a student must never see one (the gate
+  // leans on coach first names being unique within coaches; a leak means that broke or a non-coach shares a name)
   const hasTok = (t, k) => new RegExp(`\\b${k}\\b`).test(t || "");
   const isCoach = t => hasTok(t, "F") || hasTok(t, "DIR") || hasTok(t, "TF");
-  let played = 0, coachCards = 0, nonCoachLeaks = 0;             // days with group rehearsals (the ones that must personalize)
+  let played = 0, facCards = 0, nonCoachLeaks = 0;              // days with group rehearsals (the ones that must personalize)
   for (const [tab, raw] of Object.entries(dayRaws)) {
     let day; try { day = C.parse(C.rowsFrom({ table: unwrap(raw) })); } catch { continue; }
     const grouped = (day.rehearsals || []).some(r => r[6]);      // has a Group-lettered rehearsal block
@@ -78,14 +78,14 @@ function festTabs() {                                          // "Mon 7/6" … 
       const u = ctx.get(p.name); if (!u) continue;
       const mine = C.mineOf(day, u); total += mine.length;
       if (mine.length > (u.mine || []).filter(x => x.week !== other).length) falsePos++;
-      const co = C.coachingOf(day, u).length;
-      if (co) (isCoach(p.type) ? coachCards += co : nonCoachLeaks++);
+      const fac = C.coachingOf(day, u).length + C.teachingOf(day, u).length;   // pieces coached + lessons given
+      if (fac) (isCoach(p.type) ? facCards += fac : nonCoachLeaks++);
     }
     ok(total > 0 && falsePos === 0, `${tab} (wk${wk}): personalizes ${total} matches, ${falsePos} over-claims`);
   }
   ok(played >= 8, `swept ${Object.keys(dayRaws).length} tabs, ${played} rehearsal days checked`);
-  ok(nonCoachLeaks === 0, `coaching cards stay faculty-only across the sweep (${nonCoachLeaks} non-coach leaks)`);
-  ok(coachCards > 0, `faculty view live: ${coachCards} coaching cards surfaced for F/DIR/TF`);
+  ok(nonCoachLeaks === 0, `coaching + teaching cards stay faculty-only across the sweep (${nonCoachLeaks} non-coach leaks)`);
+  ok(facCards > 0, `faculty view live: ${facCards} coaching + teaching cards surfaced for F/DIR/TF`);
 
   out.forEach(l => console.log(l));
   console.log(`\n${pass}/${out.filter(l => !l.startsWith("--")).length}`);
