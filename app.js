@@ -588,7 +588,8 @@ function dayTimes(day){
 // a self-added event as a timeline row — a dashed "yours, informal" card (never the reserved brass fill)
 function selfCardHtml(m,i){
   const chip = m.room?placeChip(m.room):"";
-  const who = m.who?`<span class="with">with <b>${esc(m.who)}</b></span>`:"";
+  const wl = whoArr(m.who);   // who is an array now; tolerate the old comma-string too
+  const who = wl.length?`<span class="with">with <b>${esc(wl.join(", "))}</b></span>`:"";
   const meta = (chip||who)?`<div class="meta">${chip}${who}</div>`:"";
   return `<div class="row mine self">${tline(m.s,m.e)}<div class="body"><span class="dot"></span>`
     +`<div class="card" data-edit="${i}"><div class="kicker"><span>Yours · added</span>`
@@ -600,6 +601,37 @@ function removeSelf(i){
   if(list.length) m[sel]=list; else delete m[sel];
   saveMine(m); render();
 }
+// --- WITH field: roster autocomplete as chips (multiple players), stored as an array ---
+let whoTokens = [];
+const whoArr = v => Array.isArray(v) ? v.slice() : v ? String(v).split(/\s*,\s*/).filter(Boolean) : [];  // tolerate the old comma-string
+// roster names → display tokens: first name (how people refer to each other), full name if the first collides
+function whoRoster(){
+  const ns = (Roster.cached()||[]).map(p=>p.name), c={};
+  ns.forEach(n=>{ const f=n.split(/\s+/)[0].toLowerCase(); c[f]=(c[f]||0)+1; });
+  return ns.map(n=>{ const f=n.split(/\s+/)[0]; return {name:n, token:c[f.toLowerCase()]>1?n:f}; });
+}
+function renderChips(){
+  const box=$("#whobox"), inp=$("#f-who"); if(!box) return;
+  box.querySelectorAll(".wchip").forEach(c=>c.remove());
+  whoTokens.forEach((t,i)=>{ const c=document.createElement("span"); c.className="wchip";
+    c.innerHTML=`${esc(t)}<button type="button" data-i="${i}" aria-label="Remove">×</button>`; box.insertBefore(c, inp); });
+  inp.placeholder = whoTokens.length ? "add another…" : "who you're playing with";
+}
+const hideAc = () => { const a=$("#whoac"); if(a){ a.hidden=true; a.innerHTML=""; } };
+function addToken(t){ t=(t||"").trim();
+  if(t && !whoTokens.some(x=>x.toLowerCase()===t.toLowerCase())) whoTokens.push(t);
+  $("#f-who").value=""; renderChips(); hideAc(); }
+function showAc(){
+  const q=$("#f-who").value.trim().toLowerCase(), a=$("#whoac");
+  const chosen=new Set(whoTokens.map(x=>x.toLowerCase()));
+  const hits = q ? whoRoster().filter(p=>p.name.toLowerCase().includes(q) && !chosen.has(p.token.toLowerCase())) : [];
+  if(!hits.length){ hideAc(); return; }
+  a.innerHTML=hits.slice(0,6).map(p=>`<button type="button" data-t="${esc(p.token)}">${esc(p.name)}</button>`).join("");
+  a.hidden=false;
+}
+function navAc(d){ const items=[...$("#whoac").querySelectorAll("button")]; if(!items.length) return;
+  let i=items.findIndex(x=>x.classList.contains("on")); items.forEach(x=>x.classList.remove("on"));
+  i = i<0 ? (d>0?0:items.length-1) : (i+d+items.length)%items.length; items[i].classList.add("on"); }
 // --- add-sheet (overlay, lives OUTSIDE #app so a background refresh mid-entry can't wipe the form) ---
 // pre = {s,e}: opened from an unscheduled block, times pre-filled
 function openAdd(i, pre){
@@ -607,7 +639,8 @@ function openAdd(i, pre){
   editIdx = typeof i==="number" ? i : null;            // editing an existing event vs adding a new one
   const ev = editIdx!=null ? (loadMine()[sel]||[])[editIdx] : pre;
   $("#f-s").value=ev?pad2(ev.s):""; $("#f-e").value=ev&&ev.e?pad2(ev.e):"";
-  $("#f-what").value=ev?ev.what||"":""; $("#f-who").value=ev?ev.who||"":"";
+  $("#f-what").value=ev?ev.what||"":"";
+  whoTokens = ev ? whoArr(ev.who) : []; $("#f-who").value=""; renderChips(); hideAc();
   const day=(load().sched||{})[sel], slots=dayTimes(day);
   $("#f-room").innerHTML = `<option value="">room…</option>`   // incl. rooms learned from the day's header (A4)
     +[...new Set([...ROOMS, ...((day&&day.rooms)||[])])].map(r=>`<option${ev&&ev.room===r?" selected":""}>${r}</option>`).join("");
@@ -623,8 +656,9 @@ function saveSelf(){
   let s=$("#f-s").value, e=$("#f-e").value;
   if(!s){ $("#f-s").focus(); return; }                 // start is the one required field
   if(!e) e=hhmm(Math.min(mins(s)+60,1439));            // default to a one-hour slot
+  if($("#f-who").value.trim()) addToken($("#f-who").value);   // fold in a name typed but not yet chipped
   const ev={ s:unpad(s), e:unpad(e), what:$("#f-what").value.trim(),
-             who:$("#f-who").value.trim(), room:$("#f-room").value };
+             who:whoTokens.slice(), room:$("#f-room").value };
   const m=loadMine(); const list=(m[sel]=m[sel]||[]);
   if(editIdx!=null && list[editIdx]) list[editIdx]=ev; else list.push(ev);   // update in place, or append
   saveMine(m); closeAdd(); render();
@@ -636,6 +670,19 @@ function setupAdd(){
   $("#addslots").onclick=e=>{ const c=e.target.closest(".slotchip"); if(!c) return;
     $("#f-s").value=pad2(c.dataset.t);
     if(!$("#f-e").value) $("#f-e").value=pad2(hhmm(Math.min(mins(c.dataset.t)+60,1439))); };
+  // WITH chip input: type → roster suggestions; Enter/comma commits, Backspace pops, ↑/↓ navigate
+  const winp=$("#f-who");
+  winp.oninput=showAc;
+  winp.onkeydown=e=>{ const a=$("#whoac"), cur=a.querySelector(".on");
+    if(e.key==="Enter"){ e.preventDefault(); if(cur) addToken(cur.dataset.t); else if(winp.value.trim()) addToken(winp.value); }
+    else if(e.key===","){ e.preventDefault(); if(winp.value.trim()) addToken(winp.value); }
+    else if(e.key==="Backspace" && !winp.value && whoTokens.length){ whoTokens.pop(); renderChips(); }
+    else if((e.key==="ArrowDown"||e.key==="ArrowUp") && !a.hidden){ e.preventDefault(); navAc(e.key==="ArrowDown"?1:-1); }
+    else if(e.key==="Escape" && !a.hidden){ e.stopPropagation(); hideAc(); } };
+  winp.onblur=()=>setTimeout(hideAc,150);   // let a suggestion click land before hiding
+  $("#whoac").onclick=e=>{ const b=e.target.closest("button"); if(b){ addToken(b.dataset.t); winp.focus(); } };
+  $("#whobox").onclick=e=>{ const x=e.target.closest(".wchip button");
+    if(x){ whoTokens.splice(+x.dataset.i,1); renderChips(); } else if(!e.target.closest(".wac")) winp.focus(); };
 }
 
 // --- identity picker (overlay like #addsheet) — one shared URL, choose yourself once; localStorage

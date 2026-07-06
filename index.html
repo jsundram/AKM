@@ -253,6 +253,22 @@
   .add-f input,.add-f select{font-family:"Inter",sans-serif;font-size:16px;color:var(--ink);background:var(--haze);
     border:1px solid var(--line);border-radius:8px;padding:9px 11px;letter-spacing:normal;text-transform:none;width:100%;-webkit-appearance:none;appearance:none}
   .add-f input:focus,.add-f select:focus{outline:none;border-color:var(--muted)}
+  /* WITH field: roster autocomplete as removable chips (multiple players) */
+  .chipbox{position:relative;display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:var(--haze);
+    border:1px solid var(--line);border-radius:8px;padding:6px 8px;letter-spacing:normal;text-transform:none}
+  .chipbox:focus-within{border-color:var(--muted)}
+  .chipbox input{background:none;border:none;border-radius:0;padding:3px 2px;width:auto;flex:1;min-width:88px}
+  .wchip{display:inline-flex;align-items:center;gap:5px;font-family:"Inter",sans-serif;font-size:13px;
+    color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 4px 3px 9px}
+  .wchip button{font:inherit;font-size:15px;line-height:1;color:var(--faint);background:none;border:none;cursor:pointer;padding:0 2px}
+  .wchip button:hover{color:var(--ink)}
+  .wac{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;background:var(--paper);
+    border:1px solid var(--line);border-radius:8px;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.16)}
+  .wac[hidden]{display:none}
+  .wac button{display:block;width:100%;text-align:left;font-family:"Inter",sans-serif;font-size:14px;color:var(--ink);
+    background:none;border:none;border-top:1px solid var(--line);padding:9px 11px;cursor:pointer;letter-spacing:normal;text-transform:none}
+  .wac button:first-child{border-top:none}
+  .wac button:hover,.wac button.on{background:var(--haze)}
   /* --- identity picker (same sheet chrome as #addsheet) --- */
   #whosheet[hidden]{display:none}
   #whosheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center}
@@ -303,7 +319,7 @@
       <label class="add-f">End<input type="time" id="f-e"></label>
     </div>
     <label class="add-f">What<input type="text" id="f-what" placeholder="Play-through, coaching…" autocomplete="off"></label>
-    <label class="add-f">With<input type="text" id="f-who" placeholder="who you're playing with" autocomplete="off"></label>
+    <label class="add-f">With<div class="chipbox" id="whobox"><input type="text" id="f-who" placeholder="who you're playing with" autocomplete="off"><div class="wac" id="whoac" hidden></div></div></label>
     <label class="add-f">Room<select id="f-room"></select></label>
     <div class="add-actions"><button type="button" id="addcancel" class="btn-ghost">Cancel</button><button type="submit" id="addsave" class="btn-go">Add</button></div>
   </form>
