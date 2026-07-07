@@ -2,6 +2,12 @@
 
 Context for working on this project in Claude Code. Read this first.
 
+**Keep this file current in the same commit as the code.** When a change alters a file's
+**role, its links, its public surface, or the test shape**, update the matching prose here in
+the same commit — stale prose is worse than none. `scripts/doc-lint.py` (pre-commit, warn-only)
+catches added / removed / renamed files; the *semantic* drift — a description that quietly
+stopped being true — no linter can see, so it's on you.
+
 ## What this is
 
 A pure-pull **PWA** that shows the day at the AKM Chamber Music Festival: Jason's
