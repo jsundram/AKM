@@ -100,6 +100,9 @@ h1{font-family:"Fraunces","Iowan Old Style",Georgia,serif;font-weight:500;font-s
 .commit .t{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;color:var(--faint);
   flex:none;width:38px;font-variant-numeric:tabular-nums}
 .commit .s{flex:1;min-width:0}
+.commit .s a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;
+  text-decoration-color:color-mix(in srgb,var(--muted) 40%,transparent)}
+.commit .s a:hover{text-decoration-color:var(--muted)}
 .chipc{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:8.5px;letter-spacing:.08em;
   text-transform:uppercase;color:var(--s-claude);border:1px solid color-mix(in srgb,var(--s-claude) 45%,transparent);
   border-radius:4px;padding:0 5px;flex:none}
@@ -448,7 +451,7 @@ Object.keys(byDay).sort().forEach(d => {
   cs.forEach(c => {
     const row = el('div','commit');
     row.append(el('span','t', fmt(T(c.t),{hour:'2-digit',minute:'2-digit',hour12:false})),
-               el('span','s', esc(c.subject)));
+               el('span','s', `<a href="https://github.com/jsundram/AKM/commit/${c.h}" target="_blank" rel="noopener">${esc(c.subject)}</a>`));
     if (c.cloud) row.append(el('span','chipc','cloud'));
     day.append(row);
   });
