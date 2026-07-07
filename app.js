@@ -728,8 +728,17 @@ function navAc(d){ const items=[...$("#whoac").querySelectorAll("button")]; if(!
   i = i<0 ? (d>0?0:items.length-1) : (i+d+items.length)%items.length; items[i].classList.add("on"); }
 // --- add-sheet (overlay, lives OUTSIDE #app so a background refresh mid-entry can't wipe the form) ---
 // pre = {s,e}: opened from an unscheduled block, times pre-filled
+// an identity is picked (a real name, not null=never-asked or ""=declined) — events are per-person,
+// so a NEW one needs an owner or it can't be filed and gets orphaned/adopted by the next user.
+const meSet = () => { const m = (typeof Roster!=="undefined" && Roster.me) ? Roster.me() : null; return !!m; };
+let pendingAdd = null;   // {pre} stashed while the identity picker is up, so the add resumes after you pick
 function openAdd(i, pre){
   const box=$("#addsheet"); if(!box) return;
+  if(typeof i!=="number" && !meSet()){                 // gate NEW adds: pick who you are first, then resume
+    pendingAdd = {pre};
+    if(openWho()) return;                               // picker opened → who-pick reopens this add
+    pendingAdd = null;                                  // no roster to pick from → allow the add rather than dead-end
+  }
   editIdx = typeof i==="number" ? i : null;            // editing an existing event vs adding a new one
   const ev = editIdx!=null ? (loadMine()[sel]||[])[editIdx] : pre;
   $("#f-s").value=ev?pad2(ev.s):""; $("#f-e").value=ev&&ev.e?pad2(ev.e):"";
@@ -788,21 +797,23 @@ function setupAdd(){
 // only, per device. Dismissing without choosing still counts as "asked" (me="") so it never nags.
 function openWho(){
   const box=$("#whosheet"), people=Roster.cached()||[];
-  if(!box || !box.hidden || !people.length) return;
+  if(!box || !box.hidden || !people.length) return false;
   $("#who-list").innerHTML = [...people].sort((a,b)=>a.name.localeCompare(b.name)).map(p=>
     `<button type="button" class="who${p.name===Roster.me()?" on":""}" data-n="${esc(p.name)}">${esc(p.name)}`
     +`${p.instrument?`<span>${esc(p.instrument)}</span>`:""}</button>`).join("");
-  box.hidden=false;
+  box.hidden=false; return true;
 }
 function closeWho(){
   if(Roster.me()==null) Roster.setMe("");   // asked + declined ≠ never asked
+  pendingAdd = null;                          // backed out without picking → abandon the pending add
   $("#whosheet").hidden=true; render();
 }
 function setupWho(){
   const box=$("#whosheet"); if(!box) return;
   $("#who-scrim").onclick=closeWho; $("#whox").onclick=closeWho;
   $("#who-list").onclick=e=>{ const b=e.target.closest(".who"); if(!b) return;
-    Roster.setMe(b.dataset.n); $("#whosheet").hidden=true; render(); };
+    Roster.setMe(b.dataset.n); $("#whosheet").hidden=true; render();
+    if(pendingAdd){ const p=pendingAdd; pendingAdd=null; openAdd(null, p.pre); } };   // resume the add you were gating on
 }
 
 function render(){
