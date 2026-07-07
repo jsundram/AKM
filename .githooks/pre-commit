@@ -6,4 +6,11 @@
 if command -v python3 >/dev/null 2>&1 && python3 scripts/update-gids.py; then
   git add app.js
 fi
+
+# Warn (never block) on CLAUDE.md drift: file refs that vanished + undocumented
+# root files. Prints its own findings; the || keeps a broken doc from blocking a
+# commit (run `python3 scripts/doc-lint.py` for a real exit code / in CI).
+if command -v python3 >/dev/null 2>&1; then
+  python3 scripts/doc-lint.py || echo "  (doc-lint: CLAUDE.md may be stale — not blocking)"
+fi
 exit 0
