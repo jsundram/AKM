@@ -39,7 +39,7 @@ effort_events = []             # (t_end, seconds) per-gap Claude effort (sums pa
 sessions = []
 
 for path in sorted(glob.glob(f"{DIR}/*.jsonl")):
-    events, prompts, tokens = [], 0, 0
+    events, prompts, tokens, seen = [], 0, 0, set()  # one row per content block; usage repeats per row
     for line in open(path):
         try:
             r = json.loads(line)
@@ -50,7 +50,10 @@ for path in sorted(glob.glob(f"{DIR}/*.jsonl")):
             continue
         human = r.get("type") == "user" and (r.get("origin") or {}).get("kind") == "human" and not r.get("isMeta")
         if r.get("type") == "assistant":
-            tokens += ((r.get("message") or {}).get("usage") or {}).get("output_tokens", 0)
+            m = r.get("message") or {}
+            if m.get("id") is None or m["id"] not in seen:
+                seen.add(m.get("id"))
+                tokens += (m.get("usage") or {}).get("output_tokens", 0)
         events.append((ts(t).timestamp(), human))
         prompts += human
     if not events:
