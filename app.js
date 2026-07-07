@@ -295,7 +295,7 @@ function mineOf(day, u){
     // and the grid's "Cello" vs my canonical "String" made both score 2 → tie → dropped.
     const peers = (day.rehearsals||[]).filter(r=>r[0]===s && r[6]===grp && r[2]!==piece && fits(words(r[2]),tw));
     if(!peers.every(r=>overlap(toks(r[2]),want)<score)) continue;
-    out.push([s,e,piece,room,coach,tag,norm(piece).split(" ")[0],partial]);   // [6]=composer key (coda), [7]=half-length coaching
+    out.push([s,e,piece,room,coach,tag,norm(piece).split(" ")[0],partial,grp]);   // [6]=composer key (coda), [7]=half-length coaching, [8]=Group letter
   }
   return out;
 }
@@ -309,7 +309,7 @@ function freeOf(day, busy){
   for(const [s,e,,,,,grp] of day.rehearsals||[]){
     if(!grp || seen.has(s)) continue; seen.add(s);
     const a = mins(s), b = e?mins(e):a+60;
-    if(!B.some(([x,y])=>x<b&&a<y)) out.push([s,e]);
+    if(!B.some(([x,y])=>x<b&&a<y)) out.push([s,e,grp]);   // [2]=the block's Group letter (shared, festival-wide)
   }
   return out;
 }
@@ -359,8 +359,8 @@ function coachingOf(day, u){
     .map(([s,e,piece,room,coach,tag,grp,partial])=>{
       const h = coachHalf(coach, u.re);             // split a shared block at its midpoint so the two
       if(h && e){ const mid = hhmm(Math.round((mins(s)+mins(e))/2));   // halves read as sequential, not a clash
-        return h===1 ? [s,mid,piece,room,coach,1,partial] : [mid,e,piece,room,coach,2,partial]; }
-      return [s,e,piece,room,coach,0,partial];      // [5]=which half (0/1/2), [6]=lone "(half)" = partial block
+        return h===1 ? [s,mid,piece,room,coach,1,partial,grp] : [mid,e,piece,room,coach,2,partial,grp]; }
+      return [s,e,piece,room,coach,0,partial,grp];  // [5]=which half (0/1/2), [6]=lone "(half)" = partial block, [7]=Group letter
     });
 }
 // the teaching side of the faculty view: the private lessons you GIVE. lessonsOf() surfaces a lesson to
@@ -493,6 +493,12 @@ const mapHref = label => `./map.html#${encodeURIComponent(label)}`;
 const placeChip = (room,cls="roomchip") => mapped(room)
   ? `<a class="${cls} maplink" href="${mapHref(room)}">${esc(room)}${PIN}</a>`
   : `<span class="${cls}">${esc(room)}</span>`;
+// the block's shared Group letter (A…E) as a large, quiet index on the card's right edge — not a
+// datum in the meta row, so it never reads as a room code (A1/A2). A coordination handle everyone
+// in the block shares, players and coaches alike; tinted to each card's accent (CSS), kept faint.
+// It sits in the bottom-right corner, below the kicker, so the top row (incl. "＋ add") stays
+// full-width; cards with a letter are stamped `.gcard` (below) to reserve a piece/meta right gutter.
+const gLetter = grp => grp ? `<div class="gletter">${esc(grp)}</div>` : "";
 const placeText = label => mapped(label)
   ? `<a class="maplink" href="${mapHref(label)}">${esc(label)}${PIN}</a>` : esc(label);
 // the day's concert row gets its printed program, once Jason has the PDF (precached, so it opens at the venue)
@@ -539,17 +545,17 @@ function timeline(day,w){
   const evbSpans = evb.map(b=>[mins(b.s), b.e?mins(b.e):mins(b.s)+60]);
   // your unscheduled blocks, explicit — free time, not brass; tap to turn one into an event.
   // Skip any the sheet already advertises as a practice block (that row has the rooms, so prefer it).
-  for(const [s,e] of day.free||[]){
+  for(const [s,e,grp] of day.free||[]){
     const a=mins(s), z=e?mins(e):a+60;
     if(evbSpans.some(([x,y])=>x<z&&a<y)) continue;
-    ev.push([s,`<div class="row free">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card freecard" data-free="${s}|${e}"><div class="kicker"><span>Unscheduled</span><span class="pc">＋ add</span></div><div class="piece">Practice Time / Free Reading</div></div></div></div>`]);
+    ev.push([s,`<div class="row free">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card freecard${grp?' gcard':''}" data-free="${s}|${e}"><div class="kicker"><span>Unscheduled</span><span class="pc">＋ add</span></div><div class="piece">Practice Time / Free Reading</div>${gLetter(grp)}</div></div></div>`]);   // the block's letter — free here, but still the shared slot
   }
-  for(const [s,e,piece,room,coach,tag,,partial] of day.mine){
+  for(const [s,e,piece,room,coach,tag,,partial,grp] of day.mine){
     const role = tag==="P"?"Coach plays":tag==="C"?"Coach observes":"";   // sheet tag: P = coach plays in the rehearsal, C = coach observes only
     const pc = [role, partial?"half":""].filter(Boolean).join(" · ");     // "(half)" = coach here for half the block
     const chip = room?placeChip(room):"";
     const cw = coach?`<span class="coach">with ${coachLink(coach)}</span>`:"";
-    ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your rehearsal</span><span class="pc">${pc}</span></div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
+    ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card${grp?' gcard':''}"><div class="kicker"><span>Your rehearsal</span><span class="pc">${pc}</span></div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div>${gLetter(grp)}</div></div></div>`]);
   }
   for(const [s,e,coach,room] of day.lessons||[]){
     const cw = coach?`<span class="coach">with ${coachLink(coach)}</span>`:"";
@@ -558,13 +564,13 @@ function timeline(day,w){
   }
   // pieces you coach but sit out — cool, never brass. A co-coached cell ("Gijs/Nathan") drops you from
   // the "with" line so it reads as your co-coach, not yourself.
-  for(const [s,e,piece,room,coach,half,partial] of day.coaching||[]){
+  for(const [s,e,piece,room,coach,half,partial,grp] of day.coaching||[]){
     const others = (coach||"").split(/\s*[\/&,]\s*|\s+and\s+/).map(x=>x.trim()).filter(x=>x && !(USER&&USER.re.test(x))).join("/");
     const cw = others?`<span class="coach">with ${coachLink(others)}</span>`:"";
     const chip = room?placeChip(room):"";
     const label = half===1?"first half":half===2?"second half":partial?"half":"";   // 1st/2nd = time-split; lone "(half)" = partial, no split
     const hl = label?`<span class="pc">${label}</span>`:"";
-    ev.push([s,`<div class="row coach-row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card coachcard"><div class="kicker"><span>Coaching</span>${hl}</div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
+    ev.push([s,`<div class="row coach-row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card coachcard${grp?' gcard':''}"><div class="kicker"><span>Coaching</span>${hl}</div><div class="piece">${esc(piece)}</div><div class="meta">${chip}${cw}</div>${gLetter(grp)}</div></div></div>`]);
   }
   // private lessons you give — same cool treatment as coaching, named with the student
   for(const [s,e,student,room] of day.teaching||[]){

@@ -126,7 +126,7 @@ const checks = [
   ["daytime faculty cells → parsed but never rehearsals/blocks", day.fac.length === 2 && day.fac.some(f => f.join("|") === "11:50|12:40|Schumann Marchenerzahlungen|A1") && blocks.length === 2],
   // unscheduled blocks are called out per user: every Group slot with no conflicting rehearsal/
   // lesson/self-added event — and only on a day you're actually scheduled
-  ["Jason's one free block is 11:50 (Group A)", freeOf(day, [...day.mine, ...day.lessons]).map(f => f.join("-")).join() === "11:50-12:40"],
+  ["Jason's one free block is 11:50 (Group A)", freeOf(day, [...day.mine, ...day.lessons]).map(f => f.join("-")).join() === "11:50-12:40-A"],
   ["Kian free in the three blocks he doesn't play", freeOf(day, mineOf(day, userCtx(roster, "Kian Woo"))).length === 3],
   ["a self-added event fills the free block", freeOf(day, [...day.mine, ...day.lessons, ["12:00", "12:30"]]).length === 0],
   ["no schedule → no phantom free time", freeOf(day, []).length === 0],
