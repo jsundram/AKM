@@ -505,10 +505,11 @@ const placeChip = (room,cls="roomchip") => mapped(room)
 const gLetter = grp => grp ? `<div class="gletter">${esc(grp)}</div>` : "";
 const placeText = label => mapped(label)
   ? `<a class="maplink" href="${mapHref(label)}">${esc(label)}${PIN}</a>` : esc(label);
-// the concert's printed program (precached, so it opens at the venue) + its concerts.html listing
+// one link into the concert's concerts.html listing (which itself links the printed PDF); drafts
+// keep the red DRAFT tag off the pdf name
 const progA = conc => {
   const dr = /-draft\./.test(conc.pdf) ? '<span class="dr">DRAFT</span> ' : "";
-  return `<a class="prog" href="${conc.pdf}" target="_blank" rel="noopener">${dr}program ↗</a>`;
+  return `<a class="prog" href="./concerts.html#${conc.id}">${dr}view program</a>`;
 };
 // which of the concert's pieces carry the picked user's name — printed full name (normalized), or a
 // first name that belongs to only one person on that program (absorbs the drafts' spelling wobbles)
@@ -550,7 +551,7 @@ function evblocks(day){
 // a concert we hold the program for → a card, not a banner line. Brass iff you're on the program.
 function concertCard(conc,s,e){
   const mine = myConcertPieces(conc, USER);
-  const meta = `<div class="meta">${placeChip(conc.poi)}<span class="coach">${progA(conc)} · <a class="prog" href="./concerts.html#${conc.id}">who's playing →</a></span></div>`;
+  const meta = `<div class="meta">${placeChip(conc.poi)}<span class="coach">${progA(conc)}</span></div>`;
   return mine.length
     ? `<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Concert · you're performing</span></div><div class="piece">${mine.map(p=>`${esc(p.c)} — ${esc(p.t)}`).join("<br>")}</div>${meta}</div></div></div>`
     : `<div class="row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card ccard"><div class="kicker"><span>Concert · audience</span><span class="pc">all welcome</span></div><div class="piece">${esc(conc.title)}</div>${meta}</div></div></div>`;
