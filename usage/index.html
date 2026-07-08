@@ -121,6 +121,7 @@
   ol.nu{columns:2;column-gap:28px;padding-left:22px;margin:4px 0 2px;font-size:13px;color:var(--ink)}
   ol.nu li{margin:0 0 4px;break-inside:avoid;padding-left:2px}
   ol.nu li::marker{color:var(--faint);font-family:"IBM Plex Mono",monospace;font-size:11px}
+  .tc{color:var(--faint);font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em;margin-left:6px}
   @media(max-width:520px){ ol.nu{columns:1} }
 
   .foot{font-size:11px;color:var(--faint);max-width:64ch;line-height:1.6;margin-top:34px;
@@ -475,11 +476,11 @@ function nonUsersList(){
     tag.textContent = ""; box.innerHTML = `<p class="sub" style="margin:0">Roster unavailable — can't list names offline.</p>`; return;
   }
   const used = new Set(DATA.users.map(u => u.uid));
-  const names = Object.entries(UIDS).filter(([uid]) => !used.has(uid))
-    .map(([, p]) => p.name).sort((a, b) => a.localeCompare(b));
-  tag.textContent = names.length ? `${names.length} of ${DATA.rosterSize}` : "";
-  box.innerHTML = names.length
-    ? `<ol class="nu">${names.map(n => `<li>${n}</li>`).join("")}</ol>`
+  const miss = Object.entries(UIDS).filter(([uid]) => !used.has(uid))
+    .map(([, p]) => p).sort((a, b) => a.name.localeCompare(b.name));
+  tag.textContent = miss.length ? `${miss.length} of ${DATA.rosterSize} · mostly week-one alumni (W1) and non-playing guests (G)` : "";
+  box.innerHTML = miss.length
+    ? `<ol class="nu">${miss.map(p => `<li>${p.name}${p.type ? `<span class="tc">${p.type}</span>` : ""}</li>`).join("")}</ol>`
     : `<p class="sub" style="margin:0">Everyone on the roster has opened it at least once.</p>`;
 }
 
