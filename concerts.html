@@ -139,6 +139,21 @@ function render(people){
   if(!(people||[]).length){ const m=$("#msg"); m.textContent="Names link to WhatsApp once the roster has loaded — open online once."; m.hidden=false; }
   else $("#msg").hidden = true;
   if(location.hash){ const el = document.getElementById(location.hash.slice(1)); if(el) el.scrollIntoView(); }
+  else scrollToday();
+}
+
+// With no explicit #jump, bring today's concert into view. When the day has two, show the first
+// until 3h past its start, then the second — the one you're most likely walking into. Runs on
+// every render, so a resume after that threshold advances the view (pure-pull: opening = refresh).
+const pad2 = n => String(n).padStart(2, "0");
+const clockMins = t => { const m = /(\d+):(\d+)\s*(am|pm)/i.exec(t) || []; let h = (+m[1]||0) % 12; if(/pm/i.test(m[3])) h += 12; return h*60 + (+m[2]||0); };
+function scrollToday(){
+  const d = new Date(), key = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const todays = CONCERTS.filter(c => c.id.startsWith(key)).sort((a,b) => clockMins(a.time) - clockMins(b.time));
+  if(!todays.length) return;
+  const now = d.getHours()*60 + d.getMinutes();
+  const pick = todays.length > 1 && now >= clockMins(todays[0].time) + 180 ? todays[1] : todays[0];
+  const el = document.getElementById(pick.id); if(el) el.scrollIntoView();
 }
 
 render(Roster.cached());
