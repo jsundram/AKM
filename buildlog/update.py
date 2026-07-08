@@ -15,6 +15,10 @@ BL = Path(__file__).resolve().parent
 ROOT = BL.parent
 END = date(2026, 7, 13)   # festival ends 7/12; last refresh the morning after
 
+# the usage page rides this same nightly job — run it first, before our own
+# expiry check, since it keeps refreshing for a week after the buildlog stops
+subprocess.run([sys.executable, ROOT / "usage" / "update.py"])
+
 if date.today() > END:
     print("past festival; nothing to do")
     sys.exit(0)

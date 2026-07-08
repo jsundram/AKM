@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>AKM · Usage</title>
+<meta property="og:site_name" content="AKM">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AKM — Field report">
+<meta property="og:description" content="Who's using the festival app: adoption, the rhythm of the day, top pages — refreshed nightly.">
+<meta property="og:url" content="https://jsundram.github.io/AKM/usage/">
+<meta property="og:image" content="https://jsundram.github.io/AKM/usage/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://jsundram.github.io/AKM/usage/og.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+<link rel="icon" type="image/svg+xml" href="../icon.svg">
+</head>
+<body>
+<style>
+  :root{
+    --paper:#E9EDEC; --card:#F2F5F4; --card2:#E7ECEA; --ink:#172526; --muted:#5F7072;
+    --faint:#8C9A9B; --line:#CBD3D1; --grid:#DAE0DE; --warm:#F4ECDD; --warm-line:#E2D2B2;
+    --brass:#9A6B22; --brass-deep:#7C5417; --brass-soft:#9A6B2273;
+    --c-index:#9A6B22; --c-roster:#276199; --c-map:#3F8A35; --c-network:#7C4E8E;
+    --c-about:#A14434; --c-concerts:#0A7FA5; --anon:#8C9A9B;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#0F1817; --card:#172221; --card2:#121C1B; --ink:#E9EEEC; --muted:#A6B5B4;
+      --faint:#869897; --line:#2C3938; --grid:#243130; --warm:#272015; --warm-line:#4A3D23;
+      --brass:#D9A24C; --brass-deep:#E8C481; --brass-soft:#D9A24C66;
+      --c-index:#BD8526; --c-roster:#3987E5; --c-map:#52A03F; --c-network:#AE77CF;
+      --c-about:#D65F47; --c-concerts:#279AB1; --anon:#5F7072;
+    }
+  }
+  :root[data-theme="light"]{
+    --paper:#E9EDEC; --card:#F2F5F4; --card2:#E7ECEA; --ink:#172526; --muted:#5F7072;
+    --faint:#8C9A9B; --line:#CBD3D1; --grid:#DAE0DE; --warm:#F4ECDD; --warm-line:#E2D2B2;
+    --brass:#9A6B22; --brass-deep:#7C5417; --brass-soft:#9A6B2273;
+    --c-index:#9A6B22; --c-roster:#276199; --c-map:#3F8A35; --c-network:#7C4E8E;
+    --c-about:#A14434; --c-concerts:#0A7FA5; --anon:#8C9A9B;
+  }
+  :root[data-theme="dark"]{
+    --paper:#0F1817; --card:#172221; --card2:#121C1B; --ink:#E9EEEC; --muted:#A6B5B4;
+    --faint:#869897; --line:#2C3938; --grid:#243130; --warm:#272015; --warm-line:#4A3D23;
+    --brass:#D9A24C; --brass-deep:#E8C481; --brass-soft:#D9A24C66;
+    --c-index:#BD8526; --c-roster:#3987E5; --c-map:#52A03F; --c-network:#AE77CF;
+    --c-about:#D65F47; --c-concerts:#279AB1; --anon:#5F7072;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;
+    line-height:1.45;display:flex;justify-content:center;
+    padding:calc(30px + env(safe-area-inset-top)) 18px calc(60px + env(safe-area-inset-bottom))}
+  .sheet{width:100%;max-width:730px}
+  a{color:inherit}
+
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .eyebrow b{color:var(--brass);font-weight:500}
+  h1{font-family:"Fraunces",serif;font-weight:500;font-size:38px;line-height:1.05;
+    letter-spacing:-.015em;margin:10px 0 8px;text-wrap:balance}
+  .lede{font-size:14px;color:var(--muted);max-width:58ch;margin:0 0 26px}
+  .lede b{color:var(--ink);font-weight:600}
+
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 30px}
+  .tile{border:1px solid var(--line);border-radius:13px;background:linear-gradient(180deg,var(--card),var(--card2));
+    padding:12px 14px 11px}
+  .tile .k{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted)}
+  .tile .v{font-family:"Fraunces",serif;font-size:29px;font-weight:500;letter-spacing:-.02em;
+    line-height:1.15;margin-top:3px;font-variant-numeric:tabular-nums}
+  .tile .v small{font-size:14px;color:var(--muted);font-weight:400}
+  .tile .s{font-size:11px;color:var(--faint);margin-top:2px}
+
+  section{margin:0 0 30px}
+  .card{border:1px solid var(--line);border-radius:13px;background:linear-gradient(180deg,var(--card),var(--card2));
+    padding:14px 16px 12px;position:relative}
+  .card h2{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);font-weight:500;margin:0 0 2px}
+  .card .sub{font-size:12px;color:var(--faint);margin:0 0 10px}
+  .card .sub b{color:var(--muted);font-weight:600}
+  svg{display:block;width:100%}
+  svg text{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:var(--muted)}
+  svg .val{fill:var(--ink);font-size:10.5px}
+  svg .nm{font-family:"Inter",system-ui,sans-serif;font-size:12px;fill:var(--ink)}
+  svg .nm tspan{fill:var(--faint);font-size:10px}
+
+  .tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--paper);
+    font-family:"IBM Plex Mono",monospace;font-size:10.5px;line-height:1.5;padding:5px 8px;
+    border-radius:6px;white-space:nowrap;opacity:0;transition:opacity .1s;z-index:3}
+  @media (prefers-reduced-motion: reduce){ .tip{transition:none} }
+
+  .legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0 0 10px;
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em;color:var(--muted)}
+  .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+
+  .notes{border-left:2px solid var(--warm-line);padding:2px 0 2px 14px;display:grid;gap:9px}
+  .notes p{font-size:13.5px;max-width:62ch}
+  .notes p b{font-weight:600}
+  .notes p .m{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--brass-deep)}
+
+  details{margin-top:12px}
+  summary{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);cursor:pointer;padding:4px 0}
+  summary:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:3px}
+  .twrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:6px}
+  th{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--faint);text-align:left;font-weight:500;padding:4px 12px 4px 0;border-bottom:1px solid var(--line)}
+  td{padding:4px 12px 4px 0;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.n{font-family:"IBM Plex Mono",monospace;font-size:11.5px}
+  td .ty{color:var(--faint);font-size:10.5px;font-family:"IBM Plex Mono",monospace;margin-left:6px}
+  tr.me td{color:var(--brass-deep)}
+
+  .foot{font-size:11px;color:var(--faint);max-width:64ch;line-height:1.6;margin-top:34px;
+    border-top:1px solid var(--line);padding-top:14px}
+  .foot p{margin:0 0 7px}
+</style>
+
+<div class="sheet">
+  <header>
+    <div class="eyebrow"><span>ALPEN <b>KAMMERMUSIK</b> · FIELD REPORT</span><span id="asof"></span></div>
+    <h1 id="title">The app, in use</h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section>
+    <div class="card" id="c-flow">
+      <h2>Opens per hour</h2>
+      <p class="sub">Every page open since launch, Vienna time · <b id="flowpeak"></b></p>
+      <div class="chwrap"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card" id="c-adopt">
+      <h2>Adoption</h2>
+      <p class="sub">People (besides Jason) who had picked an identity and opened the app, cumulative</p>
+      <div class="chwrap"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card" id="c-hod">
+      <h2>Rhythm of the day</h2>
+      <p class="sub">Opens by hour of day, all days combined</p>
+      <div class="chwrap"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card" id="c-users">
+      <h2>Top users</h2>
+      <p class="sub">Opens per person, coloured by page · Jason is shown for scale but out of the ranking</p>
+      <div class="legend" id="pagelegend"></div>
+      <div class="chwrap"></div>
+      <details>
+        <summary>All <span id="ucount"></span> people, as a table</summary>
+        <div class="twrap"><table id="utable"></table></div>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <div class="card" id="c-pages">
+      <h2>Pages</h2>
+      <p class="sub">Opens and reach — how many of the <span id="idcount"></span> identified people opened each page at least once</p>
+      <div class="chwrap"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card" id="c-anon">
+      <h2>Identified vs anonymous</h2>
+      <p class="sub">Anonymous = opened before picking an identity — the "who are you?" moment catches almost everyone</p>
+      <div class="legend"><span><i style="background:var(--brass)"></i>identified</span><span><i style="background:var(--anon)"></i>anonymous</span></div>
+      <div class="chwrap"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow" style="margin-bottom:12px"><span>WORTH <b>KNOWING</b></span></div>
+    <div class="notes" id="notes"></div>
+  </section>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>window.AKM_PAGE = "usage"</script>
+<script src="../roster-data.js"></script>
+<script src="../ping.js"></script>
+<script>
+const DATA = {"generated":"7/9 00:53","raw":2914,"deduped":642,"pre":270,"total":2002,"anon":263,"queued":111,"rosterSize":60,"identified":51,"unknown":0,"users":[{"uid":"70f71792","opens":171,"pages":{"index":111,"network":3,"map":6,"roster":20,"about":6,"concerts":25},"days":4,"known":true},{"uid":"e995e16f","opens":77,"pages":{"network":3,"roster":6,"index":43,"map":4,"about":21},"days":3,"known":true},{"uid":"529ea048","opens":69,"pages":{"network":3,"index":33,"map":4,"roster":27,"about":1,"concerts":1},"days":4,"known":true},{"uid":"8b739e33","opens":66,"pages":{"about":33,"index":30,"map":2,"network":1},"days":3,"known":true},{"uid":"ae83ceba","opens":64,"pages":{"map":6,"roster":4,"network":1,"index":35,"about":17,"concerts":1},"days":3,"known":true},{"uid":"d80f3e7b","opens":62,"pages":{"map":2,"about":16,"index":43,"concerts":1},"days":3,"known":true},{"uid":"681ae9be","opens":58,"pages":{"map":4,"roster":5,"network":3,"index":44,"about":2},"days":3,"known":true},{"uid":"fdcb7433","opens":58,"pages":{"network":3,"index":32,"roster":6,"about":10,"map":6,"concerts":1},"days":2,"known":true},{"uid":"344e72ab","opens":48,"pages":{"index":30,"about":17,"roster":1},"days":3,"known":true},{"uid":"c73b533d","opens":47,"pages":{"index":39,"roster":2,"concerts":4,"network":1,"map":1},"days":4,"known":true},{"uid":"470e4d9e","opens":46,"pages":{"index":41,"map":1,"roster":3,"network":1},"days":3,"known":true},{"uid":"7b590f39","opens":45,"pages":{"map":2,"roster":6,"network":2,"index":34,"concerts":1},"days":3,"known":true},{"uid":"099686f3","opens":45,"pages":{"map":2,"roster":3,"index":30,"about":8,"network":2},"days":3,"known":true},{"uid":"d0c052eb","opens":43,"pages":{"roster":4,"map":1,"network":3,"index":35},"days":3,"known":true},{"uid":"fbbb1f7e","opens":42,"pages":{"index":29,"map":2,"about":8,"roster":2,"concerts":1},"days":3,"known":true},{"uid":"97e1810c","opens":42,"pages":{"about":2,"index":30,"network":2,"roster":2,"map":5,"concerts":1},"days":3,"known":true},{"uid":"b0b316ed","opens":41,"pages":{"map":5,"roster":9,"network":2,"index":25},"days":3,"known":true},{"uid":"8bcd650b","opens":41,"pages":{"index":21,"roster":4,"network":11,"about":2,"map":1,"concerts":2},"days":3,"known":true},{"uid":"4a871629","opens":39,"pages":{"index":22,"network":1,"map":5,"roster":1,"about":6,"concerts":4},"days":3,"known":true},{"uid":"81100bf1","opens":37,"pages":{"index":29,"roster":3,"network":2,"about":3},"days":3,"known":true},{"uid":"c6ada6a8","opens":37,"pages":{"index":30,"about":7},"days":3,"known":true},{"uid":"51593363","opens":37,"pages":{"roster":7,"index":26,"about":1,"map":3},"days":2,"known":true},{"uid":"fa36366e","opens":36,"pages":{"map":5,"roster":2,"network":1,"index":27,"about":1},"days":3,"known":true},{"uid":"e82d4e49","opens":35,"pages":{"roster":3,"about":2,"index":28,"map":1,"network":1},"days":3,"known":true},{"uid":"6432ed7a","opens":33,"pages":{"network":5,"map":3,"roster":3,"index":21,"about":1},"days":3,"known":true},{"uid":"a3eeb8e1","opens":33,"pages":{"roster":5,"about":4,"index":18,"network":3,"map":3},"days":3,"known":true},{"uid":"877f3894","opens":30,"pages":{"map":2,"roster":1,"network":1,"index":24,"about":1,"concerts":1},"days":3,"known":true},{"uid":"ae6c54df","opens":30,"pages":{"about":12,"index":17,"map":1},"days":2,"known":true},{"uid":"411eaad6","opens":29,"pages":{"index":15,"network":2,"roster":2,"map":2,"about":7,"concerts":1},"days":4,"known":true},{"uid":"4a47be47","opens":27,"pages":{"index":22,"network":1,"about":1,"map":3},"days":3,"known":true},{"uid":"750d16d4","opens":26,"pages":{"index":20,"network":2,"roster":3,"map":1},"days":3,"known":true},{"uid":"c7931bb3","opens":25,"pages":{"roster":6,"network":4,"map":5,"about":2,"index":8},"days":2,"known":true},{"uid":"d8176f4a","opens":23,"pages":{"index":17,"roster":6},"days":3,"known":true},{"uid":"7d488bb9","opens":21,"pages":{"network":5,"roster":6,"map":4,"index":5,"about":1},"days":2,"known":true},{"uid":"3ec491a8","opens":18,"pages":{"network":5,"roster":4,"map":4,"index":4,"about":1},"days":2,"known":true},{"uid":"59a4f476","opens":16,"pages":{"map":2,"roster":2,"network":2,"index":10},"days":3,"known":true},{"uid":"f97e82b0","opens":16,"pages":{"map":2,"roster":5,"network":2,"index":5,"about":2},"days":3,"known":true},{"uid":"a4b49834","opens":14,"pages":{"map":1,"roster":3,"network":3,"index":6,"about":1},"days":2,"known":true},{"uid":"e16a5550","opens":13,"pages":{"about":3,"index":8,"network":1,"map":1},"days":2,"known":true},{"uid":"bcc3d4b1","opens":13,"pages":{"map":3,"roster":1,"network":2,"index":5,"about":2},"days":2,"known":true},{"uid":"01b62ef3","opens":13,"pages":{"index":4,"roster":4,"map":1,"network":3,"about":1},"days":2,"known":true},{"uid":"92dff4ee","opens":13,"pages":{"map":4,"roster":3,"index":5,"about":1},"days":1,"known":true},{"uid":"9f8d2812","opens":12,"pages":{"roster":4,"network":3,"map":3,"index":2},"days":1,"known":true},{"uid":"539f633b","opens":11,"pages":{"map":1,"roster":1,"network":1,"index":8},"days":3,"known":true},{"uid":"7af31c2f","opens":11,"pages":{"index":10,"map":1},"days":4,"known":true},{"uid":"b5f58d48","opens":11,"pages":{"index":5,"roster":3,"network":1,"map":1,"about":1},"days":2,"known":true},{"uid":"13a643be","opens":6,"pages":{"index":4,"network":1,"map":1},"days":2,"known":true},{"uid":"843a17fd","opens":3,"pages":{"index":2,"about":1},"days":2,"known":true},{"uid":"847f67bb","opens":3,"pages":{"roster":1,"index":2},"days":1,"known":true},{"uid":"f9053c0c","opens":2,"pages":{"index":2},"days":1,"known":true},{"uid":"0b9af28e","opens":1,"pages":{"index":1},"days":1,"known":true}],"pages":[{"page":"index","opens":1242,"users":51},{"page":"about","opens":255,"users":36},{"page":"roster","opens":208,"users":40},{"page":"map","opens":143,"users":43},{"page":"network","opens":106,"users":38},{"page":"concerts","opens":48,"users":13}],"byDay":{"7/6":479,"7/7":793,"7/8":699,"7/9":31},"anonByDay":{"7/6":144,"7/7":81,"7/8":36,"7/9":2},"byHour":[66,38,13,8,1,14,39,67,143,70,98,83,134,111,83,87,46,84,49,334,62,167,69,136],"series":[{"t":"7/6 19","n":274},{"t":"7/6 20","n":20},{"t":"7/6 21","n":106},{"t":"7/6 22","n":37},{"t":"7/6 23","n":42},{"t":"7/7 00","n":26},{"t":"7/7 01","n":31},{"t":"7/7 02","n":11},{"t":"7/7 03","n":0},{"t":"7/7 04","n":1},{"t":"7/7 05","n":10},{"t":"7/7 06","n":21},{"t":"7/7 07","n":43},{"t":"7/7 08","n":90},{"t":"7/7 09","n":48},{"t":"7/7 10","n":67},{"t":"7/7 11","n":46},{"t":"7/7 12","n":85},{"t":"7/7 13","n":54},{"t":"7/7 14","n":48},{"t":"7/7 15","n":49},{"t":"7/7 16","n":23},{"t":"7/7 17","n":22},{"t":"7/7 18","n":10},{"t":"7/7 19","n":16},{"t":"7/7 20","n":17},{"t":"7/7 21","n":22},{"t":"7/7 22","n":26},{"t":"7/7 23","n":27},{"t":"7/8 00","n":9},{"t":"7/8 01","n":7},{"t":"7/8 02","n":2},{"t":"7/8 03","n":8},{"t":"7/8 04","n":0},{"t":"7/8 05","n":4},{"t":"7/8 06","n":18},{"t":"7/8 07","n":24},{"t":"7/8 08","n":53},{"t":"7/8 09","n":22},{"t":"7/8 10","n":31},{"t":"7/8 11","n":37},{"t":"7/8 12","n":49},{"t":"7/8 13","n":57},{"t":"7/8 14","n":35},{"t":"7/8 15","n":38},{"t":"7/8 16","n":23},{"t":"7/8 17","n":62},{"t":"7/8 18","n":39},{"t":"7/8 19","n":44},{"t":"7/8 20","n":25},{"t":"7/8 21","n":39},{"t":"7/8 22","n":6},{"t":"7/8 23","n":67},{"t":"7/9 00","n":31}],"adopt":[{"t":"7/6 19","n":31},{"t":"7/6 20","n":33},{"t":"7/6 21","n":39},{"t":"7/6 22","n":41},{"t":"7/6 23","n":41},{"t":"7/7 00","n":44},{"t":"7/7 01","n":45},{"t":"7/7 02","n":46},{"t":"7/7 03","n":46},{"t":"7/7 04","n":46},{"t":"7/7 05","n":46},{"t":"7/7 06","n":46},{"t":"7/7 07","n":47},{"t":"7/7 08","n":47},{"t":"7/7 09","n":47},{"t":"7/7 10","n":49},{"t":"7/7 11","n":49},{"t":"7/7 12","n":50},{"t":"7/7 13","n":50},{"t":"7/7 14","n":50},{"t":"7/7 15","n":50},{"t":"7/7 16","n":50},{"t":"7/7 17","n":50},{"t":"7/7 18","n":50},{"t":"7/7 19","n":50},{"t":"7/7 20","n":50},{"t":"7/7 21","n":50},{"t":"7/7 22","n":50},{"t":"7/7 23","n":50},{"t":"7/8 00","n":50},{"t":"7/8 01","n":50},{"t":"7/8 02","n":50},{"t":"7/8 03","n":50},{"t":"7/8 04","n":50},{"t":"7/8 05","n":50},{"t":"7/8 06","n":50},{"t":"7/8 07","n":50},{"t":"7/8 08","n":50},{"t":"7/8 09","n":50},{"t":"7/8 10","n":50},{"t":"7/8 11","n":50},{"t":"7/8 12","n":50},{"t":"7/8 13","n":50},{"t":"7/8 14","n":50},{"t":"7/8 15","n":50},{"t":"7/8 16","n":50},{"t":"7/8 17","n":50},{"t":"7/8 18","n":50},{"t":"7/8 19","n":50},{"t":"7/8 20","n":50},{"t":"7/8 21","n":50},{"t":"7/8 22","n":50},{"t":"7/8 23","n":50},{"t":"7/9 00","n":50}]};
+const JASON = "70f71792";                     // uid("Jason Sundram")
+const YEAR = 2026;
+const PAGE_ORDER = ["index","roster","map","network","about","concerts"];
+const pageCol = p => PAGE_ORDER.includes(p) ? `var(--c-${p})` : "var(--anon)";
+const pageLabel = p => p === "index" ? "today" : p;
+const fmtN = n => n.toLocaleString("en-US");
+const dow = md => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(YEAR, md.split("/")[0]-1, md.split("/")[1]).getDay()];
+
+// names never live in this file — they're joined from the roster at load time,
+// by the same uid recipe ping.js uses (first 8 hex of SHA-256 of the name)
+const UIDS = {};
+async function loadNames(){
+  let people = null;
+  try{ people = Roster.cached(); }catch{}
+  if(!people){ try{ people = await Roster.pull(); }catch{} }
+  if(!people || !crypto.subtle) return;
+  for(const p of people){
+    const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(p.name));
+    UIDS[[...new Uint8Array(h)].slice(0,4).map(b => b.toString(16).padStart(2,"0")).join("")] = p;
+  }
+}
+const who     = u => UIDS[u.uid];
+const nameOf  = u => { const p = who(u); return p ? p.name : `#${u.uid.slice(0,4)}`; };
+const shortOf = u => { const p = who(u);
+  return p ? `${p.name.split(/\s+/)[0]} ${p.name.split(/\s+/).slice(1).map(w => w[0]+".").join("")}` : `#${u.uid.slice(0,4)}`; };
+
+const others = DATA.users.filter(u => u.uid !== JASON);
+const jason  = DATA.users.find(u => u.uid === JASON);
+
+// ---------- svg helpers ----------
+const NS = "http://www.w3.org/2000/svg";
+const el = (t, a, parent) => { const e = document.createElementNS(NS, t);
+  for (const k in a) e.setAttribute(k, a[k]); if (parent) parent.appendChild(e); return e; };
+const txt = (parent, x, y, s, a = {}) => { const e = el("text", { x, y, ...a }, parent); e.textContent = s; return e; };
+// bars with only the data-end rounded (the baseline stays square)
+const barV = (g, x, y, w, h, r, fill) => { r = Math.min(r, w/2, h);
+  el("path", { d:`M${x},${y+h} v${-(h-r)} q0,${-r} ${r},${-r} h${w-2*r} q${r},0 ${r},${r} v${h-r} z`, fill }, g); };
+const barH = (g, x, y, w, h, r, fill, round) => { r = round ? Math.min(r, h/2, w) : 0;
+  el("path", { d:`M${x},${y} h${w-r} q${r},0 ${r},${r} v${h-2*r} q0,${r} ${-r},${r} h${-(w-r)} z`, fill }, g); };
+
+function tipFor(card){
+  let t = card.querySelector(".tip");
+  if (!t){ t = document.createElement("div"); t.className = "tip"; card.appendChild(t); }
+  return {
+    show(html, cx, cy){ t.innerHTML = html; t.style.opacity = 1;
+      const cw = card.clientWidth, tw = t.offsetWidth;
+      t.style.left = Math.max(8, Math.min(cx - tw/2, cw - tw - 8)) + "px";
+      t.style.top  = Math.max(4, cy - t.offsetHeight - 12) + "px"; },
+    hide(){ t.style.opacity = 0; }
+  };
+}
+const hourLabel = t => { const [md, h] = t.split(" "); return `${dow(md)} ${md} · ${+h}:00–${+h+1}:00`; };
+// with a week+ of days, label every other boundary so they don't collide
+const dayTicks = s => { const b = s.map((d, i) => d.t.endsWith(" 00") ? i : -1).filter(i => i >= 0);
+  return new Set(b.length > 4 ? b.filter((_, j) => j % 2 === (b.length % 2 ? 0 : 1)) : b); };
+
+// ---------- charts ----------
+function flowChart(){
+  const card = document.getElementById("c-flow"), wrap = card.querySelector(".chwrap");
+  wrap.innerHTML = "";
+  const W = wrap.clientWidth, H = 190, L = 30, R = 8, T = 12, B = 22;
+  const s = DATA.series;
+  const rawmax = Math.max(...s.map(d => d.n));
+  const step = rawmax > 160 ? 100 : rawmax > 60 ? 50 : 25;
+  const max = Math.ceil(rawmax / step) * step;
+  const x = i => L + i * (W - L - R) / (s.length - 1);
+  const y = v => T + (H - T - B) * (1 - v / max);
+  const svg = el("svg", { viewBox:`0 0 ${W} ${H}`, height:H, role:"img",
+    "aria-label":"Opens per hour since launch" }, wrap);
+  for (let v = step; v <= max; v += step){
+    el("line", { x1:L, x2:W-R, y1:y(v), y2:y(v), stroke:"var(--grid)", "stroke-width":1 }, svg);
+    txt(svg, L-5, y(v)+3, v, { "text-anchor":"end", "font-size":9 });
+  }
+  const labeled = dayTicks(s);
+  s.forEach((d, i) => {                                   // day boundaries
+    if (d.t.endsWith(" 00")){
+      el("line", { x1:x(i), x2:x(i), y1:T, y2:H-B, stroke:"var(--line)", "stroke-width":1, "stroke-dasharray":"2 3" }, svg);
+      if (labeled.has(i) && x(i) < W - 60) txt(svg, x(i)+4, H-7, `${dow(d.t.split(" ")[0])} ${d.t.split(" ")[0]}`, {});
+    }
+  });
+  el("line", { x1:x(0), x2:x(0), y1:H-B, y2:H-B+4, stroke:"var(--brass)", "stroke-width":2 }, svg);
+  const line = s.map((d, i) => `${i ? "L" : "M"}${x(i)},${y(d.n)}`).join("");
+  const grad = el("linearGradient", { id:"gflow", x1:0, y1:0, x2:0, y2:1 }, svg);
+  el("stop", { offset:"0%", "stop-color":"var(--brass)", "stop-opacity":.28 }, grad);
+  el("stop", { offset:"100%", "stop-color":"var(--brass)", "stop-opacity":.02 }, grad);
+  el("path", { d:`${line}L${x(s.length-1)},${H-B}L${x(0)},${H-B}Z`, fill:"url(#gflow)" }, svg);
+  el("path", { d:line, fill:"none", stroke:"var(--brass)", "stroke-width":2, "stroke-linejoin":"round" }, svg);
+  const peak = s.reduce((m, d) => d.n > m.n ? d : m, s[0]), pi = s.indexOf(peak);
+  el("circle", { cx:x(pi), cy:y(peak.n), r:3.5, fill:"var(--brass)", stroke:"var(--card)", "stroke-width":2 }, svg);
+  txt(svg, Math.min(x(pi)+6, W-30), y(peak.n)-6, `${peak.n}`, { class:"val" });
+  document.getElementById("flowpeak").textContent =
+    `peak ${peak.n} in the ${+peak.t.split(" ")[1]}:00 hour ${dow(peak.t.split(" ")[0])}`;
+  const tip = tipFor(card), cross = el("line", { y1:T, y2:H-B, stroke:"var(--faint)", "stroke-width":1, opacity:0 }, svg);
+  svg.addEventListener("pointermove", e => {
+    const r = svg.getBoundingClientRect();
+    const i = Math.max(0, Math.min(s.length-1, Math.round((e.clientX - r.left - L) / ((W-L-R)/(s.length-1)))));
+    cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("opacity", .6);
+    tip.show(`${hourLabel(s[i].t)}<br><b>${s[i].n}</b> opens`, x(i), y(s[i].n));
+  });
+  svg.addEventListener("pointerleave", () => { cross.setAttribute("opacity", 0); tip.hide(); });
+}
+
+function adoptChart(){
+  const card = document.getElementById("c-adopt"), wrap = card.querySelector(".chwrap");
+  wrap.innerHTML = "";
+  const W = wrap.clientWidth, H = 170, L = 30, R = 46, T = 14, B = 22;
+  const s = DATA.adopt, total = DATA.rosterSize - 1;      // everyone but Jason
+  const x = i => L + i * (W - L - R) / (s.length - 1);
+  const y = v => T + (H - T - B) * (1 - v / 60);
+  const svg = el("svg", { viewBox:`0 0 ${W} ${H}`, height:H, role:"img",
+    "aria-label":"Cumulative adoption" }, wrap);
+  for (const v of [20, 40]){
+    el("line", { x1:L, x2:W-R, y1:y(v), y2:y(v), stroke:"var(--grid)" }, svg);
+    txt(svg, L-5, y(v)+3, v, { "text-anchor":"end", "font-size":9 });
+  }
+  el("line", { x1:L, x2:W-R, y1:y(total), y2:y(total), stroke:"var(--warm-line)", "stroke-dasharray":"4 4" }, svg);
+  txt(svg, W-R+5, y(total)+3, `all ${total}`, { fill:"var(--brass-deep)", "font-size":9 });
+  const labeled = dayTicks(s);
+  s.forEach((d, i) => { if (labeled.has(i))
+    txt(svg, x(i)+4, H-7, `${dow(d.t.split(" ")[0])} ${d.t.split(" ")[0]}`, {}); });
+  const step = s.map((d, i) => `${i ? `H${x(i)}` : `M${x(0)},${y(d.n)}`}V${y(d.n)}`).join("");
+  el("path", { d:step, fill:"none", stroke:"var(--c-roster)", "stroke-width":2, "stroke-linejoin":"round" }, svg);
+  const last = s[s.length-1];
+  el("circle", { cx:x(s.length-1), cy:y(last.n), r:3.5, fill:"var(--c-roster)", stroke:"var(--card)", "stroke-width":2 }, svg);
+  txt(svg, x(s.length-1)+7, y(last.n)+3, last.n, { class:"val" });
+  txt(svg, x(1)+4, y(s[0].n)-8, `${s[0].n} in the first half hour`, { class:"val" });
+  const tip = tipFor(card);
+  svg.addEventListener("pointermove", e => {
+    const r = svg.getBoundingClientRect();
+    const i = Math.max(0, Math.min(s.length-1, Math.round((e.clientX - r.left - L) / ((W-L-R)/(s.length-1)))));
+    tip.show(`by ${hourLabel(s[i].t).replace(/–.*/, "")}00<br><b>${s[i].n}</b> people`, x(i), y(s[i].n));
+  });
+  svg.addEventListener("pointerleave", tip.hide);
+}
+
+function hodChart(){
+  const card = document.getElementById("c-hod"), wrap = card.querySelector(".chwrap");
+  wrap.innerHTML = "";
+  const W = wrap.clientWidth, H = 160, L = 8, R = 8, T = 16, B = 20;
+  const v = DATA.byHour, max = Math.max(...v);
+  const bw = (W - L - R) / 24;
+  const y = n => T + (H - T - B) * (1 - n / max);
+  const svg = el("svg", { viewBox:`0 0 ${W} ${H}`, height:H, role:"img",
+    "aria-label":"Opens by hour of day" }, wrap);
+  el("line", { x1:L, x2:W-R, y1:H-B, y2:H-B, stroke:"var(--line)" }, svg);
+  const tip = tipFor(card);
+  v.forEach((n, h) => {
+    const bx = L + h * bw + 1;
+    if (n) barV(svg, bx, y(n), bw - 2, H - B - y(n), 3, h === v.indexOf(max) ? "var(--brass)" : "var(--brass-soft)");
+    if (h === v.indexOf(max)) txt(svg, bx + (bw-2)/2, y(n) - 5, n, { class:"val", "text-anchor":"middle" });
+    const hit = el("rect", { x:L+h*bw, y:T, width:bw, height:H-T-B, fill:"transparent" }, svg);
+    hit.addEventListener("pointerenter", () => tip.show(`${h}:00–${h+1}:00<br><b>${n}</b> opens`, bx + bw/2, y(n)));
+    hit.addEventListener("pointerleave", tip.hide);
+  });
+  for (const h of [0, 6, 12, 18])
+    txt(svg, L + h * bw + bw/2, H-6, h === 0 ? "12a" : h === 12 ? "12p" : h % 12 + (h < 12 ? "a" : "p"), { "text-anchor":"middle" });
+}
+
+function stackRow(g, tip, u, y, rh, x0, maxW, maxV){
+  let acc = 0;
+  const segs = PAGE_ORDER.filter(p => u.pages[p]).concat(Object.keys(u.pages).filter(p => !PAGE_ORDER.includes(p)));
+  segs.forEach((p, si) => {
+    const n = u.pages[p], w = n / maxV * maxW - (si < segs.length - 1 ? 2 : 0);
+    if (w > 0){
+      barH(g, x0 + acc / maxV * maxW, y, w, rh, 4, pageCol(p), si === segs.length - 1);
+      const hit = el("rect", { x:x0 + acc / maxV * maxW, y, width:Math.max(w, 6), height:rh, fill:"transparent" }, g);
+      hit.addEventListener("pointerenter", () => tip.show(`${shortOf(u)}<br>${pageLabel(p)} · <b>${n}</b> of ${u.opens}`, x0 + (acc + n/2) / maxV * maxW, y));
+      hit.addEventListener("pointerleave", tip.hide);
+    }
+    acc += n;
+  });
+}
+
+function usersChart(){
+  const card = document.getElementById("c-users"), wrap = card.querySelector(".chwrap");
+  wrap.innerHTML = "";
+  document.getElementById("pagelegend").innerHTML = PAGE_ORDER
+    .map(p => `<span><i style="background:${pageCol(p)}"></i>${p === "index" ? "today (index)" : p}</span>`).join("");
+  const TOPN = 15, top = others.slice(0, TOPN);
+  const W = wrap.clientWidth, rh = 15, gap = 11, nameW = Math.min(178, W * .32), numW = 40;
+  const H = (top.length + 1) * (rh + gap) + 26;
+  const maxV = Math.max(top[0].opens, jason ? jason.opens : 0);
+  const maxW = W - nameW - numW;
+  const svg = el("svg", { viewBox:`0 0 ${W} ${H}`, height:H, role:"img", "aria-label":"Top users" }, wrap);
+  const tip = tipFor(card);
+  top.forEach((u, i) => {
+    const y = i * (rh + gap) + 4, p = who(u);
+    const t = txt(svg, nameW - 10, y + rh - 4, "", { class:"nm", "text-anchor":"end" });
+    t.appendChild(document.createTextNode(shortOf(u)));
+    if (p && p.instrument){ const ts = document.createElementNS(NS, "tspan");
+      ts.textContent = ` ${p.instrument}`; t.appendChild(ts); }
+    stackRow(svg, tip, u, y, rh, nameW, maxW, maxV);
+    txt(svg, nameW + u.opens / maxV * maxW + 7, y + rh - 4, u.opens, { class:"val" });
+  });
+  const jy = top.length * (rh + gap) + 14;
+  el("line", { x1:0, x2:W, y1:jy - 8, y2:jy - 8, stroke:"var(--grid)" }, svg);
+  if (jason){
+    txt(svg, nameW - 10, jy + rh - 4, "Jason S. (made it)", { class:"nm", "text-anchor":"end", opacity:.55 });
+    const g = el("g", { opacity:.5 }, svg);
+    stackRow(g, tip, jason, jy, rh, nameW, maxW, maxV);
+    txt(svg, nameW + jason.opens / maxV * maxW + 7, jy + rh - 4, jason.opens, { class:"val", opacity:.55 });
+  }
+  document.getElementById("ucount").textContent = others.length;
+}
+
+function usersTable(){
+  const rows = DATA.users;
+  document.getElementById("utable").innerHTML =
+    `<tr><th>#</th><th>name</th><th>opens</th><th>days</th><th>beyond the today-page</th></tr>` +
+    rows.map((u, i) => {
+      const p = who(u), me = u.uid === JASON;
+      const extra = Object.keys(u.pages).filter(k => k !== "index")
+        .sort((a, b) => u.pages[b] - u.pages[a]).map(k => `${pageLabel(k)} ${u.pages[k]}`).join(" · ");
+      return `<tr${me ? ' class="me"' : ""}><td class="n">${i+1}</td>
+        <td>${nameOf(u)}${me ? " ★" : ""}<span class="ty">${p ? p.type || "" : ""}</span></td>
+        <td class="n">${u.opens}</td><td class="n">${u.days}</td>
+        <td class="n" style="white-space:normal">${extra || "—"}</td></tr>`;
+    }).join("");
+}
+
+function pagesChart(){
+  const card = document.getElementById("c-pages"), wrap = card.querySelector(".chwrap");
+  wrap.innerHTML = "";
+  document.getElementById("idcount").textContent = DATA.identified;
+  const W = wrap.clientWidth, rh = 15, gap = 24, nameW = 84;
+  const pages = DATA.pages, maxV = pages[0].opens;
+  const H = pages.length * (rh + gap) + 2;
+  const svg = el("svg", { viewBox:`0 0 ${W} ${H}`, height:H, role:"img", "aria-label":"Opens per page" }, wrap);
+  const tip = tipFor(card);
+  pages.forEach((p, i) => {
+    const y = i * (rh + gap);
+    txt(svg, 0, y + rh - 3, pageLabel(p.page), { class:"nm" });
+    const w = Math.max(p.opens / maxV * (W - nameW - 4), 3);
+    barH(svg, nameW, y, w, rh, 4, pageCol(p.page), true);
+    txt(svg, nameW, y + rh + 13, `${fmtN(p.opens)} opens · reached ${p.users} of ${DATA.identified}`, { "font-size":9.5 });
+    const hit = el("rect", { x:nameW, y, width:Math.max(w, 20), height:rh, fill:"transparent" }, svg);
+    hit.addEventListener("pointerenter", () => tip.show(`${pageLabel(p.page)}<br><b>${fmtN(p.opens)}</b> opens · <b>${p.users}</b> people`, nameW + w/2, y));
+    hit.addEventListener("pointerleave", tip.hide);
+  });
+}
+
+function anonChart(){
+  const card = document.getElementById("c-anon"), wrap = card.querySelector(".chwrap");
+  wrap.innerHTML = "";
+  const days = Object.keys(DATA.byDay);
+  const W = wrap.clientWidth, rh = 15, gap = 24, nameW = 84;
+  const maxV = Math.max(...days.map(d => DATA.byDay[d]));
+  const H = days.length * (rh + gap) + 2;
+  const svg = el("svg", { viewBox:`0 0 ${W} ${H}`, height:H, role:"img", "aria-label":"Identified vs anonymous opens per day" }, wrap);
+  const tip = tipFor(card);
+  const gen = DATA.generated.split(" ");
+  days.forEach((d, i) => {
+    const y = i * (rh + gap), anon = DATA.anonByDay[d] || 0, idd = DATA.byDay[d] - anon;
+    const part = d === "7/6" ? " (from 19:30)" : d === gen[0] ? ` (to ${gen[1]})` : "";
+    txt(svg, 0, y + rh - 3, `${dow(d)} ${d}`, { class:"nm" });
+    const wI = idd / maxV * (W - nameW - 4), wA = anon / maxV * (W - nameW - 4);
+    barH(svg, nameW, y, Math.max(wI - 2, 2), rh, 4, "var(--brass)", false);
+    barH(svg, nameW + wI, y, Math.max(wA, 2), rh, 4, "var(--anon)", true);
+    txt(svg, nameW, y + rh + 13, `${fmtN(idd)} identified · ${anon} anonymous${part}`, { "font-size":9.5 });
+    const hit = el("rect", { x:nameW, y, width:Math.max(wI + wA, 20), height:rh, fill:"transparent" }, svg);
+    hit.addEventListener("pointerenter", () => tip.show(`${dow(d)} ${d}${part}<br><b>${idd}</b> identified · <b>${anon}</b> anonymous`, nameW + (wI + wA)/2, y));
+    hit.addEventListener("pointerleave", tip.hide);
+  });
+}
+
+// ---------- assembly ----------
+function main(){
+  const nDays = Object.keys(DATA.byDay).length;
+  document.getElementById("asof").textContent = `through ${DATA.generated}`;
+  document.getElementById("title").textContent = `${["","One day","Two days","Three days","Four days","Five days","Six days","A week","Eight days","Nine days","Ten days","Eleven days","Twelve days","Two weeks"][nDays] || nDays + " days"} in the wild`;
+  const opensSorted = others.map(u => u.opens).sort((a, b) => a - b);
+  const median = opensSorted[Math.floor(opensSorted.length / 2)] || 0;
+  // "every day" means every *completed* day — the generated-day is still in progress
+  const nFull = nDays - (Object.keys(DATA.byDay).at(-1) === DATA.generated.split(" ")[0] ? 1 : 0);
+  const everyDay = others.filter(u => u.days >= nFull).length;
+  const anonShare = Math.round(DATA.anon / DATA.total * 100);
+
+  document.getElementById("lede").innerHTML =
+    `The festival app went out over dinner on Mon 7/6 at 19:30 — one WhatsApp message, one link. ` +
+    `Since then it's been opened <b>${fmtN(DATA.total)} times</b> by <b>${DATA.identified} of the ${DATA.rosterSize} people</b> ` +
+    `on the roster — a median of <b>${median} opens</b> per person — and <b>${everyDay} people</b> have come back ` +
+    `every single day so far. Jason's ${fmtN(jason ? jason.opens : 0)} opens are counted here but left out of the rankings.`;
+
+  const tiles = [
+    ["opens", fmtN(DATA.total), "since launch, deduped"],
+    ["people", `${DATA.identified}<small> of ${DATA.rosterSize}</small>`, "picked an identity"],
+    ["median / person", median, `mean ${Math.round(DATA.total / Math.max(DATA.identified, 1))}, excl. Jason`],
+    [`back all ${nFull} days`, everyDay, `of ${others.length} others`],
+    ["offline opens", DATA.queued, "flushed when back online"],
+    ["anonymous", `${fmtN(DATA.anon)}<small> · ${anonShare}%</small>`, "mostly launch night"],
+  ];
+  document.getElementById("tiles").innerHTML = tiles
+    .map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+
+  const idx = DATA.pages.find(p => p.page === "index") || { opens: 0 };
+  const reach = Math.max(...DATA.pages.filter(p => p.page === "roster" || p.page === "map").map(p => p.users), 0);
+  document.getElementById("notes").innerHTML = [
+    `<b>The launch worked in one push.</b> <span class="m">${DATA.adopt[0].n} people</span> opened it within the first half hour of the WhatsApp message, and adoption hit ${DATA.adopt[DATA.adopt.length-1].n} of ${DATA.rosterSize - 1}. The few still missing are mostly the non-playing guests.`,
+    `<b>It's a daily habit, not a curiosity.</b> ${everyDay} of ${others.length} people have opened it every day, and the median person has opened it ${median} times. The rhythm says utility: breakfast (<span class="m">${DATA.byHour[8]} opens at 8:00</span>), lunch, and a big <span class="m">19:00 spike</span> — dinner and pre-concert checking.`,
+    `<b>The schedule is the product; the rest gets sampled.</b> The today-page is <span class="m">${Math.round(idx.opens / DATA.total * 100)}%</span> of all opens, but roster and map have each reached ${reach} people — nearly everyone looked at least once.`,
+    DATA.unknown === 0
+      ? `<b>Nobody unexpected is inside.</b> Every identified uid resolves to a roster name, and anonymous opens fell ${Object.values(DATA.anonByDay).slice(0, 4).join(" → ")}${Object.keys(DATA.anonByDay).length > 4 ? " → …" : ""} as people picked identities. The tripwire has stayed quiet.`
+      : `<b>Tripwire:</b> <span class="m">${DATA.unknown} uid${DATA.unknown > 1 ? "s" : ""}</span> in the pings match nobody on the roster.`,
+    `<b>Offline mode is earning its keep.</b> <span class="m">${DATA.queued} opens</span> (${Math.round(DATA.queued / DATA.total * 100)}%) happened offline and flushed later — the venue-basement scenario the whole architecture was built for.`,
+  ].map(s => `<p>${s}</p>`).join("");
+
+  document.getElementById("foot").innerHTML =
+    `<p><b>Method.</b> One anonymous ping per page open. Rows are deduped (${fmtN(DATA.deduped)} duplicate deliveries removed), ` +
+    `and the ${fmtN(DATA.pre)} pre-launch test opens are excluded. All times Europe/Vienna. ` +
+    `The pings carry no names — just a short hash of the picked identity; this page joins names back from the ` +
+    `<a href="../roster.html">roster</a> when it loads, so none are stored here. Refreshed nightly.</p>` +
+    `<p>Generated ${DATA.generated} · <a href="../">back to the app</a> · <a href="../buildlog/">how it was built</a></p>`;
+
+  flowChart(); adoptChart(); hodChart(); usersChart(); usersTable(); pagesChart(); anonChart();
+}
+loadNames().then(main);
+let rt;
+addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { flowChart(); adoptChart(); hodChart(); usersChart(); pagesChart(); anonChart(); }, 150); });
+</script>
+</body>
+</html>

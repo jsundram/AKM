@@ -8,7 +8,9 @@
   const URL_ = "https://script.google.com/macros/s/AKfycbzCjWSTVOhqusGhbFp23q0MZukSXjHIEouTf3AWe9uaT_GPbYq5yH4yaT8_bTssnvEC/exec";
   const TOK  = "akm-2026";      // matches TOK in analytics.gs; public in the repo, just filters scanners
   const KEY  = "akm-pings", CAP = 300, GAP = 5*60e3;
-  const page = (location.pathname.split("/").pop() || "index").replace(".html","") || "index";
+  // directory URLs (/AKM/buildlog/, /AKM/usage/) end in "/" and would read as "index" —
+  // those pages set window.AKM_PAGE before loading this
+  const page = window.AKM_PAGE || (location.pathname.split("/").pop() || "index").replace(".html","") || "index";
 
   const q    = () => { try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch{ return []; } };
   const save = a  => { try{ localStorage.setItem(KEY, JSON.stringify(a.slice(-CAP))); }catch{} };

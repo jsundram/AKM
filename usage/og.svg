@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- Share card for /usage/ (og:image): the dawn scene with the opens-per-hour curve
+       rising over the meadows. Rasterize with scripts/make-og.sh usage/og.svg
+       (needs Fraunces + IBM Plex Mono installed locally). -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#86A9C0"/>
+      <stop offset="0.48" stop-color="#BCCED5"/>
+      <stop offset="0.78" stop-color="#ECDCBB"/>
+      <stop offset="1"    stop-color="#F1D096"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#FBE0A6"/>
+      <stop offset="0.55" stop-color="#F0B85A"/>
+      <stop offset="1"    stop-color="#C9892B"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#F4C36A" stop-opacity="0.55"/>
+      <stop offset="1"   stop-color="#F4C36A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="curve" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9A6B22" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#9A6B22" stop-opacity="0.06"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#sky)"/>
+
+  <!-- dawn sun -->
+  <circle cx="985" cy="150" r="210" fill="url(#halo)"/>
+  <circle cx="985" cy="150" r="58"  fill="url(#sun)"/>
+
+  <!-- hazy side ranges -->
+  <path d="M-20,480 L130,392 L310,480 Z"   fill="#A9C0CA"/>
+  <path d="M520,480 L700,312 L880,480 Z"   fill="#9DB6C2"/>
+  <path d="M880,480 L1035,328 L1190,480 Z" fill="#A9C0CA"/>
+
+  <!-- hero peak + snow cap -->
+  <path d="M540,480 L760,180 L835,295 L888,262 L1018,480 Z" fill="#5C7682"/>
+  <path d="M760,180 L792,254 L783,241 L773,256 L762,233 L752,256 L742,241 L729,255 Z" fill="#F2F5F4"/>
+
+  <!-- rolling meadows -->
+  <path d="M0,468 C280,438 430,460 600,451 C800,441 960,466 1200,446 L1200,630 L0,630 Z" fill="#94A56C"/>
+  <path d="M0,542 C330,516 470,536 685,526 C895,516 1060,542 1200,528 L1200,630 L0,630 Z" fill="#6E8350"/>
+
+  <!-- the opens-per-hour curve, rising over the meadows: the launch spike, then the daily
+       breakfast / lunch / pre-concert humps -->
+  <path d="M60,600 L80,478 L100,560 L130,588 L180,596 L240,566 L280,578 L330,556 L370,572 L430,540 L470,566 L520,596
+           L580,562 L620,576 L670,552 L710,570 L770,536 L810,564 L860,596 L920,558 L960,574 L1010,548 L1050,568 L1140,600
+           L1140,614 L60,614 Z" fill="url(#curve)"/>
+  <path d="M60,600 L80,478 L100,560 L130,588 L180,596 L240,566 L280,578 L330,556 L370,572 L430,540 L470,566 L520,596
+           L580,562 L620,576 L670,552 L710,570 L770,536 L810,564 L860,596 L920,558 L960,574 L1010,548 L1050,568 L1140,600"
+        fill="none" stroke="#9A6B22" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="80" cy="478" r="9" fill="#9A6B22" stroke="#F2F5F4" stroke-width="4"/>
+
+  <!-- wordmark -->
+  <text x="92" y="158" font-family="IBM Plex Mono" font-weight="500" font-size="22"
+        letter-spacing="5.5" fill="#2E4649">ALPEN KAMMERMUSIK · USAGE</text>
+  <text x="84" y="322" font-family="Fraunces" font-weight="500" font-size="122"
+        letter-spacing="-2" fill="#172526">Field report</text>
+  <text x="92" y="382" font-family="IBM Plex Mono" font-weight="400" font-size="18"
+        letter-spacing="1" fill="#3E5457">who&#8217;s using the app, refreshed nightly</text>
+</svg>
