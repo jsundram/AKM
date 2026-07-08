@@ -511,14 +511,19 @@ const progA = conc => {
   const dr = /-draft\./.test(conc.pdf) ? '<span class="dr">DRAFT</span> ' : "";
   return `<a class="prog" href="./concerts.html#${conc.id}">${dr}view program</a>`;
 };
-// which of the concert's pieces carry the picked user's name — printed full name (normalized), or a
-// first name that belongs to only one person on that program (absorbs the drafts' spelling wobbles)
+// which of the concert's pieces carry the picked user — each printed name resolves through the
+// shared roster matcher (concert-data.js), the same one concerts.html links kudos chips with, so a
+// program namesake ("Stephen Lustig" vs Steve Buck, the two Tanyas) can never claim someone else's
+// brass card. No roster around → exact printed-name match only, never a guess.
 function myConcertPieces(conc, u){
   if(!conc || !u || !u.name) return [];
-  const me = norm(u.name), meF = me.split(" ")[0], owners = new Set();
-  for(const p of conc.pieces) for(const [w] of (p.who||[])){ const n=norm(w); if(n.split(" ")[0]===meF) owners.add(n); }
-  const isMe = n => n===me || (n.split(" ")[0]===meF && owners.size===1);
-  return conc.pieces.filter(p => (p.who||[]).some(w => isMe(norm(w[0]))));
+  const me = norm(u.name);
+  const find = (typeof Concerts !== "undefined" && Concerts.matcher)
+    ? Concerts.matcher((typeof Roster !== "undefined" && Roster.cached()) || []) : null;
+  return conc.pieces.filter(p => (p.who||[]).some(([w,i]) => {
+    const hit = find && find(w, i);
+    return hit ? norm(hit.name) === me : norm(w) === me;
+  }));
 }
 
 function tline(s,e){ return `<div class="time"><span class="s">${s}</span>${e?`<span class="e">${e}</span>`:""}</div>`; }
@@ -549,28 +554,41 @@ function evblocks(day){
   });
 }
 // a concert we hold the program for → a card, not a banner line. Brass iff you're on the program.
-function concertCard(conc,s,e){
+// `live` is the sheet banner's "@ venue" — the day-of truth: when it names somewhere that isn't
+// just the baked venue under another spelling, it wins the chip (a weather move reaches users).
+function concertCard(conc,s,e,live){
+  const alias = (a,b) => { a=norm(a); b=norm(b); return a===b || a.includes(b) || b.includes(a); };
+  const at = live && !alias(live,conc.poi) && !alias(live,conc.venue) ? live : conc.poi;
   const mine = myConcertPieces(conc, USER);
-  const meta = `<div class="meta">${placeChip(conc.poi)}<span class="coach">${progA(conc)}</span></div>`;
-  return mine.length
-    ? `<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Concert · you're performing</span></div><div class="piece">${mine.map(p=>`${esc(p.c)} — ${esc(p.t)}`).join("<br>")}</div>${meta}</div></div></div>`
-    : `<div class="row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card ccard"><div class="kicker"><span>Concert · audience</span><span class="pc">all welcome</span></div><div class="piece">${esc(conc.title)}</div>${meta}</div></div></div>`;
+  const [row, card, kick, body] = mine.length
+    ? ["row mine", "card", "<span>Concert · you're performing</span>",
+       mine.map(p=>`${esc(p.c)} — ${esc(p.t)}`).join("<br>")]
+    : ["row", "card ccard", '<span>Concert · audience</span><span class="pc">all welcome</span>',
+       esc(conc.title)];
+  return `<div class="${row}">${tline(s,e)}<div class="body"><span class="dot"></span><div class="${card}">`
+    +`<div class="kicker">${kick}</div><div class="piece">${body}</div>`
+    +`<div class="meta">${placeChip(at)}<span class="coach">${progA(conc)}</span></div></div></div></div>`;
 }
 function timeline(day,w){
   const ev=[];
   // concerts whose program we hold, for the shown day — the single source of the concert cards below
   const dayConcerts = (typeof Concerts!=="undefined") ? Concerts.all.filter(c=>c.id.startsWith(sel)) : [];
+  const bven = {};   // half-day slot → the live "@ venue" off the day's own CONCERT banner
   for(const [s,e,piece,venue] of day.allhands){
     // a CONCERT banner we hold the program for is rendered as a card from concert-data.js (at the
-    // printed time), so drop its plain line here — no matter how the banner's own time parsed. A
-    // banner with no data entry (a day we haven't transcribed) still shows the plain "All welcome" line.
-    if(/concert/i.test(piece) && dayConcerts.length) continue;
+    // printed time), so drop its plain line here — no matter how the banner's own time parsed —
+    // but keep its venue: the sheet is the live truth if a concert moves. A banner with no data
+    // entry (a day we haven't transcribed) still shows the plain "All welcome" line.
+    if(/concert/i.test(piece) && dayConcerts.length){
+      if(venue && piece.trim().toUpperCase()==="CONCERT") bven[mins(s)<1080?"aft":"eve"] = venue;
+      continue;
+    }
     ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
   }
   // concert cards come straight from concert-data.js — independent of whether the day's sheet tab
   // carries a CONCERT banner at all (the Faculty Concert 7/8 renders even so), and of a mis-parsed
   // banner time (an "8:00" written for 8pm no longer misfiles it into the afternoon slot).
-  for(const c of dayConcerts){ const s=concStart(c); ev.push([s, concertCard(c,s,"")]); }
+  for(const c of dayConcerts){ const s=concStart(c); ev.push([s, concertCard(c,s,"",bven[mins(s)<1080?"aft":"eve"])]); }
   // the sheet's own practice/reading blocks — but once you add your own event over one it *becomes*
   // that event, so drop any block a self-added event overlaps (same dedup day.free already does).
   const selfSpans = (loadMine()[sel]||[]).map(m=>[mins(m.s), m.e?mins(m.e):mins(m.s)+60]);
@@ -983,4 +1001,5 @@ async function boot(){
 }
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
-  userCtx, mineOf, lessonsOf, coachingOf, teachingOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad };
+  userCtx, mineOf, lessonsOf, coachingOf, teachingOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad,
+  myConcertPieces };

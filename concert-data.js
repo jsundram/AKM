@@ -1,11 +1,13 @@
 // window.Concerts — shared concert-program data for the schedule (concert cards + program links)
-// and concerts.html (the full listing). Hand-transcribed from the PDFs in programs/ (titles in
-// English; a -draft pdf keeps the red DRAFT tag until the final lands — then repoint `pdf` and bump
-// sw.js V). Each performer is [name-as-printed, instrument] — names reconcile to the roster at
-// runtime (no phone numbers here, per the PII rule). Instruments: vn va vc bass pf cl ob + voices.
+// and concerts.html (the full listing), plus the one printed-name → roster matcher both use.
+// Hand-transcribed from the PDFs in programs/ (titles in English; a -draft pdf keeps the red DRAFT
+// tag until the final lands — then repoint `pdf` and bump sw.js V). Each performer is
+// [name-as-printed, instrument] — names reconcile to the roster at runtime via matcher() (no phone
+// numbers here, per the PII rule). Instruments: vn va vc bass pf cl ob + voices.
 (() => {
+const g = typeof window !== "undefined" ? window : globalThis;   // Node-requirable for the test harness
 const C = [
- {id:"2026-07-04-aft", title:"Afternoon Concert", day:"Saturday, July 4", time:"4:30 pm",
+ {id:"2026-07-04-aft", title:"Afternoon Concert", time:"4:30 pm",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-04-afternoon.pdf", pieces:[
   {c:"Fauré", t:"Piano Quartet No. 1 in C minor, Op. 15", m:"I. Allegro molto moderato",
    who:[["Claudia Ajmone-Marsan","vn"],["Jason Sundram","va"],["Max Buck","vc"],["Mark Zang","pf"]]},
@@ -23,7 +25,7 @@ const C = [
   {c:"Brahms", t:"String Sextet No. 1 in B-flat major, Op. 18", m:"I. Allegro ma non troppo",
    who:[["Korn Roongruangchai","vn"],["YooJin Jang","vn"],["Xinyuan Wang","va"],["Angelina Freeman","va"],["Richard Beales","vc"],["Aaron Kinghorn","vc"]]},
  ]},
- {id:"2026-07-04-eve", title:"Evening Concert", day:"Saturday, July 4", time:"8:00 pm",
+ {id:"2026-07-04-eve", title:"Evening Concert", time:"8:00 pm",
   venue:"Pfarrkirche St. Nikolaus", poi:"Pfarrkirche Hl. Nikolaus", pdf:"programs/2026-07-04-evening.pdf", pieces:[
   {c:"Shostakovich", t:"String Quartet No. 8 in C minor, Op. 110", m:"I. Largo · II. Allegro molto",
    who:[["Jane Givens","vn"],["Aafke Koffeman","vn"],["Gijs Kramers","va"],["Richard Beales","vc"]]},
@@ -41,7 +43,7 @@ const C = [
   {c:"Debussy", t:"String Quartet in G minor, Op. 10", m:"I. Animé et très décidé",
    who:[["Jane Givens","vn"],["Claudia Ajmone-Marsan","vn"],["Angelina Freeman","va"],["Seah Yu","vc"]]},
  ]},
- {id:"2026-07-08-eve", title:"Faculty Concert", day:"Wednesday, July 8", time:"8:00 pm",
+ {id:"2026-07-08-eve", title:"Faculty Concert", time:"8:00 pm",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-08-evening.pdf", pieces:[
   {c:"Mendelssohn", t:"String Quintet No. 2 in B-flat major, Op. 87", m:"I. Allegro vivace · II. Andante scherzando · III. Adagio e lento · IV. Allegro molto vivace",
    who:[["YooJin Jang","vn"],["Emi Ohi Resnick","vn"],["Ilinca Forna","va"],["Gijs Kramers","va"],["Jesús Morales","vc"]]},
@@ -54,7 +56,7 @@ const C = [
   {c:"Messiaen", t:"Quartet for the End of Time", m:"Complete — eight movements · ~50 min",
    who:[["Chad Burrow","cl"],["Nathan Meltzer","vn"],["Yoanna Prodanova","vc"],["James Cheung","pf"]]},
  ]},
- {id:"2026-07-09-eve", title:"Evening Concert", day:"Thursday, July 9", time:"8:00 pm",
+ {id:"2026-07-09-eve", title:"Evening Concert", time:"8:00 pm",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-09-evening-draft.pdf", pieces:[
   {c:"Mozart", t:"Clarinet Quintet in A major, K. 581", m:"I. Allegro",
    who:[["Robert Dembo","cl"],["Aafke Koffeman","vn"],["Tanya Jenkin","vn"],["Isadora Banyai","va"],["Jesús Morales","vc"]]},
@@ -76,7 +78,7 @@ const C = [
   {c:"Bruch", t:"String Octet in B-flat major, Op. posth.", m:"I. Allegro moderato",
    who:[["Nathan Meltzer","vn"],["Aafke Koffeman","vn"],["Bernhard Zojer","vn"],["Tanya Jenkin","vn"],["Gijs Kramers","va"],["Jason Sundram","va"],["Aaron Kinghorn","vc"],["Bruce Rosenblum","bass"]]},
  ]},
- {id:"2026-07-10-eve", title:"Evening Concert", day:"Friday, July 10", time:"8:00 pm",
+ {id:"2026-07-10-eve", title:"Evening Concert", time:"8:00 pm",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-10-evening-draft.pdf", pieces:[
   {c:"Ravel", t:"String Quartet in F major, M. 35", m:"I. Allegro moderato – très doux",
    who:[["YooJin Jang","vn"],["Jisoo Kim","vn"],["Ilinca Forna","va"],["David Goldesgeyme","vc"]]},
@@ -98,7 +100,7 @@ const C = [
   {c:"Brahms", t:"Clarinet Quintet in B minor, Op. 115", m:"I. Allegro",
    who:[["Chad Burrow","cl"],["Cara Wunder","vn"],["Adriana Stamile","vn"],["Ilinca Forna","va"],["Max Buck","vc"]]},
  ]},
- {id:"2026-07-11-morn", title:"Morning Concert", day:"Saturday, July 11", time:"11:00 am",
+ {id:"2026-07-11-morn", title:"Morning Concert", time:"11:00 am",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-11-morning-draft.pdf", pieces:[
   {c:"Haydn", t:"String Quartet in F minor, Op. 20 No. 5", m:"I. Allegro moderato",
    who:[["YooJin Jang","vn"],["Maya Weil","vn"],["Xinyuan Wang","va"],["Sara Phelps","vc"]]},
@@ -118,7 +120,7 @@ const C = [
   {c:"Mendelssohn", t:"String Quintet No. 2 in B-flat major, Op. 87", m:"I. Allegro vivace",
    who:[["Claire Maugham","vn"],["Chia-Hsuan Lin","vn"],["Emi Ohi Resnick","va"],["Michael Lee","va"],["Stephanie Wingfield","vc"]]},
  ]},
- {id:"2026-07-11-eve", title:"Evening Concert", day:"Saturday, July 11", time:"8:00 pm",
+ {id:"2026-07-11-eve", title:"Evening Concert", time:"8:00 pm",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-11-evening-draft.pdf", pieces:[
   {c:"Beethoven", t:"String Quartet in F major, Op. 18 No. 1", m:"II. Adagio affettuoso ed appassionato",
    who:[["YooJin Jang","vn"],["Korn Roongruangchai","vn"],["Xinyuan Wang","va"],["Aaron Kinghorn","vc"]]},
@@ -139,8 +141,58 @@ const C = [
    who:[["Jisoo Kim","vn"],["Seah Yu","vc"],["Tanya Bannister","pf"]]},
  ]},
 ];
+// `day` is derived from each id's date — one source of truth, so a hand-typed heading can't
+// contradict the id the schedule keys its cards on. `title` stays hand-set (Faculty vs Evening
+// isn't derivable from the id).
+const dayOf = id => new Date(+id.slice(0,4), +id.slice(5,7)-1, +id.slice(8,10))
+  .toLocaleDateString("en-US", {weekday:"long", month:"long", day:"numeric"});
+C.forEach(c => c.day = dayOf(c.id));
+
+// --- printed name → roster person: the ONE matcher, shared by concerts.html's kudos chips and
+// app.js's "you're performing" test (they used to be two copies, and drifted). Rules, in order:
+//   1. exact normalized full name;
+//   2. a printed full name may still match on surname — exact, or a trailing-letters wobble
+//      ("Koffemann"/"Koffeman") — when the first names agree for ≥3 leading chars ("Stephen" ~
+//      roster Steve, "Preetcharn" ~ roster Preet) and the instruments are compatible;
+//   3. a bare first name matches its unique roster owner (exact, else a ≥3-char prefix),
+//      instrument-checked.
+// Anything ambiguous, or a full name with no surname counterpart on the roster (the 7/8 guest
+// "Robert Lexer", flugelhorn — NOT Robert Dembo, clarinet), stays unmatched: never a wrong link,
+// never someone else's brass card. Instrument compatibility comes from Roster.instKind when
+// roster-data.js is around (violin/viola interchangeable, unknown permissive).
+const norm = s => (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+const pre = (a,b,min) => (a.startsWith(b) || b.startsWith(a)) && Math.min(a.length,b.length) >= min;
+const surOk = (a,b) => a===b || pre(a,b,4);
+const firstOk = (a,b) => { let i=0; while(i<a.length && i<b.length && a[i]===b[i]) i++; return a===b || i>=3; };
+function instOk(a,b){
+  const K = g.Roster && g.Roster.instKind; if(!K) return true;
+  const x = K(a), y = K(b); if(!x || !y) return true;          // unknown stays permissive
+  const str = k => k==="v" || k==="va" || k==="v/va";
+  return x===y || (str(x) && str(y));
+}
+function matcher(people){
+  const full = new Map(), first = new Map(), ppl = [];
+  for(const p of people||[]){
+    const n = norm(p.name), f = n.split(" ")[0];
+    full.set(n, p); first.set(f, first.has(f) ? null : p);     // null = ambiguous first, don't guess
+    ppl.push({p, f, last: n.includes(" ") ? n.split(" ").pop() : ""});
+  }
+  return (name, inst) => {
+    const n = norm(name), hit = full.get(n); if(hit) return hit;
+    const t = n.split(" "), f = t[0], last = t.length>1 ? t[t.length-1] : "";
+    let c;
+    if(last) c = ppl.filter(x => x.last && surOk(x.last,last) && firstOk(x.f,f) && instOk(inst,x.p.instrument));
+    else{
+      const e = first.get(f);
+      if(e !== undefined) return e && instOk(inst,e.instrument) ? e : null;
+      c = ppl.filter(x => pre(x.f,f,3) && instOk(inst,x.p.instrument));
+    }
+    return c.length===1 ? c[0].p : null;
+  };
+}
+
 // the schedule (app.js timeline) and concerts.html both read `all` and filter by `c.id`'s date
 // prefix, placing each card at its own printed `time` — so a concert renders whether or not the
 // day's sheet tab carries a CONCERT banner, and a banner's own (sometimes 12h) time can't misfile it.
-window.Concerts = { all: C };
+g.Concerts = { all: C, matcher };
 })();

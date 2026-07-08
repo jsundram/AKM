@@ -103,31 +103,13 @@ const CONCERTS = Concerts.all;
 
 const $ = s => document.querySelector(s);
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-const norm = s => (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
 const WA_SVG = '<svg viewBox="0 0 32 32" width="12" height="12" aria-hidden="true"><path fill="#25D366" d="M16 .6C7.5.6.6 7.5.6 16c0 2.8.8 5.5 2.1 7.8L.5 31.5l7.9-2.1c2.2 1.2 4.8 1.9 7.6 1.9 8.5 0 15.4-6.9 15.4-15.4S24.5.6 16 .6z"/><path fill="#fff" d="M23.1 19.3c-.4-.2-2.3-1.1-2.6-1.3-.3-.1-.6-.2-.8.2-.2.3-.9 1.2-1.2 1.5-.2.2-.4.2-.8.1-.4-.2-1.6-.6-3.1-1.9-1.1-1-1.9-2.3-2.1-2.7-.2-.4 0-.6.2-.8l.5-.6c.2-.2.2-.4.4-.6.1-.3 0-.5 0-.7-.1-.2-.8-2.1-1.2-2.8-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.5 3.8 6 5.3.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 2.3-.9 2.6-1.8.3-.9.3-1.7.2-1.8z"/></svg>';
 
-// two instruments compatible enough to be the same person? violin/viola are interchangeable
-// (a v/va player, a sheet that says one when the program says the other); everything else must
-// agree. Unknown on either side stays permissive — never block a match we can't classify.
-function instOk(a, b){
-  const x = Roster.instKind(a), y = Roster.instKind(b);
-  if(!x || !y) return true;
-  const str = k => k==="v" || k==="va" || k==="v/va";
-  return (str(x) && str(y)) || x===y;
-}
-// programmed name → roster person: exact normalized full name, else unambiguous first name
-// (absorbs the drafts' spelling wobbles — "Koffemann", "Jesús"). The first-name fallback also
-// checks the instrument, so a concert pianist who isn't in the roster doesn't get linked to a
-// same-first-name violinist (Sat morning's James Cheung vs a participant James). Unmatched names
-// print as-is, unlinked.
-function findP(maps, name, inst){
-  const n = norm(name), full = maps.full.get(n);
-  if(full) return full;
-  const p = maps.first.get(n.split(" ")[0]);
-  return p && instOk(inst, p.instrument) ? p : null;
-}
-function nameChip(maps, [name, inst]){
-  const p = findP(maps, name, inst), first = name.split(/\s+/)[0];
+// programmed name → roster person via the shared matcher (concert-data.js) — the same rules the
+// schedule's "you're performing" card uses, so the two pages can't drift. Unmatched names (the
+// guest choir, the flugelhorn trio) print as-is, unlinked.
+function nameChip(find, [name, inst]){
+  const p = find(name, inst), first = name.split(/\s+/)[0];
   const tail = (inst ? `<span class="inst">${esc(inst)}</span>` : "");
   const num = p && (p.whatsapp||"").replace(/\D/g,"");
   if(!num) return `<span class="p">${esc(p ? first : name)}${tail}</span>`;
@@ -138,12 +120,7 @@ function nameChip(maps, [name, inst]){
 }
 
 function render(people){
-  const maps = {full:new Map(), first:new Map()};
-  for(const p of people||[]){
-    const n = norm(p.name); maps.full.set(n, p);
-    const f = n.split(" ")[0];
-    maps.first.set(f, maps.first.has(f) ? null : p);   // null = ambiguous first name, don't guess
-  }
+  const find = Concerts.matcher(people);
   $("#index").innerHTML = CONCERTS.map(c =>
     `<a href="#${c.id}">${esc(c.day.slice(0,3))} ${c.day.replace(/\D+/g,"")} · ${esc(c.time.replace(":00","").replace(" ",""))}</a>`).join("");
   $("#concerts").innerHTML = CONCERTS.map(c => {
@@ -153,7 +130,7 @@ function render(people){
       ? `<li class="brk">Intermission</li>`
       : `<li value="${++n}"><div class="pt"><b>${esc(p.c)}</b> — ${esc(p.t)}</div>`
         + (p.m ? `<div class="mv">${esc(p.m)}</div>` : "")
-        + `<div class="names">${p.who.map(w => nameChip(maps, w)).join("")}</div></li>`).join("");
+        + `<div class="names">${p.who.map(w => nameChip(find, w)).join("")}</div></li>`).join("");
     return `<section id="${c.id}"><h2>${esc(c.day)}</h2>`
       + `<div class="cmeta">${esc(c.time)} · <a href="./map.html#${encodeURIComponent(c.poi)}">${esc(c.venue)}</a>`
       + ` · <a href="${c.pdf}" target="_blank" rel="noopener">original program ↗</a>${dr}</div>`

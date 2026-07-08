@@ -10,6 +10,7 @@ before sharing with new people or after anything that touches identity, matching
 ```
 node archive/parser-test.js     # 50/50 — grid parsing + multi-user matching + faculty coaching view, synthetic fixture (offline; runs anywhere)
 node scripts/inst-test.js       # 35/35 — the shared instrument classifier (Roster.instKind) + network's Winds grouping (offline)
+node scripts/concert-match-test.js  # 14/14 — the shared printed-name → roster matcher (kudos links + "you're performing" brass), namesake/wobble/guest cases (offline)
 node scripts/network-test.js    # 14/14 — pieces↔roster co-performance join + both graph layouts, against the live sheets
 node scripts/schedule-test.js   # 17/17 — schedule personalizes (mineOf non-empty, no over-claims) + coaching stays faculty-only, every festival day, live
 ```
