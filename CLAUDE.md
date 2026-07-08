@@ -115,7 +115,13 @@ Log: `~/Library/Logs/akm-buildlog.log`. Run by hand anytime: `python3 buildlog/u
 ## usage (analytics dashboard, nightly refresh)
 
 `usage/` is the public analytics page ("Field report") at `/usage/` — who's using the app: adoption
-curve, opens per hour, rhythm of day, top users, page reach, identified-vs-anonymous. noindex, **not**
+curve, opens per hour, rhythm of day, top users, page reach, identified-vs-anonymous, and a **"Not yet
+aboard"** list (`nonUsersList` — roster people whose uid never appears in the pings, A→Z full names;
+the one place full names show, since it's the ask, and it needs the roster loaded — offline it says so).
+On-screen names elsewhere show **first name only**, with the full name on hover/tap (`firstOf` +
+an SVG `<title>` / table `title=` / the bar tooltip's `nameOf`). The **rhythm-of-day chart excludes
+launch night** (`crunch.py` drops the launch day from `by_hour` only — not `by_day`/`series`) so the
+19:30 WhatsApp burst doesn't masquerade as a routine 7pm habit. noindex, **not**
 SW-precached, shareable (it has its own OG card, `usage/og.svg` → `og.png`, rendered via
 `scripts/make-og.sh usage/og.svg`). Same splice pattern as buildlog: everything renders in-page from one
 embedded `DATA` blob; `usage/crunch.py` (stdlib) re-bakes it and `usage/update.py` splices → commits →
@@ -125,8 +131,11 @@ buildlog's 7/13 cutoff. Run by hand: `python3 usage/update.py`.
 
 **PII posture — names never land in the repo.** The DATA blob is keyed by ping uid (first 8 hex of
 SHA-256 of the roster name); the page joins names back **at runtime** from the roster via
-`../roster-data.js` + `crypto.subtle` (same recipe as `ping.js`; roster missing → `#a1b2` placeholders,
-never a crash). Jason (`70f71792`) is shown for scale but excluded from rankings/adoption. Two data
+`../roster-data.js` + SHA-256 (same recipe as `ping.js`; roster missing → `#a1b2` placeholders,
+never a crash). The hash uses `crypto.subtle` when present and a **vendored pure-JS SHA-256 fallback**
+(`sha256_8`) otherwise — `crypto.subtle` only exists in a secure context, so without the fallback every
+name resolved to a `#hash` placeholder when the page was opened over `file://` or an `http://` LAN
+address. Jason (`70f71792`) is shown for scale but excluded from rankings/adoption. Two data
 invariants baked into crunch: **dedupe on (opened, page, uid)** — ping.js re-sends a queued ping when a
 flush is interrupted, ~20% of raw rows are duplicate deliveries — and **drop everything before
 2026-07-06 19:30** (launch; earlier = Jason's testing). One external dependency: crunch reads the

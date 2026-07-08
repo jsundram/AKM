@@ -55,6 +55,7 @@ def crunch():
     dd = [x for x in dd if x[0] >= LAUNCH]
 
     day = lambda d: f"{d.month}/{d.day}"
+    launch_day = day(LAUNCH)                 # the launch evening's burst skews the hour-of-day rhythm
     users, pages, by_day, anon_day = {}, {}, {}, {}
     by_hour = [0] * 24
     buckets, first = {}, {}
@@ -62,7 +63,7 @@ def crunch():
     for opened, rec, page, who in dd:
         d, h = day(opened), opened.hour
         by_day[d] = by_day.get(d, 0) + 1
-        by_hour[h] += 1
+        if d != launch_day: by_hour[h] += 1     # rhythm of day leaves out launch night's 19:30 spike
         buckets[(d, h)] = buckets.get((d, h), 0) + 1
         pg = pages.setdefault(page, {"opens": 0, "users": set()})
         pg["opens"] += 1
