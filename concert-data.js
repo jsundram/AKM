@@ -51,6 +51,8 @@ const C = [
    who:[["Jesús Morales","vc"],["Stephen Buck","pf"]]},
   {c:"arr. Gijs Kramers", t:"Songs: Sammy · Ozean · Sternenstaub · Sie glaubt an mich · Schwarz-Weiß", m:"Ramses Shaffy · Racoon · André Hazes · De Jeugd van Tegenwoordig · Frank Boeijen",
    who:[["Ilinca Forna","vn"],["Gijs Kramers","va"],["Jesús Morales","vc"],["Stephen Buck","pf"]]},
+  {c:"Messiaen", t:"Quartet for the End of Time", m:"Complete — eight movements · ~50 min",
+   who:[["Chad Burrow","cl"],["Nathan Meltzer","vn"],["Yoanna Prodanova","vc"],["James Cheung","pf"]]},
  ]},
  {id:"2026-07-09-eve", title:"Evening Concert", day:"Thursday, July 9", time:"8:00 pm",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-09-evening-draft.pdf", pieces:[
