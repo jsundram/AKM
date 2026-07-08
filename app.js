@@ -13,11 +13,13 @@ const TZ = "Europe/Vienna";
 const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusive
 const ROOMS = new Set(["A1","A2","A3","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
 const JASON = "Jason Sundram";     // the grace notes stay his easter egg; everything else follows the picker
-// concert programs + performer lists live in concert-data.js (window.Concerts), shared with
-// concerts.html; absent under Node, so every use goes through concertOf. A concert row whose
-// date+slot has an entry renders as a card — brass when the picked user's name is on the program,
-// cool "audience" otherwise — with the program PDF linked (drafts keep the red DRAFT tag).
-const concertOf = (iso,s) => (typeof Concerts==="undefined") ? null : Concerts.forDate(iso, mins(s)<1080);
+// concert programs + performer lists live in concert-data.js (window.Concerts.all), shared with
+// concerts.html; absent under Node, so every use is typeof-guarded. Each entry for the shown day
+// renders as a card (timeline()) — brass when the picked user's name is on the program, cool
+// "audience" otherwise — with the program PDF linked (drafts keep the red DRAFT tag). The card is
+// driven by the data, not by a sheet CONCERT banner, so it shows even when the tab has none.
+// a concert's printed start time ("8:00 pm" → "20:00") places its card on the day's timeline.
+const concStart = c => { const m=(c.time||"").match(/(\d{1,2}:\d{2})\s*(am|pm)?/i); return m?to24(m[1],m[2]):"0:00"; };
 const MEET = /Participant Tour|Info Meeting|Informational Meeting|Festival Meeting|Festival Informational/;
 const CK = "akm-cache";
 
@@ -545,21 +547,29 @@ function evblocks(day){
     return {s, e:entries[0][1], label:(day.evLabels||{})[s]||"Practice Block / Free Reading", free, closed:[...closed]};
   });
 }
+// a concert we hold the program for → a card, not a banner line. Brass iff you're on the program.
+function concertCard(conc,s,e){
+  const mine = myConcertPieces(conc, USER);
+  const meta = `<div class="meta">${placeChip(conc.poi)}<span class="coach">${progA(conc)} · <a class="prog" href="./concerts.html#${conc.id}">who's playing →</a></span></div>`;
+  return mine.length
+    ? `<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Concert · you're performing</span></div><div class="piece">${mine.map(p=>`${esc(p.c)} — ${esc(p.t)}`).join("<br>")}</div>${meta}</div></div></div>`
+    : `<div class="row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card ccard"><div class="kicker"><span>Concert · audience</span><span class="pc">all welcome</span></div><div class="piece">${esc(conc.title)}</div>${meta}</div></div></div>`;
+}
 function timeline(day,w){
   const ev=[];
+  // concerts whose program we hold, for the shown day — the single source of the concert cards below
+  const dayConcerts = (typeof Concerts!=="undefined") ? Concerts.all.filter(c=>c.id.startsWith(sel)) : [];
   for(const [s,e,piece,venue] of day.allhands){
-    const conc = /concert/i.test(piece) && concertOf(sel,s);
-    if(conc){
-      // a concert we hold the program for → a card, not a banner line. Brass iff you're on the program.
-      const mine = myConcertPieces(conc, USER);
-      const meta = `<div class="meta">${placeChip(conc.poi)}<span class="coach">${progA(conc)} · <a class="prog" href="./concerts.html#${conc.id}">who's playing →</a></span></div>`;
-      ev.push([s, mine.length
-        ? `<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Concert · you're performing</span></div><div class="piece">${mine.map(p=>`${esc(p.c)} — ${esc(p.t)}`).join("<br>")}</div>${meta}</div></div></div>`
-        : `<div class="row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card ccard"><div class="kicker"><span>Concert · audience</span><span class="pc">all welcome</span></div><div class="piece">${esc(conc.title)}</div>${meta}</div></div></div>`]);
-      continue;
-    }
+    // a CONCERT banner we hold the program for is rendered as a card from concert-data.js (at the
+    // printed time), so drop its plain line here — no matter how the banner's own time parsed. A
+    // banner with no data entry (a day we haven't transcribed) still shows the plain "All welcome" line.
+    if(/concert/i.test(piece) && dayConcerts.length) continue;
     ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
   }
+  // concert cards come straight from concert-data.js — independent of whether the day's sheet tab
+  // carries a CONCERT banner at all (the Faculty Concert 7/8 renders even so), and of a mis-parsed
+  // banner time (an "8:00" written for 8pm no longer misfiles it into the afternoon slot).
+  for(const c of dayConcerts){ const s=concStart(c); ev.push([s, concertCard(c,s,"")]); }
   // the sheet's own practice/reading blocks — but once you add your own event over one it *becomes*
   // that event, so drop any block a self-added event overlaps (same dedup day.free already does).
   const selfSpans = (loadMine()[sel]||[]).map(m=>[mins(m.s), m.e?mins(m.e):mins(m.s)+60]);

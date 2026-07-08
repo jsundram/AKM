@@ -117,9 +117,8 @@ const C = [
    who:[["Claire Maugham","vn"],["Chia-Hsuan Lin","vn"],["Emi Ohi Resnick","va"],["Michael Lee","va"],["Stephanie Wingfield","vc"]]},
  ]},
 ];
-// the schedule keys concerts by date + before/after 18:00 (same split as its banner rows),
-// so a sheet time shift can't misfile the card; morn + aft both land in the "before" slot
-const forDate = (iso, before18) =>
-  C.find(c => c.id.startsWith(iso) && (/-(aft|morn)$/.test(c.id)) === !!before18) || null;
-window.Concerts = { all: C, forDate };
+// the schedule (app.js timeline) and concerts.html both read `all` and filter by `c.id`'s date
+// prefix, placing each card at its own printed `time` — so a concert renders whether or not the
+// day's sheet tab carries a CONCERT banner, and a banner's own (sometimes 12h) time can't misfile it.
+window.Concerts = { all: C };
 })();
