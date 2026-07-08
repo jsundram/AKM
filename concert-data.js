@@ -41,6 +41,17 @@ const C = [
   {c:"Debussy", t:"String Quartet in G minor, Op. 10", m:"I. Animé et très décidé",
    who:[["Jane Givens","vn"],["Claudia Ajmone-Marsan","vn"],["Angelina Freeman","va"],["Seah Yu","vc"]]},
  ]},
+ {id:"2026-07-08-eve", title:"Faculty Concert", day:"Wednesday, July 8", time:"8:00 pm",
+  venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-08-evening.pdf", pieces:[
+  {c:"Mendelssohn", t:"String Quintet No. 2 in B-flat major, Op. 87", m:"I. Allegro vivace · II. Andante scherzando · III. Adagio e lento · IV. Allegro molto vivace",
+   who:[["YooJin Jang","vn"],["Emi Ohi Resnick","vn"],["Ilinca Forna","va"],["Gijs Kramers","va"],["Jesús Morales","vc"]]},
+  {c:"Austrian folk song, arr. Stephen Buck", t:"In die Berg bin i gern", m:"",
+   who:[["Nikolaus Lanner sen.","flugelhorn"],["Robert Lexer","flugelhorn"],["Roman Cecco","flugelhorn"],["Nathan Meltzer","vn"],["Ilinca Forna","vn"],["Gijs Kramers","va"],["Jesús Morales","vc"]]},
+  {c:"Kühr", t:"Portraits", m:"",
+   who:[["Jesús Morales","vc"],["Stephen Buck","pf"]]},
+  {c:"arr. Gijs Kramers", t:"Songs: Sammy · Ozean · Sternenstaub · Sie glaubt an mich · Schwarz-Weiß", m:"Ramses Shaffy · Racoon · André Hazes · De Jeugd van Tegenwoordig · Frank Boeijen",
+   who:[["Ilinca Forna","vn"],["Gijs Kramers","va"],["Jesús Morales","vc"],["Stephen Buck","pf"]]},
+ ]},
  {id:"2026-07-09-eve", title:"Evening Concert", day:"Thursday, July 9", time:"8:00 pm",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-09-evening-draft.pdf", pieces:[
   {c:"Mozart", t:"Clarinet Quintet in A major, K. 581", m:"I. Allegro",
