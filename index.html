@@ -145,9 +145,14 @@
   .what a.maplink{color:inherit;border-bottom:1px dotted currentColor}
   .what a.maplink .pin{vertical-align:baseline}
   /* the concert's printed program (a PDF) — muted ink, same voice as the coach bio links */
-  .what a.prog{color:var(--muted);font-weight:400;white-space:nowrap;text-decoration:underline;
+  a.prog{color:var(--muted);font-weight:400;white-space:nowrap;text-decoration:underline;
     text-decoration-thickness:.7px;text-underline-offset:2px;text-decoration-color:var(--muted)}
-  .what a.prog .dr{color:var(--draft);font-weight:600;font-size:10px;letter-spacing:.06em}  /* not final yet */
+  a.prog .dr{color:var(--draft);font-weight:600;font-size:10px;letter-spacing:.06em}  /* not final yet */
+  /* audience concert card — a real block on your day, but cool: brass stays "your own playing" */
+  .ccard{background:transparent;border-color:var(--line)}
+  .ccard .kicker{color:var(--muted)}
+  .ccard .kicker .pc{color:var(--faint)}
+  .card .meta{flex-wrap:wrap}
 
   .wxnote{grid-column:2;margin:-10px 0 16px;display:flex;align-items:center;gap:7px;
     font-size:11.5px;color:var(--shower)}
@@ -332,7 +337,7 @@
 <div class="sheet">
   <header class="apphead">
     <a class="wordmark" href="./about.html" aria-label="About AKM"><span class="full">AlpenKammerMusik</span><span class="abbr">AKM</span></a>
-    <nav><span aria-current="page">Today</span><a href="./concerts.html">Concerts</a><a href="./map.html">Map</a><a href="./roster.html">Roster</a><a href="./network.html">Network</a></nav>
+    <nav><span aria-current="page">Today</span><a href="./map.html">Map</a><a href="./roster.html">Roster</a><a href="./network.html">Network</a><a href="./concerts.html">Concerts</a></nav>
   </header>
   <div class="bar">
     <div class="days" id="days"></div>
@@ -364,6 +369,7 @@
   </div>
 </div>
 <script src="./roster-data.js"></script>
+<script src="./concert-data.js"></script>
 <script src="./app.js"></script>
 <script src="./ping.js"></script>
 </body>

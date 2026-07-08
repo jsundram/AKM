@@ -71,6 +71,7 @@
   .names a.p{color:var(--ink)}
   .names a.p:hover{color:var(--brass-deep);border-color:var(--warm-line)}
   .names a.p svg{flex:none}
+  .names .p .inst{color:var(--faint);font-size:9.5px}
 
   #msg{padding:18px 0 0;color:var(--faint);font-size:12px}
 
@@ -85,7 +86,7 @@
 <div class="sheet">
   <header class="apphead">
     <a class="wordmark" href="./about.html" aria-label="About AKM"><span class="full">AlpenKammerMusik</span><span class="abbr">AKM</span></a>
-    <nav><a href="./index.html">Today</a><span aria-current="page">Concerts</span><a href="./map.html">Map</a><a href="./roster.html">Roster</a><a href="./network.html">Network</a></nav>
+    <nav><a href="./index.html">Today</a><a href="./map.html">Map</a><a href="./roster.html">Roster</a><a href="./network.html">Network</a><span aria-current="page">Concerts</span></nav>
   </header>
   <h1>Concerts</h1>
   <p class="lede">Each festival concert in brief, with the printed program linked. Tap a player's name to send them a quick kudos on WhatsApp.</p>
@@ -94,113 +95,11 @@
   <div id="msg" hidden></div>
 </div>
 <script src="./roster-data.js"></script>
+<script src="./concert-data.js"></script>
 <script>
-// Programs transcribed from the PDFs in programs/ (titles translated to English; drafts marked until
-// the final PDF lands — same -draft convention as the schedule's PROGRAMS map in app.js). Performer
-// names appear exactly as printed so they reconcile to the roster; numbers are resolved AT RUNTIME
-// from the cached roster sheet — no phone numbers in this repo, per the PII rule.
-const CONCERTS = [
- {id:"2026-07-04-aft", day:"Saturday, July 4", time:"4:30 pm", venue:"Kultursaal", poi:"Kultursaal",
-  pdf:"programs/2026-07-04-afternoon.pdf", pieces:[
-  {c:"Fauré", t:"Piano Quartet No. 1 in C minor, Op. 15", m:"I. Allegro molto moderato",
-   who:["Claudia Ajmone-Marsan","Jason Sundram","Max Buck","Mark Zang"]},
-  {c:"Schumann", t:"Piano Trio No. 2 in F major, Op. 80", m:"I. Sehr lebhaft",
-   who:["Nathan Meltzer","Richard Beales","Felicia Weiss"]},
-  {c:"Larsen", t:"Four on the Floor", m:"",
-   who:["Melody Steinbart","Seah Yu","Bruce Rosenblum","Mark Zang"]},
-  {c:"Brahms", t:"String Quintet No. 2 in G major, Op. 111", m:"I. Allegro non troppo, ma con brio",
-   who:["Ingrid Burger","Elinor Turner","Emi Ohi Resnick","Michael Lee","Stephanie Wingfield"]},
-  {brk:1},
-  {c:"Shostakovich", t:"String Quartet No. 9, Op. 117", m:"V. Allegro",
-   who:["Ingrid Burger","Maya Weil","Angelina Freeman","David Goldesgeyme"]},
-  {c:"Casarrubios", t:"luzAzul", m:"",
-   who:["Claire Maugham","Aaron Kinghorn","Kian Woo"]},
-  {c:"Brahms", t:"String Sextet No. 1 in B-flat major, Op. 18", m:"I. Allegro ma non troppo",
-   who:["Korn Roongruangchai","YooJin Jang","Xinyuan Wang","Angelina Freeman","Richard Beales","Aaron Kinghorn"]},
- ]},
- {id:"2026-07-04-eve", day:"Saturday, July 4", time:"8:00 pm", venue:"Pfarrkirche St. Nikolaus", poi:"Pfarrkirche Hl. Nikolaus",
-  pdf:"programs/2026-07-04-evening.pdf", pieces:[
-  {c:"Shostakovich", t:"String Quartet No. 8 in C minor, Op. 110", m:"I. Largo · II. Allegro molto",
-   who:["Jane Givens","Aafke Koffeman","Gijs Kramers","Richard Beales"]},
-  {c:"Grieg", t:"String Quartet in G minor, Op. 27", m:"II. Romance: Andantino – Allegro agitato",
-   who:["Elinor Turner","Chia-Hsuan Lin","Joseph Steinbart","Max Buck"]},
-  {c:"Bacewicz", t:"Quartet for Four Violins", m:"I. Allegretto · II. Andante tranquillo",
-   who:["Elinor Turner","Ingrid Burger","Tanya Jenkin","Claudia Ajmone-Marsan"]},
-  {c:"Vokalensemble Singmazomm", t:"Alpine songs — O sei gegrüßt Maria · Maria hell leuchtender Stern · Zwischen Himmel und Erde · Trag mi Wind · Abendstimmung", m:"",
-   who:["Maria Wendlinger","Gabi Engeler","Alois Wendlinger","Lukas Kollnig"]},
-  {brk:1},
-  {c:"Haydn", t:"String Quartet in G major, Op. 76 No. 1", m:"II. Adagio sostenuto · III. Menuetto. Presto",
-   who:["Jisoo Kim","Claire Maugham","Xinyuan Wang","Preetcharn Saund"]},
-  {c:"Mozart · Mendelssohn", t:"Ave verum corpus · Wirf dein Anliegen auf den Herrn — with Vokalensemble Singmazomm", m:"",
-   who:["Korn Roongruangchai","Chia-Hsuan Lin","Adam Clarke","David Goldesgeyme"]},
-  {c:"Debussy", t:"String Quartet in G minor, Op. 10", m:"I. Animé et très décidé",
-   who:["Jane Givens","Claudia Ajmone-Marsan","Angelina Freeman","Seah Yu"]},
- ]},
- {id:"2026-07-09-eve", day:"Thursday, July 9", time:"8:00 pm", venue:"Kultursaal", poi:"Kultursaal",
-  pdf:"programs/2026-07-09-evening-draft.pdf", pieces:[
-  {c:"Mozart", t:"Clarinet Quintet in A major, K. 581", m:"I. Allegro",
-   who:["Robert Dembo","Aafke Koffeman","Tanya Jenkin","Isadora Banyai","Jesús Morales"]},
-  {c:"Coleridge-Taylor", t:"Clarinet Quintet in F-sharp minor, Op. 10", m:"IV. Finale. Allegro agitato",
-   who:["Will Belden","Cara Wunder","Bernhard Zojer","Xinyuan Wang","Jesús Morales"]},
-  {c:"Jacob", t:"Oboe Quartet", m:"I. Allegro moderato",
-   who:["Chia-Hsuan Lin","Michael Lee","Sara Phelps","Katrina Cooper-Strich"]},
-  {c:"Korngold", t:"Suite for Two Violins, Cello and Piano (left hand), Op. 23", m:"I. Prelude and Fugue · IV. Lied",
-   who:["Melody Steinbart","Jane Givens","Yoanna Prodanova","Felicia Weiss"]},
-  {c:"Elgar", t:"Piano Quintet in A minor, Op. 84", m:"I. Moderato – Allegro",
-   who:["Claire Maugham","Chia-Hsuan Lin","Gijs Kramers","Stephanie Wingfield","Kian Woo"]},
-  {brk:1},
-  {c:"Ravel", t:"Piano Trio in A minor, M. 67", m:"I. Modéré",
-   who:["Matthew Chan","Alison Atkinson","James Cheung"]},
-  {c:"Beethoven", t:"Piano Trio No. 6 in E-flat major, Op. 70 No. 2", m:"I. Poco sostenuto – Allegro ma non troppo",
-   who:["Stephen Lustig","Jesús Morales","Anne Schoemaker"]},
-  {c:"Brahms", t:"String Quartet No. 3 in B-flat major, Op. 67", m:"I. Vivace",
-   who:["Nathan Meltzer","Stephen Lustig","Joseph Steinbart","Seah Yu"]},
-  {c:"Bruch", t:"String Octet in B-flat major, Op. posth.", m:"I. Allegro moderato",
-   who:["Nathan Meltzer","Aafke Koffeman","Bernhard Zojer","Tanya Jenkin","Gijs Kramers","Jason Sundram","Aaron Kinghorn","Bruce Rosenblum"]},
- ]},
- {id:"2026-07-10-eve", day:"Friday, July 10", time:"8:00 pm", venue:"Kultursaal", poi:"Kultursaal",
-  pdf:"programs/2026-07-10-evening-draft.pdf", pieces:[
-  {c:"Ravel", t:"String Quartet in F major, M. 35", m:"I. Allegro moderato – très doux",
-   who:["YooJin Jang","Jisoo Kim","Ilinca Forna","David Goldesgeyme"]},
-  {c:"Hindemith", t:"Clarinet Quartet", m:"I. Mäßig bewegt",
-   who:["Sharayu Gugnani","Preetcharn Saund","Daniel Compton","Chad Burrow"]},
-  {c:"Arensky", t:"String Quartet No. 2 in A minor", m:"V. Allegro",
-   who:["Maya Weil","Emi Ohi Resnick","Valerie Ross","Stephanie Wingfield"]},
-  {c:"Schumann", t:"Piano Quartet in E-flat major, Op. 47", m:"I. Sostenuto assai – Allegro ma non troppo",
-   who:["Korn Roongruangchai","Joseph Steinbart","Stephanie Wingfield","Anne Schoemaker"]},
-  {c:"Brahms", t:"Piano Quartet No. 1 in G minor, Op. 25", m:"I. Allegro",
-   who:["Jane Givens","Jason Sundram","Preetcharn Saund","Mark Zang"]},
-  {brk:1},
-  {c:"Beach", t:"Piano Quintet in F-sharp minor, Op. 67", m:"II. Adagio espressivo",
-   who:["Matthew Chan","Maya Weil","Adam Clarke","Yoanna Prodanova","Tanya Bannister"]},
-  {c:"Beethoven", t:"String Trio in C minor, Op. 9 No. 3", m:"II. Adagio con espressione · III. Scherzo. Allegro molto e vivace",
-   who:["Bernhard Zojer","Ilinca Forna","Valerie Ross"]},
-  {c:"Stravinsky", t:"The Soldier's Tale (Histoire du soldat)", m:"Marche du Soldat · Le violon du Soldat · Petit Concert · Danse du Diable",
-   who:["Chad Burrow","Adriana Stamile","Mark Zang"]},
-  {c:"Brahms", t:"Clarinet Quintet in B minor, Op. 115", m:"I. Allegro",
-   who:["Chad Burrow","Cara Wunder","Adriana Stamile","Ilinca Forna","Max Buck"]},
- ]},
- {id:"2026-07-11-morn", day:"Saturday, July 11", time:"11:00 am", venue:"Kultursaal", poi:"Kultursaal",
-  pdf:"programs/2026-07-11-morning-draft.pdf", pieces:[
-  {c:"Haydn", t:"String Quartet in F minor, Op. 20 No. 5", m:"I. Allegro moderato",
-   who:["YooJin Jang","Maya Weil","Xinyuan Wang","Sara Phelps"]},
-  {c:"Prokofiev", t:"Quintet in G minor, Op. 39", m:"I. Tema con variazioni · VI. Andantino",
-   who:["Korn Roongruangchai","Emi Ohi Resnick","Will Belden","Katrina Cooper-Strich","Bruce Rosenblum"]},
-  {c:"Kodály", t:"Serenade for Two Violins and Viola, Op. 12", m:"III. Vivo",
-   who:["Jane Givens","Aafke Koffeman","Gijs Kramers"]},
-  {c:"Brahms", t:"Clarinet Trio in A minor, Op. 114", m:"I. Allegro",
-   who:["Robert Dembo","David Goldesgeyme","James Cheung"]},
-  {brk:1},
-  {c:"Dvořák", t:"Piano Quintet No. 2 in A major, Op. 81", m:"II. Dumka: Andante con moto",
-   who:["Korn Roongruangchai","Melody Steinbart","Adam Clarke","Alison Atkinson","James Cheung"]},
-  {c:"Loeffler", t:"Two Rhapsodies for Oboe, Viola and Piano", m:"II. La cornemuse",
-   who:["Katrina Cooper-Strich","Isadora Banyai","Kian Woo"]},
-  {c:"Shostakovich", t:"Five Pieces for Two Violins and Piano", m:"Prelude · Gavotte · Elegy · Waltz · Polka",
-   who:["Tanya Jenkin","Nathan Meltzer","Stephen Buck"]},
-  {c:"Mendelssohn", t:"String Quintet No. 2 in B-flat major, Op. 87", m:"I. Allegro vivace",
-   who:["Claire Maugham","Chia-Hsuan Lin","Emi Ohi Resnick","Michael Lee","Stephanie Wingfield"]},
- ]},
-];
+// Program data lives in concert-data.js (window.Concerts) — shared with the schedule page,
+// which renders each concert as a card and needs the same performer lists. Edit it there.
+const CONCERTS = Concerts.all;
 
 const $ = s => document.querySelector(s);
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
@@ -213,14 +112,15 @@ function findP(maps, name){
   const n = norm(name);
   return maps.full.get(n) || maps.first.get(n.split(" ")[0]) || null;
 }
-function nameChip(maps, name){
+function nameChip(maps, [name, inst]){
   const p = findP(maps, name), first = name.split(/\s+/)[0];
+  const tail = (inst ? `<span class="inst">${esc(inst)}</span>` : "");
   const num = p && (p.whatsapp||"").replace(/\D/g,"");
-  if(!num) return `<span class="p">${esc(p ? first : name)}</span>`;
+  if(!num) return `<span class="p">${esc(p ? first : name)}${tail}</span>`;
   const me = (window.Roster && Roster.me() || "").split(/\s+/)[0];
   const msg = encodeURIComponent(`Kudos for an amazing performance! 👏${me?` — ${me}`:""}`);
   return `<a class="p" href="https://wa.me/${num}?text=${msg}" target="_blank" rel="noopener" `
-    + `title="WhatsApp ${esc(p.name)}" aria-label="Send kudos to ${esc(p.name)} on WhatsApp">${esc(first)}${WA_SVG}</a>`;
+    + `title="WhatsApp ${esc(p.name)}" aria-label="Send kudos to ${esc(p.name)} on WhatsApp">${esc(first)}${tail}${WA_SVG}</a>`;
 }
 
 function render(people){

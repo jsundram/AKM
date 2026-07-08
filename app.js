@@ -13,16 +13,11 @@ const TZ = "Europe/Vienna";
 const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusive
 const ROOMS = new Set(["A1","A2","A3","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
 const JASON = "Jason Sundram";     // the grace notes stay his easter egg; everything else follows the picker
-// concert programs (PDFs in programs/), keyed by date — aft/eve split at 18:00 so the link survives a
-// sheet time shift (aft = anything before, the 7/11 morning concert included). To add a day's: drop the
-// PDFs in programs/, add the entry, precache in sw.js (V bump). "-draft" in the filename → a red DRAFT
-// tag on the link; when the final lands, drop it in under the plain name, repoint the entry, bump V.
-const PROGRAMS = {
-  "2026-07-04":{aft:"programs/2026-07-04-afternoon.pdf", eve:"programs/2026-07-04-evening.pdf"},
-  "2026-07-09":{eve:"programs/2026-07-09-evening-draft.pdf"},
-  "2026-07-10":{eve:"programs/2026-07-10-evening-draft.pdf"},
-  "2026-07-11":{aft:"programs/2026-07-11-morning-draft.pdf"},
-};
+// concert programs + performer lists live in concert-data.js (window.Concerts), shared with
+// concerts.html; absent under Node, so every use goes through concertOf. A concert row whose
+// date+slot has an entry renders as a card — brass when the picked user's name is on the program,
+// cool "audience" otherwise — with the program PDF linked (drafts keep the red DRAFT tag).
+const concertOf = (iso,s) => (typeof Concerts==="undefined") ? null : Concerts.forDate(iso, mins(s)<1080);
 const MEET = /Participant Tour|Info Meeting|Informational Meeting|Festival Meeting|Festival Informational/;
 const CK = "akm-cache";
 
@@ -508,13 +503,20 @@ const placeChip = (room,cls="roomchip") => mapped(room)
 const gLetter = grp => grp ? `<div class="gletter">${esc(grp)}</div>` : "";
 const placeText = label => mapped(label)
   ? `<a class="maplink" href="${mapHref(label)}">${esc(label)}${PIN}</a>` : esc(label);
-// the day's concert row gets its printed program, once Jason has the PDF (precached, so it opens at the venue)
-const progLink = (s,piece) => {
-  const p = PROGRAMS[sel], u = p && /concert/i.test(piece) && (mins(s)<1080 ? p.aft : p.eve);
-  if(!u) return "";
-  const dr = /-draft\./.test(u) ? '<span class="dr">DRAFT</span> ' : "";
-  return ` · <a class="prog" href="${u}" target="_blank" rel="noopener">${dr}program ↗</a>`;
+// the concert's printed program (precached, so it opens at the venue) + its concerts.html listing
+const progA = conc => {
+  const dr = /-draft\./.test(conc.pdf) ? '<span class="dr">DRAFT</span> ' : "";
+  return `<a class="prog" href="${conc.pdf}" target="_blank" rel="noopener">${dr}program ↗</a>`;
 };
+// which of the concert's pieces carry the picked user's name — printed full name (normalized), or a
+// first name that belongs to only one person on that program (absorbs the drafts' spelling wobbles)
+function myConcertPieces(conc, u){
+  if(!conc || !u || !u.name) return [];
+  const me = norm(u.name), meF = me.split(" ")[0], owners = new Set();
+  for(const p of conc.pieces) for(const [w] of (p.who||[])){ const n=norm(w); if(n.split(" ")[0]===meF) owners.add(n); }
+  const isMe = n => n===me || (n.split(" ")[0]===meF && owners.size===1);
+  return conc.pieces.filter(p => (p.who||[]).some(w => isMe(norm(w[0]))));
+}
 
 function tline(s,e){ return `<div class="time"><span class="s">${s}</span>${e?`<span class="e">${e}</span>`:""}</div>`; }
 // a coach with a bio URL in the roster → link the name, so you can get a refresher on who's coaching
@@ -545,8 +547,19 @@ function evblocks(day){
 }
 function timeline(day,w){
   const ev=[];
-  for(const [s,e,piece,venue] of day.allhands)
-    ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}${progLink(s,piece)}</div></div></div>`]);
+  for(const [s,e,piece,venue] of day.allhands){
+    const conc = /concert/i.test(piece) && concertOf(sel,s);
+    if(conc){
+      // a concert we hold the program for → a card, not a banner line. Brass iff you're on the program.
+      const mine = myConcertPieces(conc, USER);
+      const meta = `<div class="meta">${placeChip(conc.poi)}<span class="coach">${progA(conc)} · <a class="prog" href="./concerts.html#${conc.id}">who's playing →</a></span></div>`;
+      ev.push([s, mine.length
+        ? `<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Concert · you're performing</span></div><div class="piece">${mine.map(p=>`${esc(p.c)} — ${esc(p.t)}`).join("<br>")}</div>${meta}</div></div></div>`
+        : `<div class="row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card ccard"><div class="kicker"><span>Concert · audience</span><span class="pc">all welcome</span></div><div class="piece">${esc(conc.title)}</div>${meta}</div></div></div>`]);
+      continue;
+    }
+    ev.push([s,`<div class="row">${tline(s,e)}<div class="body ev"><span class="dot"></span><div class="tag">All welcome</div><div class="what">${esc(piece)}${venue?` · ${placeText(venue)}`:""}</div></div></div>`]);
+  }
   // the sheet's own practice/reading blocks — but once you add your own event over one it *becomes*
   // that event, so drop any block a self-added event overlaps (same dedup day.free already does).
   const selfSpans = (loadMine()[sel]||[]).map(m=>[mins(m.s), m.e?mins(m.e):mins(m.s)+60]);
