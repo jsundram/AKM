@@ -62,7 +62,8 @@
     letter-spacing:.02em;color:#5A6B78;background:#F4F6F8;border:1px solid var(--doc-line);border-radius:8px}
   .typelegend b{color:var(--doc-ink);font-weight:600}
   col.c-n{width:6%} col.c-nm{width:33%} col.c-wa{width:7%} col.c-in{width:15%} col.c-ty{width:12%} col.c-ht{width:27%}
-  th.wa-h{cursor:default;text-align:center;padding-left:0;padding-right:0}
+  th.wa-h{text-align:center;padding-left:0;padding-right:0}
+  th.wa-h .ar{display:block;margin-left:0}
   th.wa-h svg{display:block;margin:0 auto}
   td.wa-cell{text-align:center;padding-left:0;padding-right:0}
   .nl{color:#2A6F97;text-decoration:underline;text-decoration-thickness:.6px;text-underline-offset:1.5px}
@@ -127,7 +128,7 @@
   <div class="doc">
     <table>
       <colgroup><col class="c-n"><col class="c-nm"><col class="c-wa"><col class="c-in"><col class="c-ty"><col class="c-ht"></colgroup>
-      <thead><tr><th class="n" data-k="n">#<span class="ar"></span></th><th data-k="name">Name<span class="ar"></span></th><th class="wa-h" id="wah" aria-label="WhatsApp"></th><th data-k="instrument">Instr.<span class="ar"></span></th><th data-k="type">Type<button class="ti" id="ti" type="button" aria-label="What the type codes mean">ⓘ</button><span class="ar"></span></th><th data-k="hotel">Hotel<span class="ar"></span></th></tr></thead>
+      <thead><tr><th class="n" data-k="n">#<span class="ar"></span></th><th data-k="name">Name<span class="ar"></span></th><th class="wa-h" id="wah" data-k="whatsapp" aria-label="WhatsApp"></th><th data-k="instrument">Instr.<span class="ar"></span></th><th data-k="type">Type<button class="ti" id="ti" type="button" aria-label="What the type codes mean">ⓘ</button><span class="ar"></span></th><th data-k="hotel">Hotel<span class="ar"></span></th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
     <div id="msg" hidden></div>
@@ -195,6 +196,8 @@ function key(p){
   // Type can compound ("F, W1" = week-1-only faculty) — rank by the first recognized token
   if(sortKey==="type"){ const k=((p.type||"").match(/[A-Z]+\d*/g)||[]).find(t=>t in TYPE_RANK); return k?TYPE_RANK[k]:8; }
   if(sortKey==="name" && nameLast){ const n=(p.name||"").trim(); return (n?n.split(/\s+/).pop():"~").toLowerCase(); }  // surname = last token
+  // WhatsApp: sort by the bare digit string so leading country code groups by region; no number → "~" sorts last
+  if(sortKey==="whatsapp"){ return (p.whatsapp||"").replace(/\D/g,"") || "~"; }
   return (p[sortKey]||"~").toLowerCase();    // blanks sort last
 }
 function cmp(a,b){
@@ -280,7 +283,7 @@ async function pull(){
   }catch(e){ if(!Roster.cached()) msg("Roster unavailable — open once on wifi to cache it."); }
 }
 function boot(){
-  $("#wah").innerHTML = WA_SVG;     // the WhatsApp column's header is the icon itself, no text
+  $("#wah").innerHTML = WA_SVG + '<span class="ar"></span>';   // header is the icon itself (+ sort arrow), no text
   document.querySelectorAll("thead th[data-k]").forEach(th=>th.onclick=()=>sortBy(th.dataset.k));
   // tap a piece → reveal/hide the rest of its group (desktop also gets it on hover, via CSS)
   $("#rows").addEventListener("click", e=>{ const b=e.target.closest(".pc"); if(!b) return;
