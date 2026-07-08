@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#E9EDEC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1817" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<link rel="stylesheet" href="./nav.css">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>AKM — Concerts</title>
+<meta name="description" content="The festival's concert programs in brief.">
+<meta property="og:site_name" content="AKM">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AKM — Concerts">
+<meta property="og:description" content="The festival's concert programs in brief.">
+<meta property="og:url" content="https://jsundram.github.io/AKM/concerts.html">
+<meta property="og:image" content="https://jsundram.github.io/AKM/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Dawn over an alpine valley — snow-capped peak, meadows, and the AKM wordmark">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root{
+    --paper:#E9EDEC; --haze:#DEE5E3; --ink:#172526; --muted:#5F7072; --faint:#8C9A9B;
+    --line:#CBD3D1; --warm:#F3ECDD; --warm-line:#E2D2B2; --brass:#9A6B22; --brass-deep:#7C5417;
+    --draft:#A14434;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+  section{scroll-margin-top:16px}
+  body{background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;line-height:1.45;
+    display:flex;justify-content:center;
+    padding:calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+            calc(44px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+  .sheet{width:100%;max-width:640px}
+
+  h1{font-family:"Fraunces",serif;font-weight:500;font-size:30px;letter-spacing:-.015em;margin:16px 0 3px}
+  .lede{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px;max-width:52ch}
+
+  /* jump index — one chip per concert */
+  .index{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px}
+  .index a{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.02em;
+    color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:7px;padding:4px 10px}
+  .index a:hover{color:var(--brass-deep);border-color:var(--warm-line)}
+
+  section{margin-top:34px;padding-top:18px;border-top:1px solid var(--line)}
+  h2{font-family:"Fraunces",serif;font-weight:500;font-size:23px;letter-spacing:-.01em}
+  .cmeta{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.02em;color:var(--muted);
+    margin-top:5px;line-height:1.7}
+  .cmeta a{color:inherit;text-decoration:underline;text-decoration-thickness:.7px;
+    text-underline-offset:2px;text-decoration-color:var(--muted)}
+  .cmeta .dr{color:var(--draft);font-weight:600;font-size:10px;letter-spacing:.06em}
+
+  ol.pieces{margin:16px 0 0;padding-left:22px;display:grid;gap:16px}
+  ol.pieces li::marker{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint)}
+  li.brk{list-style:none;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--faint);text-align:center;margin-left:-22px;padding:2px 0}
+  .pt{font-size:13.5px;font-weight:500}
+  .pt b{font-weight:600}
+  .mv{font-size:12px;color:var(--muted);margin-top:1px;font-style:italic}
+  .names{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+  .names .p{display:inline-flex;align-items:center;gap:5px;font-family:"IBM Plex Mono",monospace;
+    font-size:11px;letter-spacing:.02em;color:var(--muted);text-decoration:none;
+    border:1px solid var(--line);border-radius:7px;padding:3px 9px}
+  .names a.p{color:var(--ink)}
+  .names a.p:hover{color:var(--brass-deep);border-color:var(--warm-line)}
+  .names a.p svg{flex:none}
+
+  #msg{padding:18px 0 0;color:var(--faint);font-size:12px}
+
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#0F1817; --haze:#172221; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
+      --line:#2C3938; --warm:#272015; --warm-line:#4A3D23; --brass:#D9A24C; --brass-deep:#E8C481;
+      --draft:#E39181; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header class="apphead">
+    <a class="wordmark" href="./about.html" aria-label="About AKM"><span class="full">AlpenKammerMusik</span><span class="abbr">AKM</span></a>
+    <nav><a href="./index.html">Today</a><span aria-current="page">Concerts</span><a href="./map.html">Map</a><a href="./roster.html">Roster</a><a href="./network.html">Network</a></nav>
+  </header>
+  <h1>Concerts</h1>
+  <p class="lede">Each festival concert in brief, with the printed program linked. Tap a player's name to send them a quick kudos on WhatsApp.</p>
+  <nav class="index" id="index" aria-label="Jump to concert"></nav>
+  <div id="concerts"></div>
+  <div id="msg" hidden></div>
+</div>
+<script src="./roster-data.js"></script>
+<script>
+// Programs transcribed from the PDFs in programs/ (titles translated to English; drafts marked until
+// the final PDF lands — same -draft convention as the schedule's PROGRAMS map in app.js). Performer
+// names appear exactly as printed so they reconcile to the roster; numbers are resolved AT RUNTIME
+// from the cached roster sheet — no phone numbers in this repo, per the PII rule.
+const CONCERTS = [
+ {id:"2026-07-04-aft", day:"Saturday, July 4", time:"4:30 pm", venue:"Kultursaal", poi:"Kultursaal",
+  pdf:"programs/2026-07-04-afternoon.pdf", pieces:[
+  {c:"Fauré", t:"Piano Quartet No. 1 in C minor, Op. 15", m:"I. Allegro molto moderato",
+   who:["Claudia Ajmone-Marsan","Jason Sundram","Max Buck","Mark Zang"]},
+  {c:"Schumann", t:"Piano Trio No. 2 in F major, Op. 80", m:"I. Sehr lebhaft",
+   who:["Nathan Meltzer","Richard Beales","Felicia Weiss"]},
+  {c:"Larsen", t:"Four on the Floor", m:"",
+   who:["Melody Steinbart","Seah Yu","Bruce Rosenblum","Mark Zang"]},
+  {c:"Brahms", t:"String Quintet No. 2 in G major, Op. 111", m:"I. Allegro non troppo, ma con brio",
+   who:["Ingrid Burger","Elinor Turner","Emi Ohi Resnick","Michael Lee","Stephanie Wingfield"]},
+  {brk:1},
+  {c:"Shostakovich", t:"String Quartet No. 9, Op. 117", m:"V. Allegro",
+   who:["Ingrid Burger","Maya Weil","Angelina Freeman","David Goldesgeyme"]},
+  {c:"Casarrubios", t:"luzAzul", m:"",
+   who:["Claire Maugham","Aaron Kinghorn","Kian Woo"]},
+  {c:"Brahms", t:"String Sextet No. 1 in B-flat major, Op. 18", m:"I. Allegro ma non troppo",
+   who:["Korn Roongruangchai","YooJin Jang","Xinyuan Wang","Angelina Freeman","Richard Beales","Aaron Kinghorn"]},
+ ]},
+ {id:"2026-07-04-eve", day:"Saturday, July 4", time:"8:00 pm", venue:"Pfarrkirche St. Nikolaus", poi:"Pfarrkirche Hl. Nikolaus",
+  pdf:"programs/2026-07-04-evening.pdf", pieces:[
+  {c:"Shostakovich", t:"String Quartet No. 8 in C minor, Op. 110", m:"I. Largo · II. Allegro molto",
+   who:["Jane Givens","Aafke Koffeman","Gijs Kramers","Richard Beales"]},
+  {c:"Grieg", t:"String Quartet in G minor, Op. 27", m:"II. Romance: Andantino – Allegro agitato",
+   who:["Elinor Turner","Chia-Hsuan Lin","Joseph Steinbart","Max Buck"]},
+  {c:"Bacewicz", t:"Quartet for Four Violins", m:"I. Allegretto · II. Andante tranquillo",
+   who:["Elinor Turner","Ingrid Burger","Tanya Jenkin","Claudia Ajmone-Marsan"]},
+  {c:"Vokalensemble Singmazomm", t:"Alpine songs — O sei gegrüßt Maria · Maria hell leuchtender Stern · Zwischen Himmel und Erde · Trag mi Wind · Abendstimmung", m:"",
+   who:["Maria Wendlinger","Gabi Engeler","Alois Wendlinger","Lukas Kollnig"]},
+  {brk:1},
+  {c:"Haydn", t:"String Quartet in G major, Op. 76 No. 1", m:"II. Adagio sostenuto · III. Menuetto. Presto",
+   who:["Jisoo Kim","Claire Maugham","Xinyuan Wang","Preetcharn Saund"]},
+  {c:"Mozart · Mendelssohn", t:"Ave verum corpus · Wirf dein Anliegen auf den Herrn — with Vokalensemble Singmazomm", m:"",
+   who:["Korn Roongruangchai","Chia-Hsuan Lin","Adam Clarke","David Goldesgeyme"]},
+  {c:"Debussy", t:"String Quartet in G minor, Op. 10", m:"I. Animé et très décidé",
+   who:["Jane Givens","Claudia Ajmone-Marsan","Angelina Freeman","Seah Yu"]},
+ ]},
+ {id:"2026-07-09-eve", day:"Thursday, July 9", time:"8:00 pm", venue:"Kultursaal", poi:"Kultursaal",
+  pdf:"programs/2026-07-09-evening-draft.pdf", pieces:[
+  {c:"Mozart", t:"Clarinet Quintet in A major, K. 581", m:"I. Allegro",
+   who:["Robert Dembo","Aafke Koffeman","Tanya Jenkin","Isadora Banyai","Jesús Morales"]},
+  {c:"Coleridge-Taylor", t:"Clarinet Quintet in F-sharp minor, Op. 10", m:"IV. Finale. Allegro agitato",
+   who:["Will Belden","Cara Wunder","Bernhard Zojer","Xinyuan Wang","Jesús Morales"]},
+  {c:"Jacob", t:"Oboe Quartet", m:"I. Allegro moderato",
+   who:["Chia-Hsuan Lin","Michael Lee","Sara Phelps","Katrina Cooper-Strich"]},
+  {c:"Korngold", t:"Suite for Two Violins, Cello and Piano (left hand), Op. 23", m:"I. Prelude and Fugue · IV. Lied",
+   who:["Melody Steinbart","Jane Givens","Yoanna Prodanova","Felicia Weiss"]},
+  {c:"Elgar", t:"Piano Quintet in A minor, Op. 84", m:"I. Moderato – Allegro",
+   who:["Claire Maugham","Chia-Hsuan Lin","Gijs Kramers","Stephanie Wingfield","Kian Woo"]},
+  {brk:1},
+  {c:"Ravel", t:"Piano Trio in A minor, M. 67", m:"I. Modéré",
+   who:["Matthew Chan","Alison Atkinson","James Cheung"]},
+  {c:"Beethoven", t:"Piano Trio No. 6 in E-flat major, Op. 70 No. 2", m:"I. Poco sostenuto – Allegro ma non troppo",
+   who:["Stephen Lustig","Jesús Morales","Anne Schoemaker"]},
+  {c:"Brahms", t:"String Quartet No. 3 in B-flat major, Op. 67", m:"I. Vivace",
+   who:["Nathan Meltzer","Stephen Lustig","Joseph Steinbart","Seah Yu"]},
+  {c:"Bruch", t:"String Octet in B-flat major, Op. posth.", m:"I. Allegro moderato",
+   who:["Nathan Meltzer","Aafke Koffeman","Bernhard Zojer","Tanya Jenkin","Gijs Kramers","Jason Sundram","Aaron Kinghorn","Bruce Rosenblum"]},
+ ]},
+ {id:"2026-07-10-eve", day:"Friday, July 10", time:"8:00 pm", venue:"Kultursaal", poi:"Kultursaal",
+  pdf:"programs/2026-07-10-evening-draft.pdf", pieces:[
+  {c:"Ravel", t:"String Quartet in F major, M. 35", m:"I. Allegro moderato – très doux",
+   who:["YooJin Jang","Jisoo Kim","Ilinca Forna","David Goldesgeyme"]},
+  {c:"Hindemith", t:"Clarinet Quartet", m:"I. Mäßig bewegt",
+   who:["Sharayu Gugnani","Preetcharn Saund","Daniel Compton","Chad Burrow"]},
+  {c:"Arensky", t:"String Quartet No. 2 in A minor", m:"V. Allegro",
+   who:["Maya Weil","Emi Ohi Resnick","Valerie Ross","Stephanie Wingfield"]},
+  {c:"Schumann", t:"Piano Quartet in E-flat major, Op. 47", m:"I. Sostenuto assai – Allegro ma non troppo",
+   who:["Korn Roongruangchai","Joseph Steinbart","Stephanie Wingfield","Anne Schoemaker"]},
+  {c:"Brahms", t:"Piano Quartet No. 1 in G minor, Op. 25", m:"I. Allegro",
+   who:["Jane Givens","Jason Sundram","Preetcharn Saund","Mark Zang"]},
+  {brk:1},
+  {c:"Beach", t:"Piano Quintet in F-sharp minor, Op. 67", m:"II. Adagio espressivo",
+   who:["Matthew Chan","Maya Weil","Adam Clarke","Yoanna Prodanova","Tanya Bannister"]},
+  {c:"Beethoven", t:"String Trio in C minor, Op. 9 No. 3", m:"II. Adagio con espressione · III. Scherzo. Allegro molto e vivace",
+   who:["Bernhard Zojer","Ilinca Forna","Valerie Ross"]},
+  {c:"Stravinsky", t:"The Soldier's Tale (Histoire du soldat)", m:"Marche du Soldat · Le violon du Soldat · Petit Concert · Danse du Diable",
+   who:["Chad Burrow","Adriana Stamile","Mark Zang"]},
+  {c:"Brahms", t:"Clarinet Quintet in B minor, Op. 115", m:"I. Allegro",
+   who:["Chad Burrow","Cara Wunder","Adriana Stamile","Ilinca Forna","Max Buck"]},
+ ]},
+ {id:"2026-07-11-morn", day:"Saturday, July 11", time:"11:00 am", venue:"Kultursaal", poi:"Kultursaal",
+  pdf:"programs/2026-07-11-morning-draft.pdf", pieces:[
+  {c:"Haydn", t:"String Quartet in F minor, Op. 20 No. 5", m:"I. Allegro moderato",
+   who:["YooJin Jang","Maya Weil","Xinyuan Wang","Sara Phelps"]},
+  {c:"Prokofiev", t:"Quintet in G minor, Op. 39", m:"I. Tema con variazioni · VI. Andantino",
+   who:["Korn Roongruangchai","Emi Ohi Resnick","Will Belden","Katrina Cooper-Strich","Bruce Rosenblum"]},
+  {c:"Kodály", t:"Serenade for Two Violins and Viola, Op. 12", m:"III. Vivo",
+   who:["Jane Givens","Aafke Koffeman","Gijs Kramers"]},
+  {c:"Brahms", t:"Clarinet Trio in A minor, Op. 114", m:"I. Allegro",
+   who:["Robert Dembo","David Goldesgeyme","James Cheung"]},
+  {brk:1},
+  {c:"Dvořák", t:"Piano Quintet No. 2 in A major, Op. 81", m:"II. Dumka: Andante con moto",
+   who:["Korn Roongruangchai","Melody Steinbart","Adam Clarke","Alison Atkinson","James Cheung"]},
+  {c:"Loeffler", t:"Two Rhapsodies for Oboe, Viola and Piano", m:"II. La cornemuse",
+   who:["Katrina Cooper-Strich","Isadora Banyai","Kian Woo"]},
+  {c:"Shostakovich", t:"Five Pieces for Two Violins and Piano", m:"Prelude · Gavotte · Elegy · Waltz · Polka",
+   who:["Tanya Jenkin","Nathan Meltzer","Stephen Buck"]},
+  {c:"Mendelssohn", t:"String Quintet No. 2 in B-flat major, Op. 87", m:"I. Allegro vivace",
+   who:["Claire Maugham","Chia-Hsuan Lin","Emi Ohi Resnick","Michael Lee","Stephanie Wingfield"]},
+ ]},
+];
+
+const $ = s => document.querySelector(s);
+const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const norm = s => (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+const WA_SVG = '<svg viewBox="0 0 32 32" width="12" height="12" aria-hidden="true"><path fill="#25D366" d="M16 .6C7.5.6.6 7.5.6 16c0 2.8.8 5.5 2.1 7.8L.5 31.5l7.9-2.1c2.2 1.2 4.8 1.9 7.6 1.9 8.5 0 15.4-6.9 15.4-15.4S24.5.6 16 .6z"/><path fill="#fff" d="M23.1 19.3c-.4-.2-2.3-1.1-2.6-1.3-.3-.1-.6-.2-.8.2-.2.3-.9 1.2-1.2 1.5-.2.2-.4.2-.8.1-.4-.2-1.6-.6-3.1-1.9-1.1-1-1.9-2.3-2.1-2.7-.2-.4 0-.6.2-.8l.5-.6c.2-.2.2-.4.4-.6.1-.3 0-.5 0-.7-.1-.2-.8-2.1-1.2-2.8-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.5 3.8 6 5.3.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 2.3-.9 2.6-1.8.3-.9.3-1.7.2-1.8z"/></svg>';
+
+// programmed name → roster person: exact normalized full name, else unambiguous first name
+// (absorbs the drafts' spelling wobbles — "Koffemann", "Jesús"). Unmatched names print as-is, unlinked.
+function findP(maps, name){
+  const n = norm(name);
+  return maps.full.get(n) || maps.first.get(n.split(" ")[0]) || null;
+}
+function nameChip(maps, name){
+  const p = findP(maps, name), first = name.split(/\s+/)[0];
+  const num = p && (p.whatsapp||"").replace(/\D/g,"");
+  if(!num) return `<span class="p">${esc(p ? first : name)}</span>`;
+  const me = (window.Roster && Roster.me() || "").split(/\s+/)[0];
+  const msg = encodeURIComponent(`Kudos for an amazing performance! 👏${me?` — ${me}`:""}`);
+  return `<a class="p" href="https://wa.me/${num}?text=${msg}" target="_blank" rel="noopener" `
+    + `title="WhatsApp ${esc(p.name)}" aria-label="Send kudos to ${esc(p.name)} on WhatsApp">${esc(first)}${WA_SVG}</a>`;
+}
+
+function render(people){
+  const maps = {full:new Map(), first:new Map()};
+  for(const p of people||[]){
+    const n = norm(p.name); maps.full.set(n, p);
+    const f = n.split(" ")[0];
+    maps.first.set(f, maps.first.has(f) ? null : p);   // null = ambiguous first name, don't guess
+  }
+  $("#index").innerHTML = CONCERTS.map(c =>
+    `<a href="#${c.id}">${esc(c.day.slice(0,3))} ${c.day.replace(/\D+/g,"")} · ${esc(c.time.replace(":00","").replace(" ",""))}</a>`).join("");
+  $("#concerts").innerHTML = CONCERTS.map(c => {
+    const dr = /-draft\./.test(c.pdf) ? ` <span class="dr">DRAFT</span>` : "";
+    let n = 0;
+    const items = c.pieces.map(p => p.brk
+      ? `<li class="brk">Intermission</li>`
+      : `<li value="${++n}"><div class="pt"><b>${esc(p.c)}</b> — ${esc(p.t)}</div>`
+        + (p.m ? `<div class="mv">${esc(p.m)}</div>` : "")
+        + `<div class="names">${p.who.map(w => nameChip(maps, w)).join("")}</div></li>`).join("");
+    return `<section id="${c.id}"><h2>${esc(c.day)}</h2>`
+      + `<div class="cmeta">${esc(c.time)} · <a href="./map.html#${encodeURIComponent(c.poi)}">${esc(c.venue)}</a>`
+      + ` · <a href="${c.pdf}" target="_blank" rel="noopener">original program ↗</a>${dr}</div>`
+      + `<ol class="pieces">${items}</ol></section>`;
+  }).join("");
+  if(!(people||[]).length){ const m=$("#msg"); m.textContent="Names link to WhatsApp once the roster has loaded — open online once."; m.hidden=false; }
+  else $("#msg").hidden = true;
+  if(location.hash){ const el = document.getElementById(location.hash.slice(1)); if(el) el.scrollIntoView(); }
+}
+
+render(Roster.cached());
+if(navigator.onLine) Roster.pull().then(render).catch(()=>{});
+document.addEventListener("visibilitychange", () => {   // resume after days on the home screen → re-pull
+  if(!document.hidden && navigator.onLine) Roster.pull().then(render).catch(()=>{});
+});
+</script>
+<script src="./ping.js"></script>
+</body>
+</html>
