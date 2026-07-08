@@ -246,7 +246,13 @@
   .self .kicker .selfx{font-family:"Inter",sans-serif;font-size:16px;line-height:1;color:var(--brass);
     background:none;border:none;cursor:pointer;padding:0 0 0 8px;margin:-2px 0}
   .self .kicker .selfx:hover{color:var(--shower)}
+  .self .meta .with{line-height:1.75}
   .self .meta .with b{color:var(--ink);font-weight:500}
+  /* a "with" name we can reach on WhatsApp → tap it to open that chat (green glyph = the affordance) */
+  .self .meta .with a.wme{color:var(--ink);font-weight:500;text-decoration:underline;
+    text-decoration-thickness:.7px;text-underline-offset:2px;text-decoration-color:var(--muted)}
+  .self .meta .with a.wme:hover{text-decoration-color:#25D366}
+  .self .meta .with .waico{width:12.5px;height:12.5px;vertical-align:-2px;margin-left:3px}
 
   /* --- add sheet (overlay) --- */
   #addsheet[hidden]{display:none}

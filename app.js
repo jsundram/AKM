@@ -689,10 +689,12 @@ function dayTimes(day){
   return [...t].sort((a,b)=>mins(a)-mins(b));
 }
 // a self-added event as a timeline row — a dashed "yours, informal" card (never the reserved brass fill)
+const WA_SVG = '<svg class="waico" viewBox="0 0 32 32" aria-hidden="true"><path fill="#25D366" d="M16 .6C7.5.6.6 7.5.6 16c0 2.8.8 5.5 2.1 7.8L.5 31.5l7.9-2.1c2.2 1.2 4.8 1.9 7.6 1.9 8.5 0 15.4-6.9 15.4-15.4S24.5.6 16 .6z"/><path fill="#fff" d="M23.1 19.3c-.4-.2-2.3-1.1-2.6-1.3-.3-.1-.6-.2-.8.2-.2.3-.9 1.2-1.2 1.5-.2.2-.4.2-.8.1-.4-.2-1.6-.6-3.1-1.9-1.1-1-1.9-2.3-2.1-2.7-.2-.4 0-.6.2-.8l.5-.6c.2-.2.2-.4.4-.6.1-.3 0-.5 0-.7-.1-.2-.8-2.1-1.2-2.8-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.5 3.8 6 5.3.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 2.3-.9 2.6-1.8.3-.9.3-1.7.2-1.8z"/></svg>';
 function selfCardHtml(m,i){
   const chip = m.room?placeChip(m.room):"";
   const wl = whoArr(m.who);   // who is an array now; tolerate the old comma-string too
-  const who = wl.length?`<span class="with">with <b>${esc(wl.join(", "))}</b></span>`:"";
+  // each name links to WhatsApp when the roster has their number (waName), else stays plain
+  const who = wl.length?`<span class="with">with ${wl.map(waName).join(", ")}</span>`:"";
   const meta = (chip||who)?`<div class="meta">${chip}${who}</div>`:"";
   return `<div class="row mine self">${tline(m.s,m.e)}<div class="body"><span class="dot"></span>`
     +`<div class="card" data-edit="${i}"><div class="kicker"><span>Yours · added</span>`
@@ -707,11 +709,26 @@ function removeSelf(i){
 // --- WITH field: roster autocomplete as chips (multiple players), stored as an array ---
 let whoTokens = [];
 const whoArr = v => Array.isArray(v) ? v.slice() : v ? String(v).split(/\s*,\s*/).filter(Boolean) : [];  // tolerate the old comma-string
-// roster names → display tokens: first name (how people refer to each other), full name if the first collides
+// roster names → display tokens: first name (how people refer to each other), full name if the first
+// collides; carry each person's WhatsApp digits so a self-added event's "with" names can deep-link
 function whoRoster(){
-  const ns = (Roster.cached()||[]).map(p=>p.name), c={};
-  ns.forEach(n=>{ const f=n.split(/\s+/)[0].toLowerCase(); c[f]=(c[f]||0)+1; });
-  return ns.map(n=>{ const f=n.split(/\s+/)[0]; return {name:n, token:c[f.toLowerCase()]>1?n:f}; });
+  const ppl = Roster.cached()||[], c={};
+  ppl.forEach(p=>{ const f=p.name.split(/\s+/)[0].toLowerCase(); c[f]=(c[f]||0)+1; });
+  return ppl.map(p=>{ const f=p.name.split(/\s+/)[0];
+    return {name:p.name, token:c[f.toLowerCase()]>1?p.name:f, wa:(p.whatsapp||"").replace(/\D/g,"")}; });
+}
+// a stored `who` token → that person's WhatsApp digits ("" when unknown, no number, or off-browser)
+function whoWa(tok){
+  if(typeof Roster==="undefined" || !Roster.cached) return "";
+  const t=(tok||"").toLowerCase(), hit=whoRoster().find(p=>p.token.toLowerCase()===t);
+  return hit ? hit.wa : "";
+}
+// a participant name → a WhatsApp link (name + glyph) when we have their number, else plain text
+function waName(tok){
+  const num = whoWa(tok);
+  if(!num) return `<b>${esc(tok)}</b>`;
+  return `<a class="wme" href="https://wa.me/${num}" target="_blank" rel="noopener" `
+    +`aria-label="Message ${esc(tok)} on WhatsApp">${esc(tok)}${WA_SVG}</a>`;
 }
 function renderChips(){
   const box=$("#whobox"), inp=$("#f-who"); if(!box) return;
