@@ -32,7 +32,7 @@
   :root{
     --paper:#E9EDEC; --haze:#DFE5E3; --ink:#172526; --muted:#5F7072; --faint:#8C9A9B;
     --line:#CBD3D1; --warm:#F4ECDD; --warm-line:#E2D2B2; --brass:#9A6B22; --brass-deep:#7C5417;
-    --sky:#84A8BE; --shower:#6E7D84; --coach:#276199;
+    --sky:#84A8BE; --shower:#6E7D84; --coach:#276199; --draft:#A14434;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%}
@@ -147,6 +147,7 @@
   /* the concert's printed program (a PDF) — muted ink, same voice as the coach bio links */
   .what a.prog{color:var(--muted);font-weight:400;white-space:nowrap;text-decoration:underline;
     text-decoration-thickness:.7px;text-underline-offset:2px;text-decoration-color:var(--muted)}
+  .what a.prog .dr{color:var(--draft);font-weight:600;font-size:10px;letter-spacing:.06em}  /* not final yet */
 
   .wxnote{grid-column:2;margin:-10px 0 16px;display:flex;align-items:center;gap:7px;
     font-size:11.5px;color:var(--shower)}
@@ -207,7 +208,7 @@
     :root{
       --paper:#0F1817; --haze:#172221; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
       --line:#2C3938; --warm:#272015; --warm-line:#4A3D23;
-      --brass:#D9A24C; --brass-deep:#E8C481; --sky:#7FB2CE; --shower:#9AA7AB; --coach:#79B8E8;
+      --brass:#D9A24C; --brass-deep:#E8C481; --sky:#7FB2CE; --shower:#9AA7AB; --coach:#79B8E8; --draft:#E39181;
     }
     .wx{background:linear-gradient(180deg,#172221,#0F1817)}
     .roomchip,.fact .ftag{background:#2E2616}

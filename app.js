@@ -14,8 +14,15 @@ const FEST = ["2026-06-29", "2026-07-12"];               // [start, end] inclusi
 const ROOMS = new Set(["A1","A2","A3","AH","KS","BAND ROOM","THEATRE","CHAPEL","WERNER"]);
 const JASON = "Jason Sundram";     // the grace notes stay his easter egg; everything else follows the picker
 // concert programs (PDFs in programs/), keyed by date — aft/eve split at 18:00 so the link survives a
-// sheet time shift. To add a day's: drop the PDFs in programs/, add the entry, precache in sw.js (V bump).
-const PROGRAMS = {"2026-07-04":{aft:"programs/2026-07-04-afternoon.pdf", eve:"programs/2026-07-04-evening.pdf"}};
+// sheet time shift (aft = anything before, the 7/11 morning concert included). To add a day's: drop the
+// PDFs in programs/, add the entry, precache in sw.js (V bump). "-draft" in the filename → a red DRAFT
+// tag on the link; when the final lands, drop it in under the plain name, repoint the entry, bump V.
+const PROGRAMS = {
+  "2026-07-04":{aft:"programs/2026-07-04-afternoon.pdf", eve:"programs/2026-07-04-evening.pdf"},
+  "2026-07-09":{eve:"programs/2026-07-09-evening-draft.pdf"},
+  "2026-07-10":{eve:"programs/2026-07-10-evening-draft.pdf"},
+  "2026-07-11":{aft:"programs/2026-07-11-morning-draft.pdf"},
+};
 const MEET = /Participant Tour|Info Meeting|Informational Meeting|Festival Meeting|Festival Informational/;
 const CK = "akm-cache";
 
@@ -504,7 +511,9 @@ const placeText = label => mapped(label)
 // the day's concert row gets its printed program, once Jason has the PDF (precached, so it opens at the venue)
 const progLink = (s,piece) => {
   const p = PROGRAMS[sel], u = p && /concert/i.test(piece) && (mins(s)<1080 ? p.aft : p.eve);
-  return u ? ` · <a class="prog" href="${u}" target="_blank" rel="noopener">program ↗</a>` : "";
+  if(!u) return "";
+  const dr = /-draft\./.test(u) ? '<span class="dr">DRAFT</span> ' : "";
+  return ` · <a class="prog" href="${u}" target="_blank" rel="noopener">${dr}program ↗</a>`;
 };
 
 function tline(s,e){ return `<div class="time"><span class="s">${s}</span>${e?`<span class="e">${e}</span>`:""}</div>`; }
