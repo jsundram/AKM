@@ -13,4 +13,11 @@ fi
 if command -v python3 >/dev/null 2>&1; then
   python3 scripts/doc-lint.py || echo "  (doc-lint: CLAUDE.md may be stale — not blocking)"
 fi
+
+# Warn (never block) when a commit touches a precached SHELL file but leaves the
+# service-worker version V unbumped — the fix would land in the repo but never
+# reach installed clients (cache-first). Run `python3 scripts/sw-lint.py` for CI.
+if command -v python3 >/dev/null 2>&1; then
+  python3 scripts/sw-lint.py || echo "  (sw-lint: bump V in sw.js — not blocking)"
+fi
 exit 0
