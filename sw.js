@@ -1,4 +1,4 @@
-const V = "akm-v78";
+const V = "akm-v79";
 const SHELL = ["./", "./index.html", "./app.js", "./roster-data.js", "./ping.js", "./nav.css", "./manifest.json",
                "./composer-bank.json", "./roster.html", "./notes.html", "./about.html",
                "./concerts.html", "./concert-data.js",
@@ -10,7 +10,7 @@ const SHELL = ["./", "./index.html", "./app.js", "./roster-data.js", "./ping.js"
                "./programs/2026-07-04-afternoon.pdf", "./programs/2026-07-04-evening.pdf",
                "./programs/2026-07-08-evening.pdf",
                "./programs/2026-07-09-evening-draft.pdf", "./programs/2026-07-10-evening-draft.pdf",
-               "./programs/2026-07-11-morning-draft.pdf"];
+               "./programs/2026-07-11-morning-draft.pdf", "./programs/2026-07-11-evening-draft.pdf"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

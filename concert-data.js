@@ -118,6 +118,26 @@ const C = [
   {c:"Mendelssohn", t:"String Quintet No. 2 in B-flat major, Op. 87", m:"I. Allegro vivace",
    who:[["Claire Maugham","vn"],["Chia-Hsuan Lin","vn"],["Emi Ohi Resnick","va"],["Michael Lee","va"],["Stephanie Wingfield","vc"]]},
  ]},
+ {id:"2026-07-11-eve", title:"Evening Concert", day:"Saturday, July 11", time:"8:00 pm",
+  venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-11-evening-draft.pdf", pieces:[
+  {c:"Beethoven", t:"String Quartet in F major, Op. 18 No. 1", m:"II. Adagio affettuoso ed appassionato",
+   who:[["YooJin Jang","vn"],["Korn Roongruangchai","vn"],["Xinyuan Wang","va"],["Aaron Kinghorn","vc"]]},
+  {c:"Dvořák", t:"String Quartet No. 14 in A-flat major, Op. 105", m:"I. Allegro molto moderato",
+   who:[["Stephen Lustig","vn"],["Sharayu Gugnani","vn"],["Jason Sundram","va"],["Stephanie Wingfield","vc"]]},
+  {c:"Reinecke", t:"Trio in A major, Op. 264", m:"I. Moderato",
+   who:[["Will Belden","cl"],["Michael Lee","va"],["Daniel Compton","pf"]]},
+  {c:"Schubert", t:"String Quintet in C major, D. 956", m:"I. Allegro ma non troppo",
+   who:[["Jisoo Kim","vn"],["Adriana Stamile","vn"],["Adam Clarke","va"],["Preetcharn Saund","vc"],["Yoanna Prodanova","vc"]]},
+  {brk:1},
+  {c:"Schubert", t:"Piano Trio No. 1 in B-flat major, D. 898", m:"I. Allegro moderato",
+   who:[["Cara Wunder","vn"],["Alison Atkinson","vc"],["Anne Schoemaker","pf"]]},
+  {c:"Bruch", t:"Eight Pieces, Op. 83", m:"III. Andante con moto · VI. Nachtgesang: Andante con moto",
+   who:[["Robert Dembo","cl"],["Isadora Banyai","va"],["Daniel Compton","pf"]]},
+  {c:"Shaw", t:"Thousandth Orange", m:"",
+   who:[["Matthew Chan","vn"],["Xinyuan Wang","va"],["David Goldesgeyme","vc"],["Felicia Weiss","pf"]]},
+  {c:"Brahms", t:"Piano Trio No. 2 in C major, Op. 87", m:"I. Allegro moderato",
+   who:[["Jisoo Kim","vn"],["Seah Yu","vc"],["Tanya Bannister","pf"]]},
+ ]},
 ];
 // the schedule (app.js timeline) and concerts.html both read `all` and filter by `c.id`'s date
 // prefix, placing each card at its own printed `time` — so a concert renders whether or not the
