@@ -842,7 +842,7 @@ function render(){
     html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
       + (USER && USER.name===JASON ? coda(day,BANK,dnum) : "");   // grace notes: his easter egg only
   }
-  html += `<div class="who-foot">${USER?`for <b>${esc(USER.first)}</b>`:`no one picked`} · <button id="whobtn" type="button">switch</button></div>`;
+  html += `<div class="who-foot">${USER?`for <b>${esc(USER.first)}</b>`:`no one picked`} · <button id="whobtn" type="button">switch user</button></div>`;
   paint($("#app"), html);
   chips();
   if(Roster.me()==null && (people||[]).length) openWho();   // first ever open: ask once the roster is here
