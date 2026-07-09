@@ -335,6 +335,9 @@
   .who-foot button{font:inherit;color:var(--muted);background:none;border:none;cursor:pointer;
     padding:0;text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line)}
   .who-foot button:hover{color:var(--ink)}
+  .swver{margin-left:.5em;color:var(--faint)}   /* installed SW cache name — which version this device actually took */
+  .swver.ok{color:#6E9A6B}                       /* green: this device is on the version the server serves */
+  .swver.behind{color:#C0563E;cursor:pointer;text-decoration:underline;text-underline-offset:2px}  /* red: server is ahead — tap to force-refresh */
 
   .add-actions{display:flex;gap:10px;margin-top:2px}
   .btn-ghost{flex:none;font-family:"Inter",sans-serif;font-size:14px;color:var(--muted);background:none;

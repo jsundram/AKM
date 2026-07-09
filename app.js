@@ -703,6 +703,7 @@ function schedHead(c){
 
 // ---- cache + state ----
 let BANK={}, COACHES={}, PIECEGRP={}, USER=null, today=viennaToday(), sel=today;
+let SWVER="", NEWVER="";   // SWVER = the *installed* SW cache (akm-vNN, from caches.keys()); NEWVER = the version live on the server (from the deployed sw.js). Mismatch ⇒ this device is behind.
 const load = () => { try{return JSON.parse(localStorage.getItem(CK))||{}}catch{return {}} };
 const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
 
@@ -918,7 +919,7 @@ function render(){
     html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
       + (USER && USER.name===JASON ? coda(day,BANK,dnum) : "");   // grace notes: his easter egg only
   }
-  html += `<div class="who-foot">${USER?"":"no one picked · "}<button id="whobtn" type="button">switch user</button></div>`;   // name lives in the header now; keep the nudge only when unpicked
+  html += `<div class="who-foot">${USER?"":"no one picked · "}<button id="whobtn" type="button">switch user</button>${verHtml()}</div>`;   // name lives in the header now; keep the nudge only when unpicked. verHtml = the installed SW version, green when current / red+tappable when behind
   paint($("#app"), html);
   chips();
   if(Roster.me()==null && (people||[]).length) openWho();   // first ever open: ask once the roster is here
@@ -990,7 +991,8 @@ async function boot(){
     const nt=viennaToday();                                    // may have rolled past midnight while suspended
     if(nt!==today){ if(sel===today){ sel=nt; render(); } today=nt; }   // advance the view if we were on "today"
     const c=load(), age=c.ts?Date.now()-new Date(c.ts).getTime():Infinity;
-    if(age>60e3) refresh(); });
+    if(age>60e3) refresh();
+    checkVer(); });   // reopening is the moment to re-check whether a newer shell shipped
   setupPTR();
   setupAdd();
   setupWho();
@@ -998,6 +1000,7 @@ async function boot(){
   $("#app").addEventListener("click", e=>{
     if(e.target.closest("#wxunit")){ WXU = WXU==="C"?"F":"C"; try{localStorage.setItem("akm-wx-unit",WXU)}catch{} render(); return; }
     if(e.target.closest("#whobtn")||e.target.closest("#tlwho")){ openWho(); return; }
+    if(e.target.closest("#swver.behind")){ forceUpdate(); return; }   // green tag isn't tappable; only a stale (red) one updates
     if(e.target.closest("#addself")){ openAdd(); return; }
     const fr=e.target.closest("[data-free]"); if(fr){ const [s,en]=fr.dataset.free.split("|"); openAdd(null,{s,e:en}); return; }
     const d=e.target.closest("[data-del]"); if(d){ removeSelf(+d.dataset.del); return; }
@@ -1006,6 +1009,36 @@ async function boot(){
   });
   refresh();                // stale-while-revalidate
   if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  checkVer();               // stamp the footer with the installed version + compare to the server
+}
+// The footer version tag. sw.js does caches.open(V), so the installed cache name *is* akm-vNN — read
+// it back (can't drift from a hardcoded string). Then fetch the *server's* sw.js and pull its V: if the
+// server is ahead, this device is stale → red + tappable; if they match → green; can't tell → neutral.
+function verHtml(){
+  if(!SWVER) return "";
+  const behind = NEWVER && NEWVER!==SWVER;
+  const cls = "swver"+(behind?" behind":(NEWVER?" ok":""));
+  const txt = "· "+SWVER+(behind?" → "+NEWVER:"");
+  const tip = behind?`new version ${NEWVER} available — tap to update`:(NEWVER?"up to date":"installed version");
+  return `<span id="swver" class="${cls}" title="${esc(tip)}">${esc(txt)}</span>`;
+}
+function paintVer(){   // patch the tag in place (no full re-render); inject it if this is the first read
+  const foot=$(".who-foot"); if(!foot) return;
+  const cur=$("#swver"), h=verHtml();
+  if(cur) cur.outerHTML=h; else if(h) foot.insertAdjacentHTML("beforeend", h);
+}
+async function checkVer(){
+  try{ SWVER=(await caches.keys()).find(k=>/^akm-v/.test(k))||""; }catch{ SWVER=""; }
+  NEWVER="";
+  try{   // ?_= + no-store dodges both the SW cache (query never matches) and the HTTP cache → the live sw.js
+    const t=await (await fetch("./sw.js?_="+Date.now(),{cache:"no-store"})).text();
+    NEWVER=(t.match(/akm-v\d+/)||[""])[0];
+  }catch{}   // offline: leave NEWVER empty → neutral tag, never a false "behind"
+  paintVer();
+}
+async function forceUpdate(){   // the hammer: drop every cache, reload → SW reinstalls the latest shell from network
+  try{ await Promise.all((await caches.keys()).map(k=>caches.delete(k))); }catch{}
+  location.reload();
 }
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
