@@ -99,19 +99,21 @@ LOC_EXCLUDE = {"d3.v7.min.js", "map-data.json"}
 numstat = subprocess.run(
     ["git", "-C", "/Users/jsundram/Dropbox/Code/AKM", "log", "--reverse", "--numstat", "--format=@%h"],
     capture_output=True, text=True).stdout
-loc, loc_at, h = 0, {}, None
+loc, loc_at, add_at, del_at, h = 0, {}, {}, {}, None
 for line in numstat.splitlines():
     if line.startswith("@"):
         h = line[1:]
     elif "\t" in line:
-        add, rm, path = line.split("\t", 2)
-        if add == "-" or path.split("/")[-1] in LOC_EXCLUDE:
+        a, r, path = line.split("\t", 2)
+        if a == "-" or path.split("/")[-1] in LOC_EXCLUDE:
             continue
-        loc += int(add) - int(rm)
+        add_at[h] = add_at.get(h, 0) + int(a)
+        del_at[h] = del_at.get(h, 0) + int(r)
+        loc += int(a) - int(r)
     if h:
         loc_at[h] = loc
 for c in commits:
-    c["loc"] = loc_at.get(c["h"], 0)
+    c["loc"], c["add"], c["del"] = loc_at.get(c["h"], 0), add_at.get(c["h"], 0), del_at.get(c["h"], 0)
 
 groups = {}
 for c in [c for c in commits if c["cloud"]]:
@@ -180,7 +182,7 @@ out = dict(
     totals={k: round(total(e)) for k, e in STREAMS.items()},
     daily={d: {k: round(v) for k, v in v.items()} for d, v in sorted(daily.items())},
     sessions=[{**s, "start": iso(s["start"]), "end": iso(s["end"])} for s in sorted(sessions, key=lambda s: s["start"])],
-    commits=[dict(h=c["h"], t=iso(c["t"]), subject=c["subject"], cloud=c["cloud"], loc=c["loc"]) for c in commits],
+    commits=[dict(h=c["h"], t=iso(c["t"]), subject=c["subject"], cloud=c["cloud"], loc=c["loc"], add=c["add"], rm=c["del"]) for c in commits],
     blocks=[dict(start=iso(a), end=iso(z)) for a, z in blocks],
     series=[dict(r, t=iso(r["t"])) for r in series],
 )
