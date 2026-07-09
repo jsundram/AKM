@@ -597,7 +597,7 @@ const STAR = '<div class="gstar"><svg viewBox="2 2 20 19" aria-hidden="true"><pa
 // an informational event's corner mark — a circled "i" in the group-letter slot, so an open talk /
 // discussion / yoga session reads at a glance as "info, not a room code". SVG, not the ⓘ glyph, so
 // size + fill are font-independent (same reasoning as STAR). Muted — it's nobody's own playing.
-const INFO = '<div class="ginfo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="7.4" r="1.4" fill="currentColor"/><rect x="10.75" y="10.4" width="2.5" height="7.2" rx="1.25" fill="currentColor"/></svg></div>';
+const INFO = '<div class="ginfo"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="8" r="1.3" fill="currentColor"/><rect x="10.85" y="10.8" width="2.3" height="6.4" rx="1.15" fill="currentColor"/></svg></div>';
 const placeText = label => mapped(label)
   ? `<a class="maplink" href="${mapHref(label)}">${esc(label)}${PIN}</a>` : esc(label);
 // one link into the concert's concerts.html listing (which itself links the printed PDF); drafts
