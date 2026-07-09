@@ -54,5 +54,10 @@ ok("brass: Steve Buck owns the Kühr",          mine({name:"Steve Buck"})     ==
 ok("brass: Stephen Lustig owns the Brahms only", mine({name:"Stephen Lustig"}) === "Qt. No. 3");
 ok("brass: Tanya Bannister claims nothing here", mine({name:"Tanya Bannister"}) === "");
 
+// every real piece resolves to a short rehearsal-style title (SHORTS registry, keyed by title) —
+// so a piece dropped from one concert's final and re-added to another's can't silently lose its `s`.
+const noShort = Concerts.all.flatMap(c => c.pieces.filter(p => !p.brk && !p.s).map(p => `${c.id}: ${p.t}`));
+ok(`every piece has a short title${noShort.length ? " — missing: " + noShort.join("; ") : ""}`, noShort.length === 0);
+
 console.log(`\n${pass}/${pass+fail}`);
 process.exit(fail ? 1 : 0);

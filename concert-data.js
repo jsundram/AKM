@@ -4,6 +4,9 @@
 // tag until the final lands — then repoint `pdf` and bump sw.js V). Each performer is
 // [name-as-printed, instrument] — names reconcile to the roster at runtime via matcher() (no phone
 // numbers here, per the PII rule). Instruments: vn va vc bass pf cl ob + voices.
+// `t` is the full program title (movement in `m`), shown on concerts.html; the SHORT rehearsal-style
+// title the schedule's brass card shows lives in the SHORTS registry below (resolved onto each piece
+// as `p.s` at load), NOT inline — see the SHORTS comment for why.
 (() => {
 const g = typeof window !== "undefined" ? window : globalThis;   // Node-requirable for the test harness
 const C = [
@@ -141,12 +144,84 @@ const C = [
    who:[["Jisoo Kim","vn"],["Seah Yu","vc"],["Tanya Bannister","pf"]]},
  ]},
 ];
+
+// Short rehearsal-style titles — the exact wording the live schedule sheet uses for each piece's
+// rehearsals ("Bruch Octet", "Beethoven String Trio"), shown on the schedule's brass "you're
+// performing" card so it reads the same as the day's rehearsal cards. Keyed by **composer + title**
+// (`shortKey`, "Bruch | String Octet…"), NOT title alone — many program titles are generic ("Oboe
+// Quartet", "Clarinet Quartet", "Portraits") and would collide across composers, silently handing a
+// piece someone else's short name (the guard only checks that an `s` exists, not that it's the right
+// one). Kept in ONE registry, deliberately NOT inline on each piece: a piece dropped from one
+// concert's final PDF and moved into another's keeps its short name — the entry outlives the move,
+// so re-adding it (same composer + title) reattaches `s` with no re-derivation. A piece in two
+// concerts (Mendelssohn Op. 87) is named once. Not derivable from the title (the sheet is
+// inconsistent — "Haydn Quartet" one day, "Haydn String Quartet" another; "Bruch Octet" drops
+// "String" but "Beethoven String Trio" keeps it), so it's hand-kept in sync with the sheet. The
+// concert-match-test guard fails if any performed piece resolves to no `s`, so a dropped or
+// mistyped key surfaces loudly rather than shipping a blank card.
+const shortKey = p => `${p.c} | ${p.t}`;
+const SHORTS = {
+  "Fauré | Piano Quartet No. 1 in C minor, Op. 15": "Fauré Piano Quartet",
+  "Schumann | Piano Trio No. 2 in F major, Op. 80": "Schumann Piano Trio",
+  "Larsen | Four on the Floor": "Larsen Four on the Floor",
+  "Brahms | String Quintet No. 2 in G major, Op. 111": "Brahms String Quintet",
+  "Shostakovich | String Quartet No. 9, Op. 117": "Shostakovich Quartet No. 9",
+  "Casarrubios | luzAzul": "Casarrubios Piano Trio",
+  "Brahms | String Sextet No. 1 in B-flat major, Op. 18": "Brahms Sextet",
+  "Shostakovich | String Quartet No. 8 in C minor, Op. 110": "Shostakovich Quartet No. 8",
+  "Grieg | String Quartet in G minor, Op. 27": "Grieg Quartet",
+  "Bacewicz | Quartet for Four Violins": "Bacewicz Quartet",
+  "Vokalensemble Singmazomm | Alpine songs — O sei gegrüßt Maria · Maria hell leuchtender Stern · Zwischen Himmel und Erde · Trag mi Wind · Abendstimmung": "Alpine songs (Singmazomm)",
+  "Haydn | String Quartet in G major, Op. 76 No. 1": "Haydn Quartet",
+  "Mozart · Mendelssohn | Ave verum corpus · Wirf dein Anliegen auf den Herrn — with Vokalensemble Singmazomm": "Ave verum · Wirf dein Anliegen",
+  "Debussy | String Quartet in G minor, Op. 10": "Debussy Quartet",
+  "Mendelssohn | String Quintet No. 2 in B-flat major, Op. 87": "Mendelssohn String Quintet",
+  "Austrian folk song, arr. Stephen Buck | In die Berg bin i gern": "In die Berg bin i gern",
+  "Kühr | Portraits": "Kühr Portraits",
+  "arr. Gijs Kramers | Songs: Sammy · Ozean · Sternenstaub · Sie glaubt an mich · Schwarz-Weiß": "Songs, arr. Kramers",
+  "Messiaen | Quartet for the End of Time": "Messiaen Quartet for the End of Time",
+  "Mozart | Clarinet Quintet in A major, K. 581": "Mozart Clarinet Quintet",
+  "Coleridge-Taylor | Clarinet Quintet in F-sharp minor, Op. 10": "Coleridge-Taylor Quintet",
+  "Jacob | Oboe Quartet": "Jacob Oboe Quartet",
+  "Korngold | Suite for Two Violins, Cello and Piano (left hand), Op. 23": "Korngold Suite",
+  "Elgar | Piano Quintet in A minor, Op. 84": "Elgar Piano Quintet",
+  "Ravel | Piano Trio in A minor, M. 67": "Ravel Piano Trio",
+  "Beethoven | Piano Trio No. 6 in E-flat major, Op. 70 No. 2": "Beethoven Piano Trio Op. 70 No. 2",
+  "Brahms | String Quartet No. 3 in B-flat major, Op. 67": "Brahms String Quartet",
+  "Bruch | String Octet in B-flat major, Op. posth.": "Bruch Octet",
+  "Ravel | String Quartet in F major, M. 35": "Ravel String Quartet",
+  "Hindemith | Clarinet Quartet": "Hindemith Clarinet Quartet",
+  "Arensky | String Quartet No. 2 in A minor": "Arensky Quartet",
+  "Schumann | Piano Quartet in E-flat major, Op. 47": "Schumann Piano Quartet",
+  "Brahms | Piano Quartet No. 1 in G minor, Op. 25": "Brahms Piano Quartet",
+  "Beach | Piano Quintet in F-sharp minor, Op. 67": "Beach Piano Quintet",
+  "Beethoven | String Trio in C minor, Op. 9 No. 3": "Beethoven String Trio",
+  "Stravinsky | The Soldier's Tale (Histoire du soldat)": "Stravinsky Trio",
+  "Brahms | Clarinet Quintet in B minor, Op. 115": "Brahms Clarinet Quintet",
+  "Haydn | String Quartet in F minor, Op. 20 No. 5": "Haydn String Quartet",
+  "Prokofiev | Quintet in G minor, Op. 39": "Prokofiev Quintet",
+  "Kodály | Serenade for Two Violins and Viola, Op. 12": "Kodály Serenade",
+  "Brahms | Clarinet Trio in A minor, Op. 114": "Brahms Clarinet Trio",
+  "Dvořák | Piano Quintet No. 2 in A major, Op. 81": "Dvořák Piano Quintet",
+  "Loeffler | Two Rhapsodies for Oboe, Viola and Piano": "Loeffler Two Rhapsodies",
+  "Shostakovich | Five Pieces for Two Violins and Piano": "Shostakovich Five Pieces",
+  "Beethoven | String Quartet in F major, Op. 18 No. 1": "Beethoven String Quartet",
+  "Dvořák | String Quartet No. 14 in A-flat major, Op. 105": "Dvořák String Quartet",
+  "Reinecke | Trio in A major, Op. 264": "Reinecke Trio",
+  "Schubert | String Quintet in C major, D. 956": "Schubert Cello Quintet",
+  "Schubert | Piano Trio No. 1 in B-flat major, D. 898": "Schubert Piano Trio",
+  "Bruch | Eight Pieces, Op. 83": "Bruch Eight Pieces",
+  "Shaw | Thousandth Orange": "Shaw Thousandth Orange",
+  "Brahms | Piano Trio No. 2 in C major, Op. 87": "Brahms Piano Trio",
+};
+
 // `day` is derived from each id's date — one source of truth, so a hand-typed heading can't
 // contradict the id the schedule keys its cards on. `title` stays hand-set (Faculty vs Evening
-// isn't derivable from the id).
+// isn't derivable from the id). `s` is resolved from SHORTS by composer+title (undefined when
+// unlisted → the schedule card falls back to `composer — t`).
 const dayOf = id => new Date(+id.slice(0,4), +id.slice(5,7)-1, +id.slice(8,10))
   .toLocaleDateString("en-US", {weekday:"long", month:"long", day:"numeric"});
-C.forEach(c => c.day = dayOf(c.id));
+C.forEach(c => { c.day = dayOf(c.id); c.pieces.forEach(p => { if(!p.brk) p.s = SHORTS[shortKey(p)]; }); });
 
 // --- printed name → roster person: the ONE matcher, shared by concerts.html's kudos chips and
 // app.js's "you're performing" test (they used to be two copies, and drifted). Rules, in order:

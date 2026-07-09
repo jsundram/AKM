@@ -562,7 +562,7 @@ function concertCard(conc,s,e,live){
   const mine = myConcertPieces(conc, USER);
   const [row, card, kick, body] = mine.length
     ? ["row mine", "card", "<span>Concert · you're performing</span>",
-       mine.map(p=>`${esc(p.c)} — ${esc(p.t)}`).join("<br>")]
+       mine.map(p=>esc(p.s || `${p.c} — ${p.t}`)).join("<br>")]
     : ["row", "card ccard", '<span>Concert · audience</span><span class="pc">all welcome</span>',
        esc(conc.title)];
   return `<div class="${row}">${tline(s,e)}<div class="body"><span class="dot"></span><div class="${card}">`
