@@ -10,7 +10,13 @@ const gv = { table: { rows: [
   R(N, "T U E S D A Y  J U N E   3 0     |     W E E K   O N E"),
   R(N, "9:00 - 9:30", "New Participant Tour\nMeet Matt at the fountain. All welcome!"),
   R(N, "9:30 - 10:20", "Full Festival Informational Meeting\n(Lesachtalerhof Terrace)"),
+  // informational event, letter-spaced time + prose title in ONE cell (Sat 7/11 shape, no room grid) —
+  // must land in day.info with the room read off the inline "in AH", not vanish or become a rehearsal
+  R(N, "1 5 : 3 0 - 1 6 : 2 0\nMulti-Platform Careers Discussion with Tanya & Panel in AH"),
   R(N, N, "A1", "A2", "AH", "KS", "BAND\nROOM", "THEATRE", "CHAPEL", "WERNER", "A4"),
+  // informational event, time + title in SEPARATE cells (Fri 7/10 shape), the title parked in a room
+  // column ("A1") — the inline "in AH" still gives the room, the "Vibrato!" subtitle rides along
+  R(N, "8:20 - 8:50", "Emi Presentation in AH\nVibrato!"),
   // Group B carries someone else's private-lessons block (no Jason) — must NOT surface
   // Group B also holds two same-composer quintets of DIFFERENT families: "Schubert Cello Quintet"
   // (the D.956 string quintet) and "Schubert Piano Quintet" (D.667). The grid's informal "Cello" vs
@@ -189,6 +195,12 @@ const checks = [
   ["dress: no repertoire universe → no slots (same blank state as mineOf)", dressOf(day, me, {}).length === 0],
   ["dress: W1 player gets no slot in week two", dressOf(w2day, userCtx(roster, "Angelina Freeman"), pg).length === 0],
   ["dress: non-player gets nothing", dressOf(day, userCtx(roster, "Chia-Hsuan Lin"), pg).length === 0],
+  // informational events — surfaced to everyone (day.info), never routed through rehearsals/allhands/fac
+  ["info: both events parsed, chronological", day.info.length === 2 && day.info.map(i => i[0]).join(",") === "8:20,15:30"],
+  ["info: separate-cell event, room + subtitle off the inline 'in AH'", day.info.some(i => i[0] === "8:20" && i[1] === "8:50" && i[2] === "Emi Presentation — Vibrato!" && i[3] === "AH")],
+  ["info: same-cell letter-spaced event, time stripped, room read inline", day.info.some(i => i[0] === "15:30" && i[1] === "16:20" && i[2] === "Multi-Platform Careers Discussion with Tanya & Panel" && i[3] === "AH")],
+  ["info: never leaks into rehearsals / faculty / all-hands", !day.rehearsals.concat(day.fac).some(r => /presentation|discussion/i.test(r[2])) && !day.allhands.some(a => /presentation|discussion/i.test(a[2]))],
+  ["info: the inline 'in A4' rehearsal note is NOT mistaken for an info event", !day.info.some(i => /elgar|faculty/i.test(i[2]))],
 ];
 let pass = 0;
 for (const [n, r] of checks) { console.log((r ? "PASS" : "FAIL") + "  " + n); pass += r ? 1 : 0; }
