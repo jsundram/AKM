@@ -72,6 +72,7 @@ The parser has a Node harness (pure functions are exported when `app.js` is requ
 ```
 node archive/parser-test.js   # passes 50/50 on the real Tuesday grid (incl. morning all-hands above the room grid, a private lesson, per-block evening free rooms, multi-user piece matching, stale-letter false-positive guards incl. two same-composer quintets colliding in one group, coach-instrument lesson tie-breaks, the faculty coaching view (coach-not-play, excludes played, week-gated), week gating, the wrapped room header, concert banner rows, header-learned new rooms, and daytime faculty cells)
 node scripts/concert-match-test.js   # 14/14 — the shared printed-name → roster matcher (Concerts.matcher) + myConcertPieces brass ownership: namesakes never cross-claim, surname/first-name wobbles resolve, guests stay unlinked
+node scripts/usage-test.js   # usage/crunch.js (the in-browser usage crunch) reproduces the crunch.py golden field-by-field on a branch-covering fixture; re-derives the golden from crunch.py when python3 is present so it can't rot
 ```
 
 That harness is **offline + synthetic**, so it runs anywhere — but by construction it can't see the *live sheets drifting from what the code expects* (a roster `Pieces` reformat once dropped the group-prefix `userCtx` parsed, silently blanking **every** user's schedule while these fixtures stayed green). Two **live** smoke tests close that gap by pulling the real sheets (public gviz, no auth):
@@ -103,7 +104,7 @@ Run it by hand anytime: `python3 scripts/update-gids.py`. gids are stable across
 
 ## buildlog (meta dashboard, laptop-only refresh)
 
-`buildlog/` is the build-time dashboard (Jason's hours three ways vs Claude's, laptop vs cloud, commits, LOC growth) at `/buildlog/` — noindex, **not** SW-precached, no roster data. Every number is computed in-page from one embedded `DATA` blob, so refreshing = re-baking that blob: `buildlog/crunch.py` derives it from the **local Claude Code transcripts** (`~/.claude/projects/…AKM/*.jsonl`) + git history. Transcripts never leave this laptop, so **a cloud session cannot refresh this page** — and time spent on *other* machines isn't measured (their commits/LOC still count; cloud sessions are reconstructed from `Claude-Session` commit trailers). `buildlog/update.py` runs crunch → splice → commit → push; it's idempotent (skips when only the generated-timestamp moved), network-tolerant, and self-expires after 2026-07-13 — and it first invokes `usage/update.py` (see *usage* below), so the usage page refreshes on the same schedule without its own job. A launchd job runs it nightly at 23:45 (missed runs fire on next wake):
+`buildlog/` is the build-time dashboard (Jason's hours three ways vs Claude's, laptop vs cloud, commits, LOC growth) at `/buildlog/` — noindex, **not** SW-precached, no roster data. Every number is computed in-page from one embedded `DATA` blob, so refreshing = re-baking that blob: `buildlog/crunch.py` derives it from the **local Claude Code transcripts** (`~/.claude/projects/…AKM/*.jsonl`) + git history. Transcripts never leave this laptop, so **a cloud session cannot refresh this page** — and time spent on *other* machines isn't measured (their commits/LOC still count; cloud sessions are reconstructed from `Claude-Session` commit trailers). `buildlog/update.py` runs crunch → splice → commit → push; it's idempotent (skips when only the generated-timestamp moved), network-tolerant, and self-expires after 2026-07-13. (The usage page used to ride this job too; it now refreshes **client-side** — see *usage* below — so this job is buildlog-only again.) A launchd job runs it nightly at 23:45 (missed runs fire on next wake):
 
 ```
 launchctl bootstrap gui/501 ~/Library/LaunchAgents/com.akm.buildlog.plist   # install
@@ -112,7 +113,7 @@ launchctl bootout gui/501/com.akm.buildlog                                  # re
 
 Log: `~/Library/Logs/akm-buildlog.log`. Run by hand anytime: `python3 buildlog/update.py`.
 
-## usage (analytics dashboard, nightly refresh)
+## usage (analytics dashboard, client-side refresh)
 
 `usage/` is the public analytics page ("Field report") at `/usage/` — who's using the app: adoption
 curve, opens per hour, rhythm of day, top users, page reach, identified-vs-anonymous, and a **"Not yet
@@ -120,14 +121,28 @@ aboard"** list (`nonUsersList` — roster people whose uid never appears in the 
 the one place full names show, since it's the ask, and it needs the roster loaded — offline it says so).
 On-screen names elsewhere show **first name only**, with the full name on hover/tap (`firstOf` +
 an SVG `<title>` / table `title=` / the bar tooltip's `nameOf`). The **rhythm-of-day chart excludes
-launch night** (`crunch.py` drops the launch day from `by_hour` only — not `by_day`/`series`) so the
+launch night** (the crunch drops the launch day from `by_hour` only — not `by_day`/`series`) so the
 19:30 WhatsApp burst doesn't masquerade as a routine 7pm habit. noindex, **not**
 SW-precached, shareable (it has its own OG card, `usage/og.svg` → `og.png`, rendered via
-`scripts/make-og.sh usage/og.svg`). Same splice pattern as buildlog: everything renders in-page from one
-embedded `DATA` blob; `usage/crunch.py` (stdlib) re-bakes it and `usage/update.py` splices → commits →
-pushes (idempotent, network-tolerant, self-expires after **2026-07-19**). It rides the **same launchd
-job**: `buildlog/update.py` invokes it *before* its own expiry check, so the usage refresh outlives the
-buildlog's 7/13 cutoff. Run by hand: `python3 usage/update.py`.
+`scripts/make-og.sh usage/og.svg`).
+
+**The page refreshes itself in the browser — open = refresh, pure-pull like the rest of the app**
+(no nightly job anymore). `usage/crunch.js` (loaded before the page script) is the crunch, a **1:1 port
+of `usage/crunch.py`**: on open it fetches the pings CSV, runs `UsageCrunch.crunch(csvText, rosterUids)`,
+and repaints; the roster-uid set is `Object.keys(UIDS)` from the same roster load that resolves names,
+so `rosterSize`/`known` are computed client-side too. **Offline / stale-while-revalidate:** it renders
+instantly from the last live crunch cached in `localStorage["akm-usage"]`, else the baked `FALLBACK`
+blob in `index.html` (the old committed `DATA`, now just a first-paint seed for a network-less new
+device); a successful fetch overwrites the cache and repaints. Re-pulls on `visibilitychange`. The CSV
+is **CORS-clean** (a `307` → googleusercontent with `access-control-allow-origin: *`), which is what
+lets the browser fetch it cross-origin; keep `PINGS_CSV` in `index.html` in sync with `CSV` in
+`crunch.py`. `usage/crunch.py` survives as the **test oracle + manual golden regen** (its core is now
+pure: `crunch(csv_text, roster)`), not a deployed job — `usage/update.py` is gone. **Parity is pinned:**
+`scripts/usage-test.js` asserts `crunch.js` reproduces the frozen `scripts/usage-fixtures/golden.json`
+field-by-field (a synthetic, PII-free fixture hitting every branch: dedup, pre-launch drop,
+opened→received fallback, offline-queued, anon, launch-day hour exclusion, an unknown uid, Jason out of
+adoption) and, when `python3` is present, re-derives the golden from `crunch.py` so it can't rot — run
+`node scripts/usage-test.js` (offline-safe).
 
 **PII posture — names never land in the repo.** The DATA blob is keyed by ping uid (first 8 hex of
 SHA-256 of the roster name); the page joins names back **at runtime** from the roster via
@@ -138,10 +153,11 @@ name resolved to a `#hash` placeholder when the page was opened over `file://` o
 address. Jason (`70f71792`) is shown for scale but excluded from rankings/adoption. Two data
 invariants baked into crunch: **dedupe on (opened, page, uid)** — ping.js re-sends a queued ping when a
 flush is interrupted, ~20% of raw rows are duplicate deliveries — and **drop everything before
-2026-07-06 19:30** (launch; earlier = Jason's testing). One external dependency: crunch reads the
-analytics sheet's pings tab via its **publish-to-web CSV URL** (baked in `crunch.py`) — the sheet stays
-private, only that tab is published; unpublishing it breaks the nightly refresh (crunch exits nonzero,
-update keeps the current page). The hash→name key tab must **stay unpublished**.
+2026-07-06 19:30** (launch; earlier = Jason's testing) — both live in `crunch.js` and `crunch.py`
+identically (the parity test guards it). One external dependency: crunch reads the analytics sheet's
+pings tab via its **publish-to-web CSV URL** (in both `PINGS_CSV`/`crunch.py`'s `CSV`) — the sheet stays
+private, only that tab is published; unpublishing it just leaves the page on its cached/`FALLBACK` blob
+(the fetch fails, `refresh()` keeps what it has). The hash→name key tab must **stay unpublished**.
 
 ## map data (baked, hand-run)
 

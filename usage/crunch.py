@@ -37,10 +37,11 @@ def T(s):
     m = re.match(r"(\d+)/(\d+)/(\d+) (\d+):(\d+):(\d+)", s or "")
     return datetime(int(m[3]), int(m[1]), int(m[2]), int(m[4]), int(m[5]), int(m[6])) if m else None
 
-def crunch():
-    roster = roster_uids()
+def crunch(csv_text=None, roster=None):
+    if roster is None: roster = roster_uids()          # inject both to test offline (also the JS-parity oracle)
+    if csv_text is None: csv_text = fetch(CSV)
     rows = []
-    for r in csv.DictReader(io.StringIO(fetch(CSV))):
+    for r in csv.DictReader(io.StringIO(csv_text)):
         rec, opened = T(r.get("received")), T(r.get("opened")) or T(r.get("received"))
         page, who = (r.get("page") or "").strip(), (r.get("who") or "").strip()
         if rec and page and page != "page":
