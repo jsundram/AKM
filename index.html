@@ -126,6 +126,14 @@
     color:var(--brass);opacity:.42}
   .coachcard .gletter{color:var(--coach);opacity:.5}
   .freecard .gletter{color:var(--faint);opacity:1}
+  /* a concert's corner mark — the group letter's star counterpart, same slot + accent semantics:
+     brass on the "you're performing" card, muted on the audience (.ccard) card. Right-anchored at the
+     same 13px as .gletter so the two marks share a column edge; width matched to a capital's optical
+     box (the star's round, so we match its WIDTH to the letters, not its height). viewBox is cropped
+     tight (in JS) so width/height are the true glyph size — no phantom padding shrinking it. */
+  .gstar{position:absolute;right:13px;bottom:13px;pointer-events:none;color:var(--brass);opacity:.42}
+  .gstar svg{display:block;width:23px;height:auto}
+  .ccard .gstar{color:var(--muted);opacity:.5}
   .gcard .piece,.gcard .meta{padding-right:40px}
   .meta .coach b{color:var(--ink);font-weight:500}
   .meta .coach a{color:inherit;text-decoration:underline;text-decoration-thickness:.7px;text-underline-offset:2px;text-decoration-color:var(--muted)}

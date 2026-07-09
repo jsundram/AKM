@@ -503,6 +503,12 @@ const placeChip = (room,cls="roomchip") => mapped(room)
 // It sits in the bottom-right corner, below the kicker, so the top row (incl. "＋ add") stays
 // full-width; cards with a letter are stamped `.gcard` (below) to reserve a piece/meta right gutter.
 const gLetter = grp => grp ? `<div class="gletter">${esc(grp)}</div>` : "";
+// a concert's corner mark — the group letter's counterpart on concert cards. Same slot, same accent
+// semantics (brass when you're performing, muted when you're audience); an SVG star, not the ☆/★
+// glyph, so the size and fill are exact and font-independent (Fraunces doesn't ship a star anyway).
+// viewBox cropped to the star's actual bounds (x 2→22, y 2→21) so there's no phantom padding —
+// the rendered width/height then map straight to the glyph, matching the group letter's optical box.
+const STAR = '<div class="gstar"><svg viewBox="2 2 20 19" aria-hidden="true"><path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>';
 const placeText = label => mapped(label)
   ? `<a class="maplink" href="${mapHref(label)}">${esc(label)}${PIN}</a>` : esc(label);
 // one link into the concert's concerts.html listing (which itself links the printed PDF); drafts
@@ -561,13 +567,13 @@ function concertCard(conc,s,e,live){
   const at = live && !alias(live,conc.poi) && !alias(live,conc.venue) ? live : conc.poi;
   const mine = myConcertPieces(conc, USER);
   const [row, card, kick, body] = mine.length
-    ? ["row mine", "card", "<span>Concert · you're performing</span>",
+    ? ["row mine", "card gcard", "<span>Concert · you're performing</span>",
        mine.map(p=>esc(p.s || `${p.c} — ${p.t}`)).join("<br>")]
-    : ["row", "card ccard", '<span>Concert · audience</span><span class="pc">all welcome</span>',
+    : ["row", "card ccard gcard", '<span>Concert · audience</span><span class="pc">all welcome</span>',
        esc(conc.title)];
   return `<div class="${row}">${tline(s,e)}<div class="body"><span class="dot"></span><div class="${card}">`
     +`<div class="kicker">${kick}</div><div class="piece">${body}</div>`
-    +`<div class="meta">${placeChip(at)}<span class="coach">${progA(conc)}</span></div></div></div></div>`;
+    +`<div class="meta">${placeChip(at)}<span class="coach">${progA(conc)}</span></div>${STAR}</div></div></div>`;
 }
 function timeline(day,w){
   const ev=[];
