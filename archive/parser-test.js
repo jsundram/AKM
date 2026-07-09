@@ -2,7 +2,7 @@
 // Exercises the ported parser against the real Tuesday grid structure. parse() is user-agnostic;
 // whose day it is comes from userCtx (roster row) + mineOf/lessonsOf, exercised here as Jason.
 require("../roster-data.js");   // defines globalThis.Roster; app.js fams() now derives from Roster.instKind
-const { parse, rowsFrom, norm, evblocks, userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, freeOf } = require("../app.js");
+const { parse, rowsFrom, norm, evblocks, userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, freeOf, linkNames } = require("../app.js");
 const R = (...vals) => ({ c: vals.map(v => v === null ? null : { v: String(v) }) });
 const N = null;
 
@@ -104,6 +104,7 @@ day.mine = mineOf(day, me); day.lessons = lessonsOf(day, me);
 const felicia = mineOf(day, userCtx(roster, "Felicia Weiss"));
 const claire = mineOf(day, userCtx(roster, "Claire Maugham"));
 const blocks = evblocks(day);   // [17:20 faculty rehearsals, 20:00 reading w/ THEATRE closed]
+const CM = { emi: "https://bio/emi", tanya: "https://bio/tanya" };   // faculty bio map (COACHES); Elinore (W1) absent — no URL
 const checks = [
   ["eyebrow Week One", day.eyebrow === "Week One"],
   ["3 rehearsals", day.mine.length === 3],
@@ -201,6 +202,13 @@ const checks = [
   ["info: same-cell letter-spaced event, time stripped, room read inline", day.info.some(i => i[0] === "15:30" && i[1] === "16:20" && i[2] === "Multi-Platform Careers Discussion with Tanya & Panel" && i[3] === "AH")],
   ["info: never leaks into rehearsals / faculty / all-hands", !day.rehearsals.concat(day.fac).some(r => /presentation|discussion/i.test(r[2])) && !day.allhands.some(a => /presentation|discussion/i.test(a[2]))],
   ["info: the inline 'in A4' rehearsal note is NOT mistaken for an info event", !day.info.some(i => /elgar|faculty/i.test(i[2]))],
+  // presenter names in an info title link to a FACULTY bio (COACHES = faculty URL-holders only, unique
+  // first names); a collision resolves to the faculty holder, a non-faculty presenter (Elinore, W1) stays plain
+  ["names: leading faculty name links to bio", (x => x.includes('href="https://bio/emi"') && x.includes(">Emi</a>"))(linkNames("Emi Presentation — Vibrato!", CM))],
+  ["names: 'with Tanya' links; 'Panel' and prose stay plain", (x => x.includes('href="https://bio/tanya"') && x.includes(">Tanya</a>") && !x.includes("Panel</a>") && !/<a[^>]*>Multi/.test(x))(linkNames("Multi-Platform Careers Discussion with Tanya & Panel", CM))],
+  ["names: non-faculty presenter (Elinore, no bio URL) stays plain", !/<a/.test(linkNames("Yoga Session with Elinor", CM))],
+  ["names: no faculty map → text intact, no links", linkNames("Emi Presentation", {}) === "Emi Presentation"],
+  ["names: substring of a longer word isn't linked (Emi ≠ Emily)", !/<a/.test(linkNames("Emily Session", CM))],
 ];
 let pass = 0;
 for (const [n, r] of checks) { console.log((r ? "PASS" : "FAIL") + "  " + n); pass += r ? 1 : 0; }

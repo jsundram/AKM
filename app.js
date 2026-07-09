@@ -632,6 +632,19 @@ function coachLink(coach){
   }).join("");
   return `<b>${html}</b>`;
 }
+// link any faculty first name that appears in free prose to their bio — for informational-event
+// titles ("Emi Presentation", "… with Tanya & Panel"), where the presenter is faculty. Reuses
+// COACHES (first name → bio URL), which holds ONLY roster URL-holders (faculty, whose first names
+// are unique), so a match is unambiguous and a first-name collision (two Tanyas) resolves to the
+// faculty one for free; a non-faculty presenter (a W1 leading a yoga session) has no bio URL and so
+// stays plain text. Unlike coachLink this doesn't bold or split on separators — the title is prose.
+function linkNames(text, map=COACHES){
+  const keys = Object.keys(map||{}).filter(Boolean);
+  if(!keys.length) return esc(text);
+  const re = new RegExp(`\\b(${keys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")})\\b`,"gi");
+  return esc(text).replace(re, m => { const u = map[m.toLowerCase()];
+    return u ? `<a class="coachlink" href="${u}" target="_blank" rel="noopener">${m}</a>` : m; });
+}
 // group evening practice/reading rows into per-block sections (pre- and post-dinner differ in
 // what's booked), each with the rooms left unbooked. Faculty rehearsals book rooms but are never
 // advertised — they're not open invitations, and we don't send a crowd to one.
@@ -689,7 +702,7 @@ function timeline(day,w){
   // never brass (nobody's own playing), with a circled-"i" corner mark in the group-letter slot.
   for(const [s,e,ttl,room] of day.info||[]){
     const chip = room?placeChip(room):"";
-    ev.push([s,`<div class="row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card infocard gcard"><div class="kicker"><span>Info</span><span class="pc">all welcome</span></div><div class="piece">${esc(ttl)}</div>${chip?`<div class="meta">${chip}</div>`:""}${INFO}</div></div></div>`]);
+    ev.push([s,`<div class="row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card infocard gcard"><div class="kicker"><span>Info</span><span class="pc">all welcome</span></div><div class="piece">${linkNames(ttl)}</div>${chip?`<div class="meta">${chip}</div>`:""}${INFO}</div></div></div>`]);
   }
   // the sheet's own practice/reading blocks — but once you add your own event over one it *becomes*
   // that event, so drop any block a self-added event overlaps (same dedup day.free already does).
@@ -1146,4 +1159,4 @@ async function forceUpdate(){   // the hammer: drop every cache, reload → SW r
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
   userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad,
-  myConcertPieces };
+  myConcertPieces, linkNames };
