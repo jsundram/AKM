@@ -688,14 +688,16 @@ function masthead(isoStr,eyebrow){
 function asofText(c){
   if(!c.ts) return navigator.onLine ? "loading…" : "no data yet";
   const ts=new Date(c.ts), stale=Date.now()-ts.getTime()>6*3600e3;
-  return `as of ${ts.toLocaleString("en-GB",{timeZone:TZ,weekday:"short",hour:"2-digit",minute:"2-digit"})}${stale?' · <span class="stale">stale</span>':''}`;
+  return `@${ts.toLocaleString("en-GB",{timeZone:TZ,weekday:"short",hour:"2-digit",minute:"2-digit"})}${stale?' · <span class="stale">stale</span>':''}`;
 }
 // schedule section header: rule + label, with the freshness/online dot/source link in context
 function schedHead(c){
-  return `<div class="tl-head"><span class="tl-title">Schedule</span><span class="tl-meta">`
+  // whose day this is, right next to the label — tap to switch user (the foot link still works too)
+  const who = USER ? `<button id="tlwho" class="tl-who" type="button" title="switch user">${esc(USER.first)}</button>` : "";
+  return `<div class="tl-head"><span class="tl-title">Schedule${who}</span><span class="tl-meta">`
     + `<span class="netdot${navigator.onLine?'':' off'}" id="netdot"></span>`
     + `<span id="asof">${asofText(c)}</span> · `
-    + `<a href="${sheetUrl(sel)}" target="_blank" rel="noopener">source sheet ↗</a> · `
+    + `<a href="${sheetUrl(sel)}" target="_blank" rel="noopener">source ↗</a> · `
     + `<button id="addself" class="addbtn" type="button">＋ add</button></span></div>`;
 }
 
@@ -916,7 +918,7 @@ function render(){
     html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
       + (USER && USER.name===JASON ? coda(day,BANK,dnum) : "");   // grace notes: his easter egg only
   }
-  html += `<div class="who-foot">${USER?`for <b>${esc(USER.first)}</b>`:`no one picked`} · <button id="whobtn" type="button">switch user</button></div>`;
+  html += `<div class="who-foot">${USER?"":"no one picked · "}<button id="whobtn" type="button">switch user</button></div>`;   // name lives in the header now; keep the nudge only when unpicked
   paint($("#app"), html);
   chips();
   if(Roster.me()==null && (people||[]).length) openWho();   // first ever open: ask once the roster is here
@@ -995,7 +997,7 @@ async function boot(){
   // #app is repainted on every render; delegate so the add button + per-card delete/edit survive repaints
   $("#app").addEventListener("click", e=>{
     if(e.target.closest("#wxunit")){ WXU = WXU==="C"?"F":"C"; try{localStorage.setItem("akm-wx-unit",WXU)}catch{} render(); return; }
-    if(e.target.closest("#whobtn")){ openWho(); return; }
+    if(e.target.closest("#whobtn")||e.target.closest("#tlwho")){ openWho(); return; }
     if(e.target.closest("#addself")){ openAdd(); return; }
     const fr=e.target.closest("[data-free]"); if(fr){ const [s,en]=fr.dataset.free.split("|"); openAdd(null,{s,e:en}); return; }
     const d=e.target.closest("[data-del]"); if(d){ removeSelf(+d.dataset.del); return; }
