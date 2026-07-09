@@ -100,7 +100,7 @@ function coachMap(people){
 // User-agnostic: every rehearsal cell (with its block's Group letter) and every private-lesson slot
 // is kept; whose they are is decided at render time by mineOf()/lessonsOf() against the picked identity.
 function parse(rows){
-  let cols = {}, dressRoom = ""; const day = {eyebrow:"", rehearsals:[], meals:[], allhands:[], evening:[], fac:[], slots:[], dress:[], rooms:[], evLabels:{}};
+  let cols = {}, dressRoom = ""; const day = {eyebrow:"", rehearsals:[], meals:[], allhands:[], evening:[], fac:[], slots:[], dress:[], info:[], rooms:[], evLabels:{}};
   for(const raw of rows){
     const cells = raw.map(c => (c||"").trim());
     const joined = despace(cells.join(" "));
@@ -196,6 +196,27 @@ function parse(rows){
     // all-hands meetings can sit above the first room grid (cols still empty), so match per-row
     const meet = cells.slice(li+1).filter(c => MEET.test(c));
     if(meet.length){ for(const c of meet) day.allhands.push([start,end,c.split("\n").map(x=>x.trim()).filter(Boolean).join(" "),""]); continue; }
+    // informational events — a titled announcement pinned to a room (a presentation, a discussion,
+    // a yoga session), open to everyone. People have stopped double-checking the sheet, so these are
+    // easy to miss; surface them for all identities (day.info), NOT the MEET whitelist which would need
+    // touching per-event. Detected by shape: a prose cell (has lowercase) naming its room INLINE
+    // ("Emi Presentation in AH") — a word before the "in ROOM", which a standalone "in A4" rehearsal
+    // note (nothing before "in") and an all-caps banner both fail. A coach tag ("- P"/"- C") means a
+    // rehearsal, and faculty items aren't open invitations — both excluded. Runs after meals/concerts/
+    // dress (they `continue` first) and before the room grid, so it consumes the row cleanly.
+    let infoTitle="", infoRoom="";
+    for(const c of cells){
+      const flat = c.replace(/\s+/g," ").trim();
+      const m = despace(flat).match(/\S.*?\bin\s+([A-Z][A-Z0-9]{0,3})\b/);
+      if(!m || !/[a-z]/.test(flat) || /[-–]\s*[PC]\b/.test(flat) || /faculty/i.test(flat)) continue;
+      infoRoom = m[1];
+      infoTitle = c.split("\n").map(x=>despace(x.replace(/\s+/g," ").trim()))
+        .filter(x => x && !/^\d{1,2}:\d{2}(\s*-\s*\d{1,2}:\d{2})?$/.test(x))   // drop the time line(s)
+        .map(x => x.replace(/\s*\bin\s+[A-Z][A-Z0-9]{0,3}\b/,"").trim())      // drop the inline "in ROOM"
+        .filter(Boolean).join(" — ");
+      break;
+    }
+    if(infoTitle){ day.info.push([start,end,infoTitle,infoRoom]); continue; }
     for(const i in cols){
       const cell = cells[+i] || ""; if(!cell) continue;
       const lines = cell.split("\n").map(x=>x.trim()).filter(Boolean);
@@ -231,6 +252,7 @@ function parse(rows){
   const byT = a => mins(a[0]);
   day.rehearsals.sort((a,b)=>byT(a)-byT(b)); day.meals.sort((a,b)=>byT(a)-byT(b));
   day.allhands.sort((a,b)=>byT(a)-byT(b)); day.slots.sort((a,b)=>byT(a)-byT(b)); day.fac.sort((a,b)=>byT(a)-byT(b));
+  day.info.sort((a,b)=>byT(a)-byT(b));
   // dress slots run back-to-back in one hall (the two layout columns continue the same clock), so an
   // end = the next slot's start gives each its true ~15-min window; the last one gets a nominal +15.
   day.dress.sort((a,b)=>byT(a)-byT(b));
@@ -572,6 +594,10 @@ const gBang = `<div class="gbang">!</div>`;
 // viewBox cropped to the star's actual bounds (x 2→22, y 2→21) so there's no phantom padding —
 // the rendered width/height then map straight to the glyph, matching the group letter's optical box.
 const STAR = '<div class="gstar"><svg viewBox="2 2 20 19" aria-hidden="true"><path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>';
+// an informational event's corner mark — a circled "i" in the group-letter slot, so an open talk /
+// discussion / yoga session reads at a glance as "info, not a room code". SVG, not the ⓘ glyph, so
+// size + fill are font-independent (same reasoning as STAR). Muted — it's nobody's own playing.
+const INFO = '<div class="ginfo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="7.4" r="1.4" fill="currentColor"/><rect x="10.75" y="10.4" width="2.5" height="7.2" rx="1.25" fill="currentColor"/></svg></div>';
 const placeText = label => mapped(label)
   ? `<a class="maplink" href="${mapHref(label)}">${esc(label)}${PIN}</a>` : esc(label);
 // one link into the concert's concerts.html listing (which itself links the printed PDF); drafts
@@ -658,6 +684,13 @@ function timeline(day,w){
   // carries a CONCERT banner at all (the Faculty Concert 7/8 renders even so), and of a mis-parsed
   // banner time (an "8:00" written for 8pm no longer misfiles it into the afternoon slot).
   for(const c of dayConcerts){ const s=concStart(c); ev.push([s, concertCard(c,s,"",bven[mins(s)<1080?"aft":"eve"])]); }
+  // informational events (a presentation, a discussion, a yoga session) — shown to everyone
+  // regardless of the picked identity, since they're easy to miss on the sheet. Neutral card,
+  // never brass (nobody's own playing), with a circled-"i" corner mark in the group-letter slot.
+  for(const [s,e,ttl,room] of day.info||[]){
+    const chip = room?placeChip(room):"";
+    ev.push([s,`<div class="row">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card infocard gcard"><div class="kicker"><span>Info</span><span class="pc">all welcome</span></div><div class="piece">${esc(ttl)}</div>${chip?`<div class="meta">${chip}</div>`:""}${INFO}</div></div></div>`]);
+  }
   // the sheet's own practice/reading blocks — but once you add your own event over one it *becomes*
   // that event, so drop any block a self-added event overlaps (same dedup day.free already does).
   const selfSpans = (loadMine()[sel]||[]).map(m=>[mins(m.s), m.e?mins(m.e):mins(m.s)+60]);
@@ -804,7 +837,7 @@ const unpad = t => t.replace(/^0(?=\d:)/,"");                                   
 function dayTimes(day){
   if(!day) return [];
   const t=new Set(), add=x=>{ if(x && /^\d{1,2}:\d{2}$/.test(x)) t.add(x); };
-  for(const k of ["allhands","rehearsals","slots","meals","evening"])
+  for(const k of ["allhands","rehearsals","slots","meals","evening","info"])
     for(const row of (day[k]||[])){ add(row[0]); add(row[1]); }
   return [...t].sort((a,b)=>mins(a)-mins(b));
 }
@@ -1043,7 +1076,7 @@ async function refresh(){
   try{ await Roster.pull(); }catch(e){ /* keep the cached roster */ }   // pulls roster + repertoire; primes both pages
   for(const day of festDays()){
     try{ const rows=rowsFrom(await jsonp(day)); const p=parse(rows);
-         if(p.rehearsals.length||p.meals.length||p.allhands.length||p.evening.length||p.slots.length) c.sched[day]=p; }
+         if(p.rehearsals.length||p.meals.length||p.allhands.length||p.evening.length||p.slots.length||p.info.length) c.sched[day]=p; }
     catch(e){ /* keep old day */ }
   }
   c.ts=new Date().toISOString(); save(c); render();
