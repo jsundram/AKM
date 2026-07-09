@@ -2,7 +2,7 @@
 // Exercises the ported parser against the real Tuesday grid structure. parse() is user-agnostic;
 // whose day it is comes from userCtx (roster row) + mineOf/lessonsOf, exercised here as Jason.
 require("../roster-data.js");   // defines globalThis.Roster; app.js fams() now derives from Roster.instKind
-const { parse, rowsFrom, evblocks, userCtx, mineOf, lessonsOf, coachingOf, teachingOf, freeOf } = require("../app.js");
+const { parse, rowsFrom, norm, evblocks, userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, freeOf } = require("../app.js");
 const R = (...vals) => ({ c: vals.map(v => v === null ? null : { v: String(v) }) });
 const N = null;
 
@@ -29,6 +29,12 @@ const gv = { table: { rows: [
   R(N, "13:00 - 14:30", "Nathan\nPrivate Lessons\n14:00 - Robert", N, N, "1 3 : 0 0 - 1 4 : 3 0\nL U N C H @ Mascha Wirt"),
   R(N, N, "A1", "A2", "AH", "KS", "BAND ROOM", "THEATRE", "CHAPEL", "WERNER"),
   R(N, "14:30 - 15:45\nGroup E", "Beethoven Piano Trio\nJesus - P (half)", "Brahms Clarinet Quintet\nChad/Ilinca - P", "Dvorak Piano Quintet\nJames - P", "Bruch Octet\nGijs/Nathan - P", "Loeffler Two Rhapsodies\nTanya - C", "Reinecke Trio", "Debussy Quartet\nClaudia - P"),
+  // (KS) Dress Rehearsals — banner on one row ("KS Dress Rehearsals" + a note cell), the HH:MM-piece
+  // lists on the next (Thu/Fri layout): parked in arbitrary layout columns, all really in KS. The list
+  // deliberately holds BOTH Schubert quintets (Cello D.956 + Piano D.667) to prove dressOf's fits()
+  // guard keeps same-composer pieces apart, plus Jason's Fauré/Bruch and Kian's Elgar.
+  R(N, "16:20 - 18:30\nKS Dress Rehearsals", "Dress Rehearsals in KS"),
+  R(N, N, N, "16:20 - Faure Piano Quartet\n16:34 - Bruch Octet\n16:48 - Schubert Cello Quintet", N, N, N, "17:02 - Schubert Piano Quintet\n17:16 - Elgar Piano Quintet"),
   R(N, "17:20 - 19:00\nPractice Block / Free Reading", N, N, "Faculty Rehearsal\nWebern Langsamer Satz", "Faculty Rehearsal\nFaure Piano Quartet"),
   R(N, "1 9 : 0 0\nD I N N E R @ Lesachtalerhof"),
   R(N, "2 0 : 0 0\nF A C U L T Y   C O N C E R T @ Kultursaal"),
@@ -71,7 +77,20 @@ const roster = [
     pieces: "B: Schubert String Quintet in C major, D. 956" },
   { name: "Dana Poole", type: "", instrument: "Piano", hotel: "", notes: "",
     pieces: "B: Schubert Piano Quintet in A major, D. 667" },
+  // a same-composer DECOY: plays "Bruch Eight Pieces", NOT the Octet. The dress slot "Bruch Octet"
+  // must resolve to the Octet (which she doesn't play), so she gets no dress card — proving dressOf
+  // disambiguates against the whole repertoire, not just her own pieces (the pre-fix false positive).
+  { name: "Otto Klang", type: "", instrument: "VA", hotel: "", notes: "",
+    pieces: "A: Bruch Eight Pieces, op. 83" },
 ];
+// dressOf resolves a slot to its ONE canonical Repertoire piece before checking ownership, so it needs
+// the repertoire universe (norm(title) → group letters). Live it's Roster.pieceGroups(); here, build it
+// from every fixture piece (prefix + week tag stripped) so "Bruch Octet" can be told from "Bruch Eight Pieces".
+const pg = {};
+for (const p of roster)
+  (p.pieces || "").replace(/^\s*[A-Z]+\s*:\s*/, "").split("|").forEach(s => {
+    const nm = norm(s.replace(/\s*\((W1|W2)\)\s*$/i, "").trim()); if (nm) pg[nm] = { 1: "", 2: "" };
+  });
 const w2day = { ...parse(rowsFrom(gv)), eyebrow: "Week Two" };   // same grid, week-two masthead
 const me = userCtx(roster, "Jason Sundram");
 const day = parse(rowsFrom(gv));
@@ -154,6 +173,22 @@ const checks = [
   ["a coach sees the lessons they teach (Jesus: 3 slots, named)", (t => t.length === 3 && t.map(x => x[2]).join() === "Maya,Jason,Steph" && t[0][3] === "WERNER")(teachingOf(day, userCtx(roster, "Jesus Morales")))],
   ["a non-coach teaches nothing", teachingOf(day, userCtx(roster, "Felicia Weiss")).length === 0],
   ["W1-only coach teaches nothing in week two", teachingOf(w2day, userCtx(roster, "Claudia Ajmone-Marsan")).length === 0],
+  // (KS) Dress Rehearsals: parsed as unlabelled per-piece slots (banner + list rows, layout columns
+  // collapsed to the one real room KS), chronological with each end chained to the next slot's start
+  ["dress: 5 slots parsed, all in KS", day.dress.length === 5 && day.dress.every(d => d[3] === "KS")],
+  ["dress: chronological, ends chained to next start", day.dress.map(d => d[0]).join(",") === "16:20,16:34,16:48,17:02,17:16" && day.dress[0][1] === "16:34"],
+  ["dress: rows never leak into rehearsals", !day.rehearsals.some(r => /dress/i.test(r[2]) || /^\d{1,2}:\d{2}\s*-/.test(r[2]))],
+  // per-user surfacing: only your own pieces' slots, each slot resolved to its canonical repertoire piece
+  ["dress: Jason gets Fauré + Bruch at their slots", dressOf(day, me, pg).map(d => d[0] + " " + d[2]).join(", ") === "16:20 Faure Piano Quartet, 16:34 Bruch Octet"],
+  ["dress: D.956 player gets the Cello Quintet (not the Piano)", (x => x.length === 1 && x[0][2] === "Schubert Cello Quintet" && x[0][0] === "16:48")(dressOf(day, userCtx(roster, "Nora Vance"), pg))],
+  ["dress: D.667 player gets the Piano Quintet (not the Cello)", (x => x.length === 1 && x[0][2] === "Schubert Piano Quintet")(dressOf(day, userCtx(roster, "Dana Poole"), pg))],
+  ["dress: Kian gets Elgar @ KS", (x => x.length === 1 && x[0][2] === "Elgar Piano Quintet" && x[0][3] === "KS")(dressOf(day, userCtx(roster, "Kian Woo"), pg))],
+  // the false-positive guard: "Bruch Octet" resolves to the Octet, so a Bruch Eight Pieces player gets nothing
+  ["dress: same-composer decoy (Bruch Eight Pieces) claims no Bruch Octet slot", dressOf(day, userCtx(roster, "Otto Klang"), pg).length === 0],
+  ["dress: slots carry [start,end] so they count as busy (freeOf input)", dressOf(day, me, pg).every(d => /^\d{1,2}:\d{2}$/.test(d[0]) && /^\d{1,2}:\d{2}$/.test(d[1]))],
+  ["dress: no repertoire universe → no slots (same blank state as mineOf)", dressOf(day, me, {}).length === 0],
+  ["dress: W1 player gets no slot in week two", dressOf(w2day, userCtx(roster, "Angelina Freeman"), pg).length === 0],
+  ["dress: non-player gets nothing", dressOf(day, userCtx(roster, "Chia-Hsuan Lin"), pg).length === 0],
 ];
 let pass = 0;
 for (const [n, r] of checks) { console.log((r ? "PASS" : "FAIL") + "  " + n); pass += r ? 1 : 0; }

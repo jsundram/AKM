@@ -100,7 +100,7 @@ function coachMap(people){
 // User-agnostic: every rehearsal cell (with its block's Group letter) and every private-lesson slot
 // is kept; whose they are is decided at render time by mineOf()/lessonsOf() against the picked identity.
 function parse(rows){
-  let cols = {}; const day = {eyebrow:"", rehearsals:[], meals:[], allhands:[], evening:[], fac:[], slots:[], rooms:[], evLabels:{}};
+  let cols = {}, dressRoom = ""; const day = {eyebrow:"", rehearsals:[], meals:[], allhands:[], evening:[], fac:[], slots:[], dress:[], rooms:[], evLabels:{}};
   for(const raw of rows){
     const cells = raw.map(c => (c||"").trim());
     const joined = despace(cells.join(" "));
@@ -117,6 +117,30 @@ function parse(rows){
       // keep the most complete header's room list as the practice-room universe (free-room calc)
       const names = Object.values(cols);
       if(names.length>day.rooms.length) day.rooms=names;
+      continue;
+    }
+    // (KS) Dress Rehearsals — short per-piece run-throughs before a concert, all in one hall (KS). The
+    // banner ("KS Dress Rehearsals" / "Dress Rehearsals in KS", + a time range) and the HH:MM-piece
+    // lists sit on separate rows (Thu/Fri) or the same row (Sat). The lists are parked in whatever
+    // layout column, NOT a room — the room is KS, read off the banner. Detect a list by shape (every
+    // line "HH:MM - …") and collect each slot, unlabelled; dressOf() surfaces the picked user's pieces.
+    // Consumes the row so its cells never fall through into junk rehearsals. (Sat's blanks push nothing.)
+    const dressBanner = cells.some(c=>/dress rehearsal/i.test(c));
+    if(dressBanner){
+      const mr = joined.match(/dress rehearsals?\s+in\s+([A-Za-z0-9]+)/i) || joined.match(/\b([A-Za-z0-9]+)\s+dress rehearsals?/i);
+      if(mr) dressRoom = mr[1].toUpperCase();
+    }
+    const dressLists = (dressRoom ? cells : []).filter(c=>{
+      const ls = c.split("\n").map(x=>x.trim()).filter(Boolean);
+      return ls.length && ls.every(l=>/^\d{1,2}:\d{2}\s*-/.test(l));   // a whole cell of "HH:MM - …" lines
+    });
+    if(dressBanner || dressLists.length){
+      for(const cell of dressLists)
+        for(const line of cell.split("\n").map(x=>x.trim()).filter(Boolean)){
+          const mm = line.match(/^(\d{1,2}:\d{2})\s*-\s*(.+)$/);
+          if(mm && mm[2].trim() && !/^\d{1,2}:\d{2}$/.test(mm[2].trim()))   // skip empty/unposted slots + a bare time range
+            day.dress.push([mm[1], "", mm[2].trim(), dressRoom||"KS"]);
+        }
       continue;
     }
     // private-lessons blocks: a coach + half-hour slots ("HH:MM - Student"). The block sits in the
@@ -207,6 +231,10 @@ function parse(rows){
   const byT = a => mins(a[0]);
   day.rehearsals.sort((a,b)=>byT(a)-byT(b)); day.meals.sort((a,b)=>byT(a)-byT(b));
   day.allhands.sort((a,b)=>byT(a)-byT(b)); day.slots.sort((a,b)=>byT(a)-byT(b)); day.fac.sort((a,b)=>byT(a)-byT(b));
+  // dress slots run back-to-back in one hall (the two layout columns continue the same clock), so an
+  // end = the next slot's start gives each its true ~15-min window; the last one gets a nominal +15.
+  day.dress.sort((a,b)=>byT(a)-byT(b));
+  day.dress.forEach((d,i)=>{ const n=day.dress[i+1]; d[1] = n ? n[0] : hhmm(mins(d[0])+15); });
   return day;
 }
 
@@ -300,6 +328,37 @@ function mineOf(day, u){
     const peers = (day.rehearsals||[]).filter(r=>r[0]===s && r[6]===grp && r[2]!==piece && fits(words(r[2]),tw));
     if(!peers.every(r=>overlap(toks(r[2]),want)<score)) continue;
     out.push([s,e,piece,room,coach,tag,norm(piece).split(" ")[0],partial,grp]);   // [6]=composer key (coda), [7]=half-length coaching, [8]=Group letter
+  }
+  return out;
+}
+// (KS) Dress Rehearsals are NOT group-tagged — each is a single piece's pre-concert run-through — so
+// mineOf's group-letter anchor is gone and a bare composer-token match would be too loose: a slot like
+// "Beethoven Piano Trio Op. 70 no. 2" also weakly fits() "Beethoven Ghost", and "Bruch Octet" fits
+// "Bruch Eight Pieces", so a user who plays only the *decoy* would wrongly claim the slot. So resolve
+// each slot's rehearsal-style title to its ONE canonical Repertoire piece first — the strict argmax
+// over the whole repertoire (pg = Roster.pieceGroups() keys, norm(title)) under the same fits() guard —
+// then it's yours iff you actually play that piece. That restores the specificity the group letter gave.
+// Week-gated like the rest; card is a brass "Dress rehearsal · be on time" at the slot's exact time.
+function dressOf(day, u, pg){
+  if(!u) return [];
+  const dw = weekOf(day);
+  if(dw && u.week && u.week!==dw) return [];
+  const mine = (u.mine||[]).filter(mp => !dw || !mp.week || mp.week===dw);   // my pieces in play this week
+  if(!mine.length) return [];
+  pg = pg || (typeof PIECEGRP!=="undefined" ? PIECEGRP : {});
+  const canon = Object.keys(pg||{});                                        // norm(title) for every repertoire piece
+  if(!canon.length) return [];                                              // no repertoire → same blank state as mineOf
+  const mineKeys = new Set(mine.map(mp=>norm(mp.name)));
+  const out=[];
+  for(const [s,e,piece,room] of (day.dress||[])){
+    const cw = words(piece), cset = new Set(cw);
+    let bestKey=null, best=0, ties=0;
+    for(const k of canon){ const tw = words(k);
+      if(!fits(cw,tw)) continue;
+      const sc = overlap(cset, new Set(tw));
+      if(sc>best){ best=sc; bestKey=k; ties=1; } else if(sc===best && sc>0) ties++;
+    }
+    if(bestKey && ties===1 && mineKeys.has(bestKey)) out.push([s,e,piece,room]);   // unique canonical piece, and it's yours
   }
   return out;
 }
@@ -503,6 +562,10 @@ const placeChip = (room,cls="roomchip") => mapped(room)
 // It sits in the bottom-right corner, below the kicker, so the top row (incl. "＋ add") stays
 // full-width; cards with a letter are stamped `.gcard` (below) to reserve a piece/meta right gutter.
 const gLetter = grp => grp ? `<div class="gletter">${esc(grp)}</div>` : "";
+// the dress-rehearsal corner mark — a big brass "!" where a rehearsal card carries its Group letter.
+// Not a coordination handle (a dress slot is a short, solo run-through) but a "don't be late" flag:
+// the window is ~15 min and easy to miss, so it gets a mark that reads as urgency, not a room code.
+const gBang = `<div class="gbang">!</div>`;
 // a concert's corner mark — the group letter's counterpart on concert cards. Same slot, same accent
 // semantics (brass when you're performing, muted when you're audience); an SVG star, not the ☆/★
 // glyph, so the size and fill are exact and font-independent (Fraunces doesn't ship a star anyway).
@@ -618,6 +681,12 @@ function timeline(day,w){
     const cw = coach?`<span class="coach">with ${coachLink(coach)}</span>`:"";
     const chip = placeChip(room||"LESSONS");
     ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card"><div class="kicker"><span>Your private lesson</span><span class="pc">be ready</span></div><div class="piece">Private lesson</div><div class="meta">${chip}${cw}</div></div></div></div>`]);
+  }
+  // (KS) dress rehearsals — your own playing, so brass like a rehearsal, but a short fixed slot you
+  // must not miss: a "!" corner mark instead of a Group letter, and "be on time" for the kicker.
+  for(const [s,e,piece,room] of day.dress||[]){
+    const chip = placeChip(room||"KS");
+    ev.push([s,`<div class="row mine">${tline(s,e)}<div class="body"><span class="dot"></span><div class="card gcard"><div class="kicker"><span>Dress rehearsal</span><span class="pc">be on time</span></div><div class="piece">${esc(piece)}</div><div class="meta">${chip}</div>${gBang}</div></div></div>`]);
   }
   // pieces you coach but sit out — cool, never brass. A co-coached cell ("Gijs/Nathan") drops you from
   // the "with" line so it reads as your co-coach, not yourself.
@@ -914,7 +983,8 @@ function render(){
     day.mine = mineOf(day,USER); day.lessons = lessonsOf(day,USER);   // whose day this is, decided here
     day.coaching = coachingOf(day,USER);                              // + pieces a coach runs but sits out
     day.teaching = teachingOf(day,USER);                             // + private lessons a coach gives
-    day.free = freeOf(day, [...day.mine, ...day.lessons, ...day.coaching, ...day.teaching, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
+    day.dress = dressOf(day,USER,PIECEGRP);                          // + your (KS) dress-rehearsal slots (piece resolved via the repertoire)
+    day.free = freeOf(day, [...day.mine, ...day.lessons, ...day.coaching, ...day.teaching, ...day.dress, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
     const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
     html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
       + (USER && USER.name===JASON ? coda(day,BANK,dnum) : "");   // grace notes: his easter egg only
@@ -1042,5 +1112,5 @@ async function forceUpdate(){   // the hammer: drop every cache, reload → SW r
 }
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
-  userCtx, mineOf, lessonsOf, coachingOf, teachingOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad,
+  userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad,
   myConcertPieces };
