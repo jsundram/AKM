@@ -2,6 +2,7 @@
 // Exercises the ported parser against the real Tuesday grid structure. parse() is user-agnostic;
 // whose day it is comes from userCtx (roster row) + mineOf/lessonsOf, exercised here as Jason.
 require("../roster-data.js");   // defines globalThis.Roster; app.js fams() now derives from Roster.instKind
+require("../concert-data.js");  // defines globalThis.Concerts; dressOf resolves slots against the day's concert program
 const { parse, rowsFrom, norm, evblocks, userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, freeOf, linkNames } = require("../app.js");
 const R = (...vals) => ({ c: vals.map(v => v === null ? null : { v: String(v) }) });
 const N = null;
@@ -83,20 +84,7 @@ const roster = [
     pieces: "B: Schubert String Quintet in C major, D. 956" },
   { name: "Dana Poole", type: "", instrument: "Piano", hotel: "", notes: "",
     pieces: "B: Schubert Piano Quintet in A major, D. 667" },
-  // a same-composer DECOY: plays "Bruch Eight Pieces", NOT the Octet. The dress slot "Bruch Octet"
-  // must resolve to the Octet (which she doesn't play), so she gets no dress card — proving dressOf
-  // disambiguates against the whole repertoire, not just her own pieces (the pre-fix false positive).
-  { name: "Otto Klang", type: "", instrument: "VA", hotel: "", notes: "",
-    pieces: "A: Bruch Eight Pieces, op. 83" },
 ];
-// dressOf resolves a slot to its ONE canonical Repertoire piece before checking ownership, so it needs
-// the repertoire universe (norm(title) → group letters). Live it's Roster.pieceGroups(); here, build it
-// from every fixture piece (prefix + week tag stripped) so "Bruch Octet" can be told from "Bruch Eight Pieces".
-const pg = {};
-for (const p of roster)
-  (p.pieces || "").replace(/^\s*[A-Z]+\s*:\s*/, "").split("|").forEach(s => {
-    const nm = norm(s.replace(/\s*\((W1|W2)\)\s*$/i, "").trim()); if (nm) pg[nm] = { 1: "", 2: "" };
-  });
 const w2day = { ...parse(rowsFrom(gv)), eyebrow: "Week Two" };   // same grid, week-two masthead
 const me = userCtx(roster, "Jason Sundram");
 const day = parse(rowsFrom(gv));
@@ -105,6 +93,12 @@ const felicia = mineOf(day, userCtx(roster, "Felicia Weiss"));
 const claire = mineOf(day, userCtx(roster, "Claire Maugham"));
 const blocks = evblocks(day);   // [17:20 faculty rehearsals, 20:00 reading w/ THEATRE closed]
 const CM = { emi: "https://bio/emi", tanya: "https://bio/tanya" };   // faculty bio map (COACHES); Elinore (W1) absent — no URL
+// dress-rehearsal fixtures — synthetic slots (mirroring the live sheet's wording) resolved against the
+// REAL concert programs in concert-data.js, so ownership is checked with public printed names + dates.
+const friBeeth = { dress: [["17:16", "17:30", "Beethoven Piano Trio", "KS"]] };
+const satBeeth = { dress: [["16:30", "16:44", "Beethoven Ghost", "KS"], ["16:58", "17:12", "Beethoven String Quartet", "KS"]] };
+const satHaydn = { dress: [["8:40", "8:54", "Haydn String Quartet", "KS"]] };
+const dz = (d, name, date) => dressOf(d, { name }, date);
 const checks = [
   ["eyebrow Week One", day.eyebrow === "Week One"],
   ["3 rehearsals", day.mine.length === 3],
@@ -185,17 +179,29 @@ const checks = [
   ["dress: 5 slots parsed, all in KS", day.dress.length === 5 && day.dress.every(d => d[3] === "KS")],
   ["dress: chronological, ends chained to next start", day.dress.map(d => d[0]).join(",") === "16:20,16:34,16:48,17:02,17:16" && day.dress[0][1] === "16:34"],
   ["dress: rows never leak into rehearsals", !day.rehearsals.some(r => /dress/i.test(r[2]) || /^\d{1,2}:\d{2}\s*-/.test(r[2]))],
-  // per-user surfacing: only your own pieces' slots, each slot resolved to its canonical repertoire piece
-  ["dress: Jason gets Fauré + Bruch at their slots", dressOf(day, me, pg).map(d => d[0] + " " + d[2]).join(", ") === "16:20 Faure Piano Quartet, 16:34 Bruch Octet"],
-  ["dress: D.956 player gets the Cello Quintet (not the Piano)", (x => x.length === 1 && x[0][2] === "Schubert Cello Quintet" && x[0][0] === "16:48")(dressOf(day, userCtx(roster, "Nora Vance"), pg))],
-  ["dress: D.667 player gets the Piano Quintet (not the Cello)", (x => x.length === 1 && x[0][2] === "Schubert Piano Quintet")(dressOf(day, userCtx(roster, "Dana Poole"), pg))],
-  ["dress: Kian gets Elgar @ KS", (x => x.length === 1 && x[0][2] === "Elgar Piano Quintet" && x[0][3] === "KS")(dressOf(day, userCtx(roster, "Kian Woo"), pg))],
-  // the false-positive guard: "Bruch Octet" resolves to the Octet, so a Bruch Eight Pieces player gets nothing
-  ["dress: same-composer decoy (Bruch Eight Pieces) claims no Bruch Octet slot", dressOf(day, userCtx(roster, "Otto Klang"), pg).length === 0],
-  ["dress: slots carry [start,end] so they count as busy (freeOf input)", dressOf(day, me, pg).every(d => /^\d{1,2}:\d{2}$/.test(d[0]) && /^\d{1,2}:\d{2}$/.test(d[1]))],
-  ["dress: no repertoire universe → no slots (same blank state as mineOf)", dressOf(day, me, {}).length === 0],
-  ["dress: W1 player gets no slot in week two", dressOf(w2day, userCtx(roster, "Angelina Freeman"), pg).length === 0],
-  ["dress: non-player gets nothing", dressOf(day, userCtx(roster, "Chia-Hsuan Lin"), pg).length === 0],
+  // per-user surfacing: dressOf resolves each slot against THAT day's concert program (concert-data.js),
+  // composer-primary, and owns it via the shared roster matcher. Real festival data (public program names)
+  // drives these — a bare {name} is all dressOf needs. Slots are synthetic to mirror the live sheet wording.
+  //   friBeeth: 7/10's Beethoven is the String Trio, but the sheet mislabels the slot "Piano Trio"
+  //   satBeeth: Saturday runs two Beethovens — the "Ghost" trio (nick alias) and the Op. 18 String Quartet
+  //   satHaydn: "Haydn String Quartet" — the Wk-1 Haydn (Op. 76) can't be on the Wk-2 program, so no tie
+  //   dz(day, name, date) → the slots that resolve to a piece `name` performs that date
+  ["dress: sloppy 'Beethoven Piano Trio' on 7/10 resolves to the day's String Trio, not the E-flat trio",
+    (x => x.length === 1 && x[0][2] === "Beethoven String Trio")(dz(friBeeth, "Bernhard Zojer", "2026-07-10"))],
+  ["dress: the E-flat trio's player (it played 7/9) gets NO phantom card on 7/10 — the reported bug",
+    dz(friBeeth, "Stephen Lustig", "2026-07-10").length === 0],
+  ["dress: 'Beethoven Ghost' → the Op. 70/1 trio via its nick alias, not the day's other Beethoven",
+    (x => x.length === 1 && x[0][2] === "Beethoven Piano Trio Op. 70 No. 1")(dz(satBeeth, "Claire Maugham", "2026-07-11"))],
+  ["dress: a String-Quartet-only player claims that slot, never the Ghost",
+    (x => x.length === 1 && x[0][2] === "Beethoven String Quartet")(dz(satBeeth, "YooJin Jang", "2026-07-11"))],
+  ["dress: a player in both of the day's Beethovens gets both slots", dz(satBeeth, "Aaron Kinghorn", "2026-07-11").length === 2],
+  ["dress: 'Haydn String Quartet' on 7/11 is unambiguous (a Wk-1 Haydn can't be on a Wk-2 program)",
+    (x => x.length === 1 && x[0][2] === "Haydn String Quartet" && x[0][3] === "KS")(dz(satHaydn, "Maya Weil", "2026-07-11"))],
+  ["dress: a non-performer gets nothing", dz(satHaydn, "Jason Sundram", "2026-07-11").length === 0],
+  ["dress: slots carry [start,end] so they count as busy (freeOf input)",
+    dz(satBeeth, "Aaron Kinghorn", "2026-07-11").every(d => /^\d{1,2}:\d{2}$/.test(d[0]) && /^\d{1,2}:\d{2}$/.test(d[1]))],
+  ["dress: no program for the day (or no date) → no slots",
+    dz(friBeeth, "Bernhard Zojer", "2026-06-30").length === 0 && dressOf(friBeeth, { name: "Bernhard Zojer" }).length === 0],
   // informational events — surfaced to everyone (day.info), never routed through rehearsals/allhands/fac
   ["info: both events parsed, chronological", day.info.length === 2 && day.info.map(i => i[0]).join(",") === "8:20,15:30"],
   ["info: separate-cell event, room + subtitle off the inline 'in AH'", day.info.some(i => i[0] === "8:20" && i[1] === "8:50" && i[2] === "Emi Presentation — Vibrato!" && i[3] === "AH")],

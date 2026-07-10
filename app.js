@@ -353,34 +353,40 @@ function mineOf(day, u){
   }
   return out;
 }
-// (KS) Dress Rehearsals are NOT group-tagged — each is a single piece's pre-concert run-through — so
-// mineOf's group-letter anchor is gone and a bare composer-token match would be too loose: a slot like
-// "Beethoven Piano Trio Op. 70 no. 2" also weakly fits() "Beethoven Ghost", and "Bruch Octet" fits
-// "Bruch Eight Pieces", so a user who plays only the *decoy* would wrongly claim the slot. So resolve
-// each slot's rehearsal-style title to its ONE canonical Repertoire piece first — the strict argmax
-// over the whole repertoire (pg = Roster.pieceGroups() keys, norm(title)) under the same fits() guard —
-// then it's yours iff you actually play that piece. That restores the specificity the group letter gave.
-// Week-gated like the rest; card is a brass "Dress rehearsal · be on time" at the slot's exact time.
-function dressOf(day, u, pg){
-  if(!u) return [];
-  const dw = weekOf(day);
-  if(dw && u.week && u.week!==dw) return [];
-  const mine = (u.mine||[]).filter(mp => !dw || !mp.week || mp.week===dw);   // my pieces in play this week
-  if(!mine.length) return [];
-  pg = pg || (typeof PIECEGRP!=="undefined" ? PIECEGRP : {});
-  const canon = Object.keys(pg||{});                                        // norm(title) for every repertoire piece
-  if(!canon.length) return [];                                              // no repertoire → same blank state as mineOf
-  const mineKeys = new Set(mine.map(mp=>norm(mp.name)));
+// (KS) Dress Rehearsals are the run-throughs for the concert that immediately follows, so the concert
+// PROGRAM — not the festival-wide repertoire — is the authority for what a slot means. Resolve each slot
+// against THAT day's concert pieces (concert-data.js): match by composer, using ensemble/instrument only
+// to break a tie when a composer plays twice in one day. Two payoffs. (1) A lone composer that day is
+// trusted through sloppy slot wording — "Beethoven Piano Trio" on 7/10 is the day's one Beethoven, the
+// String Trio, so the stray "Piano" is ignored rather than mis-resolving to the E-flat trio that already
+// played the night before. (2) The week filter is automatic: a Week-1 quartet can't sit on a Week-2
+// program, so the Saturday "Haydn String Quartet" is never ambiguous (only Op. 20 No. 5 is in play).
+// Ownership reuses myConcertPieces (the shared roster matcher) — the very test the brass concert card
+// runs — so a dress card and its concert card can never disagree about who's performing. The one gap the
+// program can't bridge is a nickname the sheet uses but the printed title omits (the "Ghost" trio): that
+// piece carries a match-only `nick` alias in concert-data.js. Card shows the program's short title.
+function dressOf(day, u, date){
+  if(!u || !u.name || !date) return [];
+  const cs = (typeof Concerts!=="undefined" && Concerts.all) ? Concerts.all.filter(c=>c.id.startsWith(date)) : [];
+  if(!cs.length) return [];                                                  // no program for the day → no dress cards
+  const pieces = cs.flatMap(c => (c.pieces||[]).filter(p=>!p.brk));
+  const mine = new Set(cs.flatMap(c => myConcertPieces(c,u)));               // the pieces I actually perform today
+  const bag = p => toks(`${p.c} ${p.s||""} ${p.t||""} ${p.nick||""}`);       // scoring tokens (incl. any nickname alias)
+  const ord = p => words(`${p.c} ${p.s||p.t||""}`);                          // composer-first order, for fits()
   const out=[];
   for(const [s,e,piece,room] of (day.dress||[])){
-    const cw = words(piece), cset = new Set(cw);
-    let bestKey=null, best=0, ties=0;
-    for(const k of canon){ const tw = words(k);
-      if(!fits(cw,tw)) continue;
-      const sc = overlap(cset, new Set(tw));
-      if(sc>best){ best=sc; bestKey=k; ties=1; } else if(sc===best && sc>0) ties++;
+    const sw = words(piece), sset = new Set(sw);
+    const comp = pieces.filter(p => words(p.c).some(t=>sset.has(t)));        // same composer on today's program
+    let hit=null;
+    if(comp.length===1) hit=comp[0];                                        // the day's lone composer → trust it, wording slop and all
+    else if(comp.length>1){                                                  // composer plays twice today → disambiguate
+      let pool = comp.filter(p=>fits(sw, ord(p)));                           // by ensemble/instrument when the slot names one
+      if(!pool.length) pool=comp;
+      let best=-1, ties=0;
+      for(const p of pool){ const sc=overlap(sw, bag(p)); if(sc>best){ best=sc; hit=p; ties=1; } else if(sc===best) ties++; }
+      if(ties!==1) hit=null;                                                 // genuinely indistinguishable → no card, never a wrong one
     }
-    if(bestKey && ties===1 && mineKeys.has(bestKey)) out.push([s,e,piece,room]);   // unique canonical piece, and it's yours
+    if(hit && mine.has(hit)) out.push([s,e, hit.s || `${hit.c} — ${hit.t}`, room]);
   }
   return out;
 }
@@ -1029,7 +1035,7 @@ function render(){
     day.mine = mineOf(day,USER); day.lessons = lessonsOf(day,USER);   // whose day this is, decided here
     day.coaching = coachingOf(day,USER);                              // + pieces a coach runs but sits out
     day.teaching = teachingOf(day,USER);                             // + private lessons a coach gives
-    day.dress = dressOf(day,USER,PIECEGRP);                          // + your (KS) dress-rehearsal slots (piece resolved via the repertoire)
+    day.dress = dressOf(day,USER,sel);                               // + your (KS) dress-rehearsal slots (resolved against the day's concert program)
     day.free = freeOf(day, [...day.mine, ...day.lessons, ...day.coaching, ...day.teaching, ...day.dress, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
     const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
     html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
@@ -1159,4 +1165,4 @@ async function forceUpdate(){   // the hammer: drop every cache, reload → SW r
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
   userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad,
-  myConcertPieces, linkNames };
+  myConcertPieces, linkNames, words, fits, overlap, toks };   // words/fits/overlap/toks: the title-matching primitives, for scripts/dress-test.js
