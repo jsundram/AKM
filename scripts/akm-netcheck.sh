@@ -5,10 +5,18 @@
 # domain allowlist -- the network policy is applied at container creation, so an
 # already-running container won't reflect an allowlist edit.
 #
-# Usage:  bash <(curl -sSL "<this-gist-raw-url>")
-#   or:   curl -sSL "<raw-url>" -o netcheck.sh && bash netcheck.sh
+# Usage:  bash scripts/akm-netcheck.sh
 #
 # Exit 0 = every REQUIRED host reachable. Exit 1 = at least one required host blocked.
+#
+# IMPORTANT — which egress path we test. A cloud session has TWO outbound paths:
+#   1. Claude Code's agent proxy (HTTPS_PROXY, 127.0.0.1) — broadly permissive,
+#      NOT governed by your environment's domain allowlist.
+#   2. Direct egress — the environment firewall that DOES enforce your allowlist,
+#      and the path Node's fetch + the actual app/tests use.
+# We must test path 2, or a blocked host looks reachable. So every probe here
+# uses `curl --noproxy '*'` to bypass the agent proxy and hit the real firewall
+# (a blocked host returns "Host not in allowlist: <host>...").
 
 set -u
 
@@ -25,31 +33,36 @@ no() { printf '  \033[31mFAIL\033[0m %s\n' "$1"; fail=1; }
 warn(){ printf '  \033[33mWARN\033[0m %s\n' "$1"; }
 
 # probe URL, expected-substring, label, required(1)/optional(0)
+# NOTE: --noproxy '*' bypasses the agent proxy so we test the REAL egress allowlist.
 probe() {
   local url="$1" want="$2" label="$3" req="$4"
   printf '\n\033[36m--- %s ---\033[0m\n%s\n' "$label" "$url"
-  # -v to stderr so we can see which hop (docs.google vs googleusercontent) fails
   local body code
-  body="$(curl -sSL -v --max-time 25 "$url" 2>/tmp/nc_verbose)" ; code=$?
-  # show the redirect chain + any proxy errors, trimmed
+  body="$(curl -sSL --noproxy '*' -v --max-time 25 "$url" 2>/tmp/nc_verbose)" ; code=$?
   grep -Ei '^\* (Connected|Trying|SSL|Proxy|Recv|Closing)|^< HTTP/|^< location:|^< access-control-allow-origin' /tmp/nc_verbose \
     | sed 's/^/    /' | head -40
-  if [ "$code" -ne 0 ]; then
-    if [ "$req" -eq 1 ]; then no "$label — curl exit $code (blocked / timed out)"; else warn "$label — curl exit $code (optional)"; fi
+  # firewall denials come back as a plaintext body, not a transport error
+  if printf '%s' "$body" | grep -qi 'not in allowlist'; then
+    printf '    firewall: %s\n' "$(printf '%s' "$body" | head -c 160 | tr -d '\n')"
+    if [ "$req" -eq 1 ]; then no "$label — BLOCKED by egress allowlist"; else warn "$label — blocked (optional)"; fi
     return
   fi
-  if printf '%s' "$body" | grep -qF "$want"; then
-    ok "$label — got expected payload ('$want')"
+  if [ "$code" -ne 0 ]; then
+    if [ "$req" -eq 1 ]; then no "$label — curl exit $code (blocked / timed out / reset)"; else warn "$label — curl exit $code (optional)"; fi
+    return
+  fi
+  if [ -z "$want" ] || printf '%s' "$body" | grep -qF "$want"; then
+    ok "$label — reachable${want:+ (got '$want')}"
     printf '    first bytes: %s\n' "$(printf '%s' "$body" | head -c 90 | tr -d '\n')"
   else
     printf '    first bytes: %s\n' "$(printf '%s' "$body" | head -c 200 | tr -d '\n')"
-    if [ "$req" -eq 1 ]; then no "$label — reached host but payload unexpected (auth/redirect blocked?)"; else warn "$label — unexpected payload (optional)"; fi
+    if [ "$req" -eq 1 ]; then no "$label — reached host but payload unexpected"; else warn "$label — unexpected payload (optional)"; fi
   fi
 }
 
 echo "AKM network-allowlist smoke test"
 echo "curl: $(curl --version 2>/dev/null | head -1)"
-[ -n "${HTTPS_PROXY:-}" ] && echo "HTTPS_PROXY is set (traffic goes through the agent proxy)"
+echo "(probes bypass the agent proxy via --noproxy '*' to test the real egress allowlist)"
 
 # ============ REQUIRED: Google Sheets pulls ============
 # These exercise BOTH docs.google.com (first hop) AND *.googleusercontent.com
@@ -84,8 +97,8 @@ probe \
   "" "Apps Script analytics endpoint (script.google.com)" 0
 
 # ============ App-level confirmation (if repo present) ============
-# Once the domains are reachable, the repo's live smoke tests ASSERT instead of
-# skipping. They live in the AKM checkout; run from repo root if available.
+# The definitive check: these use Node fetch == the real egress path. If the
+# curl probes above pass but these fail, something other than the allowlist is off.
 c "App-level — live smoke tests (only if run from an AKM checkout)"
 if [ -f scripts/schedule-test.js ] && command -v node >/dev/null 2>&1; then
   echo "  running node scripts/schedule-test.js ..."; node scripts/schedule-test.js && ok "schedule-test.js" || no "schedule-test.js"
@@ -101,7 +114,8 @@ if [ "$fail" -eq 0 ]; then
   exit 0
 else
   printf '  \033[31mONE OR MORE REQUIRED HOSTS BLOCKED.\033[0m\n'
-  echo   "  Check the redirect chain above: a stall after 'HTTP/2 307' + 'location: https://<x>.googleusercontent.com'"
-  echo   "  means *.googleusercontent.com is still blocked; a failure on the first hop means docs.google.com is."
+  echo   "  A 'Host not in allowlist: docs.google.com' above = add docs.google.com to the allowlist."
+  echo   "  A stall after 'HTTP 307' + 'location: ...googleusercontent.com' = add *.googleusercontent.com."
+  echo   "  Remember: edit the allowlist, then start a FRESH session (policy is set at container creation)."
   exit 1
 fi
