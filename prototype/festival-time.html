@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#E9EDEC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1817" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Inter:wght@400;500&amp;display=swap">
+<link rel="icon" type="image/svg+xml" href="../icon.svg">
+<title>Festival Time · AKM</title>
+<!--
+  PROTOTYPE — "Festival Time" dashboard (2026-07-11).
+  How one participant's fortnight splits across rehearsal / dress / lesson / performing / attending.
+  Numbers are BAKED aggregate minutes (no PII) computed from the live schedule + concert program via
+  the app's own personalization functions (mineOf/dressOf/lessonsOf/myConcertPieces) — see
+  scripts/festival-time-crunch.js. Location TBD: this is a concept prototype, not wired into the app/nav.
+-->
+<style>
+  :root{
+    --paper:#E9EDEC; --card:#FCFCFB; --haze:#DFE5E3; --ink:#172526; --muted:#5F7072; --faint:#8C9A9B;
+    --line:#CBD3D1; --warm:#F4ECDD; --warm-line:#E2D2B2; --brass:#9A6B22; --brass-deep:#7C5417;
+    /* validated categorical palette (dataviz skill, light surface #E9EDEC) */
+    --c-reh:#1C7E52; --c-dress:#BC3A2B; --c-lesson:#B4478E; --c-coach:#7E56AD; --c-perform:#B67418; --c-attend:#3F80C4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#0F1817; --card:#141E1D; --haze:#172221; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
+      --line:#2C3938; --warm:#272015; --warm-line:#4A3D23; --brass:#D9A24C; --brass-deep:#E8C481;
+      --c-reh:#33A876; --c-dress:#E06B57; --c-lesson:#CA66A4; --c-coach:#9E82D6; --c-perform:#C88328; --c-attend:#5296D2;
+    }
+  }
+  :root[data-theme="light"]{
+    --paper:#E9EDEC; --card:#FCFCFB; --haze:#DFE5E3; --ink:#172526; --muted:#5F7072; --faint:#8C9A9B;
+    --line:#CBD3D1; --warm:#F4ECDD; --warm-line:#E2D2B2; --brass:#9A6B22; --brass-deep:#7C5417;
+    --c-reh:#1C7E52; --c-dress:#BC3A2B; --c-lesson:#B4478E; --c-coach:#7E56AD; --c-perform:#B67418; --c-attend:#3F80C4;
+  }
+  :root[data-theme="dark"]{
+    --paper:#0F1817; --card:#141E1D; --haze:#172221; --ink:#E9EEEC; --muted:#A6B5B4; --faint:#869897;
+    --line:#2C3938; --warm:#272015; --warm-line:#4A3D23; --brass:#D9A24C; --brass-deep:#E8C481;
+    --c-reh:#33A876; --c-dress:#E06B57; --c-lesson:#CA66A4; --c-coach:#9E82D6; --c-perform:#C88328; --c-attend:#5296D2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased;padding:0 0 60px}
+  .wrap{max-width:760px;margin:0 auto;padding:26px 18px 0}
+  .eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .eyebrow b{color:var(--brass);font-weight:500}
+  h1{font-family:"Fraunces",Georgia,serif;font-weight:500;font-size:38px;line-height:1.03;letter-spacing:-.01em;margin:8px 0 4px}
+  .sub{font-size:14px;color:var(--muted);max-width:56ch;margin-bottom:22px}
+  .sub b{color:var(--ink);font-weight:500}
+  section{margin:26px 0}
+  .sechead{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 12px;padding-top:16px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .sechead .note{letter-spacing:.02em;text-transform:none;color:var(--faint);font-size:11px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px}
+  /* hero stat row */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 13px}
+  .stat .n{font-family:"Fraunces",Georgia,serif;font-size:30px;font-weight:500;letter-spacing:-.02em;line-height:1}
+  .stat .n small{font-size:15px;color:var(--muted);font-weight:400;letter-spacing:0}
+  .stat .l{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);margin-top:7px;line-height:1.35}
+  .stat .l b{color:var(--brass-deep);font-weight:500}
+  /* the headline insight */
+  .headline{background:var(--warm);border:1px solid var(--warm-line);border-radius:14px;padding:16px 18px}
+  .headline h2{font-family:"Fraunces",Georgia,serif;font-weight:500;font-size:22px;letter-spacing:-.01em;line-height:1.15;margin-bottom:6px}
+  .headline p{font-size:13.5px;color:var(--ink);opacity:.85;max-width:60ch}
+  .headline .em{color:var(--brass-deep);font-weight:500}
+  /* donut + legend */
+  .donutwrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+  .donutwrap svg{flex:0 0 auto}
+  .legend{display:flex;flex-direction:column;gap:7px;min-width:190px;flex:1}
+  .lrow{display:flex;align-items:center;gap:9px;font-size:13px}
+  .sw{width:12px;height:12px;border-radius:3px;flex:0 0 auto}
+  .lrow .nm{color:var(--ink)}
+  .lrow .vl{margin-left:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;color:var(--muted)}
+  .lrow .pc{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;color:var(--faint);width:38px;text-align:right}
+  .sw.c-reh{background:var(--c-reh)} .sw.c-dress{background:var(--c-dress)} .sw.c-lesson{background:var(--c-lesson)}
+  .sw.c-coach{background:var(--c-coach)} .sw.c-perform{background:var(--c-perform)} .sw.c-attend{background:var(--c-attend)}
+  .fill-reh{fill:var(--c-reh)} .fill-dress{fill:var(--c-dress)} .fill-lesson{fill:var(--c-lesson)}
+  .fill-coach{fill:var(--c-coach)} .fill-perform{fill:var(--c-perform)} .fill-attend{fill:var(--c-attend)}
+  .dcenter .big{font-family:"Fraunces",Georgia,serif;font-size:26px;font-weight:500;fill:var(--ink)}
+  .dcenter .cap{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:8.5px;letter-spacing:.14em;fill:var(--muted)}
+  /* week compare */
+  .wkcompare{display:flex;flex-direction:column;gap:16px}
+  .wkrow .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+  .wkrow .wk{font-family:"Fraunces",Georgia,serif;font-size:17px;font-weight:500}
+  .wkrow .tot{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;color:var(--muted)}
+  .barbg{height:26px;border-radius:6px;overflow:hidden;display:flex;background:var(--haze)}
+  .seg{height:100%;position:relative}
+  .seg.c-reh{background:var(--c-reh)} .seg.c-dress{background:var(--c-dress)} .seg.c-lesson{background:var(--c-lesson)}
+  .seg.c-coach{background:var(--c-coach)} .seg.c-perform{background:var(--c-perform)} .seg.c-attend{background:var(--c-attend)}
+  .pivot{font-size:13px;color:var(--muted);margin-top:2px}
+  .pivot b{color:var(--ink);font-weight:500}
+  /* per-day */
+  .days{display:flex;align-items:flex-end;gap:5px;height:190px;padding-top:6px}
+  .daycol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:0}
+  .daybar{width:70%;max-width:26px;display:flex;flex-direction:column-reverse;border-radius:4px 4px 0 0;overflow:hidden;background:transparent}
+  .daybar .p{width:100%}
+  .daybar .p.c-reh{background:var(--c-reh)} .daybar .p.c-dress{background:var(--c-dress)} .daybar .p.c-lesson{background:var(--c-lesson)}
+  .daybar .p.c-coach{background:var(--c-coach)} .daybar .p.c-perform{background:var(--c-perform)} .daybar .p.c-attend{background:var(--c-attend)}
+  .daylab{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:8.5px;color:var(--muted);margin-top:6px;text-align:center;line-height:1.2}
+  .daylab.off{color:var(--faint)}
+  .weeksplit{position:relative}
+  .axisnote{display:flex;justify-content:space-between;font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-top:8px;padding:0 2px}
+  /* context compare */
+  .cmp{display:flex;flex-direction:column;gap:14px}
+  .cmprow .lab{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+  .cmprow .lab .who{color:var(--ink);font-weight:500} .cmprow .lab .who.avg{color:var(--muted);font-weight:400}
+  .cmprow .lab .v{font-family:"IBM Plex Mono",ui-monospace,monospace;color:var(--muted)}
+  .mb{height:12px;border-radius:4px;background:var(--haze);overflow:hidden;display:flex}
+  .mb .w1{background:var(--c-reh);height:100%} .mb .w2{background:var(--c-reh);opacity:.42;height:100%}
+  .cmpkey{font-size:11.5px;color:var(--faint);margin-top:2px}
+  .cmpkey i{font-style:normal;color:var(--c-reh);font-weight:600}
+  /* insights */
+  .bullets{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+  .bul{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:13px;color:var(--muted)}
+  .bul b{color:var(--ink);font-weight:500}
+  .bul .k{font-family:"Fraunces",Georgia,serif;font-size:20px;color:var(--ink);font-weight:500;display:block;margin-bottom:3px;letter-spacing:-.01em}
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  tbody td{font-family:"IBM Plex Mono",ui-monospace,monospace;color:var(--ink)}
+  tbody td:first-child{font-family:"Inter",system-ui,sans-serif}
+  tbody .catdot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:7px;vertical-align:middle}
+  tfoot td{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:500;color:var(--ink);border-top:1px solid var(--ink);border-bottom:none}
+  .method{font-size:12px;color:var(--faint);line-height:1.5;margin-top:8px}
+  .method b{color:var(--muted);font-weight:500}
+  footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.04em;color:var(--faint);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  /* tooltip */
+  #tip{position:fixed;pointer-events:none;z-index:50;background:var(--ink);color:var(--paper);
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;padding:5px 8px;border-radius:6px;
+    opacity:0;transition:opacity .09s;white-space:nowrap;transform:translate(-50%,-130%)}
+  [data-tip]{cursor:default}
+  @media (max-width:520px){ h1{font-size:31px} .legend{min-width:160px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow"><span>AKM 2026 · <b>prototype</b></span><span id="dateline"></span></div>
+  <h1>Where the fortnight went</h1>
+  <p class="sub">Every scheduled event on <b>Jason's</b> two weeks at Alpenkammermusik, sorted into how the
+  time was actually spent. Built from the live schedule + concert program — the same personalization the
+  app already runs. <b>Rehearsal dominates</b>; the interesting part is how the balance shifts week to week.</p>
+
+  <section class="stats" id="stats"></section>
+
+  <section>
+    <div class="headline">
+      <h2 id="hl-title"></h2>
+      <p id="hl-body"></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span>Time by category</span><span class="note">whole fortnight</span></div>
+    <div class="card">
+      <div class="donutwrap">
+        <svg id="donut" width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="Time by category donut chart"></svg>
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span>Week one vs week two</span><span class="note">the pivot</span></div>
+    <div class="card">
+      <div class="wkcompare" id="wkcompare"></div>
+      <p class="pivot" id="pivotnote"></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span>Day by day</span><span class="note">minutes scheduled · stacked by category</span></div>
+    <div class="card weeksplit">
+      <div class="days" id="days"></div>
+      <div class="axisnote"><span>◄ Week one</span><span>Week two ►</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span>Rehearsal: you vs the festival</span><span class="note">total hours, per week</span></div>
+    <div class="card">
+      <div class="cmp" id="cmp"></div>
+      <p class="cmpkey" id="cmpkey"></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span>Other insights</span></div>
+    <div class="bullets" id="bullets"></div>
+  </section>
+
+  <section>
+    <div class="sechead"><span>The numbers</span><span class="note">hours</span></div>
+    <div class="card">
+      <table id="table"></table>
+      <p class="method" id="method"></p>
+    </div>
+  </section>
+
+  <footer>
+    <span id="footL"></span>
+    <span>data: AKM schedule + concert program · prototype</span>
+  </footer>
+</div>
+<div id="tip"></div>
+
+<script>
+// ---- BAKED DATA (aggregate minutes; no PII) — from scripts/festival-time-crunch.js against live sheets ----
+const DATA = {
+  who:"Jason", generated:"2026-07-11", concertMin:90,
+  cats:[  // display order
+    {key:"rehearsal", label:"Rehearsal",       cls:"c-reh",     blurb:"group rehearsals"},
+    {key:"dress",     label:"Dress rehearsal", cls:"c-dress",   blurb:"pre-concert run-throughs"},
+    {key:"lesson",    label:"Private lesson",  cls:"c-lesson",  blurb:"lessons taken"},
+    {key:"coach",     label:"Coaching",        cls:"c-coach",   blurb:"faculty duties"},
+    {key:"perform",   label:"Performing",      cls:"c-perform", blurb:"concerts you play in"},
+    {key:"attend",    label:"Attending",       cls:"c-attend",  blurb:"concerts as audience"},
+  ],
+  total:{rehearsal:2145, dress:43, lesson:30, coach:0, perform:360, attend:270},
+  week:{
+    1:{rehearsal:1215, dress:0,  lesson:30, coach:0, perform:90,  attend:90},
+    2:{rehearsal:930,  dress:43, lesson:0,  coach:0, perform:270, attend:180},
+  },
+  days:[  // date, weekday label, rehearsal, dress, lesson, perform, attend  (coach omitted — 0)
+    ["06-29","Mon 29", 180,0,0,0,0],   ["06-30","Tue 30", 225,0,0,0,0],
+    ["07-01","Wed 1",  225,0,0,0,0],   ["07-02","Thu 2",  225,0,30,0,0],
+    ["07-03","Fri 3",  180,0,0,0,0],   ["07-04","Sat 4",  180,0,0,90,90],
+    ["07-05","Sun 5",  0,0,0,0,0],
+    ["07-06","Mon 6",  225,0,0,0,0],   ["07-07","Tue 7",  225,0,0,0,0],
+    ["07-08","Wed 8",  180,0,0,0,90],  ["07-09","Thu 9",  180,15,0,90,0],
+    ["07-10","Fri 10", 120,14,0,90,0], ["07-11","Sat 11", 0,14,0,90,90],
+    ["07-12","Sun 12", 0,0,0,0,0],
+  ],
+  concerts:{total:7, performed:4, attended:3},
+  ctx:{ nPlayers:55, avgRehW1:1149, avgRehW2:834, moreWk1:47,
+        youRehW1:1215, youRehW2:930 },
+  footprint:{ pieces:5, rooms:7, coaches:7, blocks:32 },
+};
+
+// ---- helpers ----
+const H = m => m/60;
+const fmtH = m => { const h=H(m); return h>=10 ? h.toFixed(1) : h>=1 ? h.toFixed(1) : (Math.round(m)+"m"); };
+const hLabel = m => { const h=Math.floor(m/60), mm=Math.round(m%60); return h ? `${h}h ${mm?mm+"m":""}`.trim() : `${mm}m`; };
+const sum = o => DATA.cats.reduce((a,c)=>a+(o[c.key]||0),0);
+const byKey = k => DATA.cats.find(c=>c.key===k);
+const el = (t,c,h)=>{ const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e; };
+
+// tooltip
+const tip=document.getElementById("tip");
+function bindTip(node, text){
+  node.setAttribute("data-tip","");
+  node.addEventListener("mousemove", e=>{ tip.textContent=text; tip.style.left=e.clientX+"px"; tip.style.top=e.clientY+"px"; tip.style.opacity=1; });
+  node.addEventListener("mouseleave", ()=>{ tip.style.opacity=0; });
+}
+
+document.getElementById("dateline").textContent = "as of Sat 07-11";
+document.getElementById("footL").textContent = "generated "+DATA.generated+" · minutes → hours";
+
+// ---- hero stats ----
+(function(){
+  const tot = sum(DATA.total);
+  const prep = DATA.total.rehearsal + DATA.total.dress + DATA.total.lesson;
+  const stage = DATA.total.perform;
+  const cards = [
+    {n:H(tot).toFixed(1), u:"h", l:"scheduled over<br>the <b>fortnight</b>"},
+    {n:H(DATA.total.rehearsal).toFixed(1), u:"h", l:`<b>${Math.round(DATA.total.rehearsal/tot*100)}%</b> of it was<br>rehearsal`},
+    {n:DATA.concerts.performed, u:"", l:`concerts <b>performed</b><br>of ${DATA.concerts.total} attended`},
+    {n:H(stage).toFixed(1), u:"h", l:"actually on stage<br><b>performing</b>"},
+  ];
+  const wrap=document.getElementById("stats");
+  cards.forEach(c=>{
+    wrap.appendChild(el("div","stat",`<div class="n">${c.n}<small>${c.u}</small></div><div class="l">${c.l}</div>`));
+  });
+})();
+
+// ---- headline ----
+(function(){
+  const w1=sum(DATA.week[1]), w2=sum(DATA.week[2]);
+  const prep1=DATA.week[1].rehearsal+DATA.week[1].dress+DATA.week[1].lesson;
+  const stage1=DATA.week[1].perform+DATA.week[1].attend;
+  const prep2=DATA.week[2].rehearsal+DATA.week[2].dress+DATA.week[2].lesson;
+  const stage2=DATA.week[2].perform+DATA.week[2].attend;
+  document.getElementById("hl-title").textContent = "Same hours — a different job.";
+  document.getElementById("hl-body").innerHTML =
+    `Both weeks asked almost exactly the same of you: <span class="em">${H(w1).toFixed(1)} h</span> in week one, `+
+    `<span class="em">${H(w2).toFixed(1)} h</span> in week two. But the work flips. Week one is `+
+    `<span class="em">${Math.round(prep1/w1*100)}% preparation</span> (rehearsal, a lesson); by week two, `+
+    `concerts and dress rehearsals climb from ${Math.round(stage1/w1*100)}% to `+
+    `<span class="em">${Math.round((stage2+DATA.week[2].dress)/w2*100)}%</span> of the week — you stop preparing and start playing.`;
+})();
+
+// ---- donut ----
+(function(){
+  const svg=document.getElementById("donut"), cx=100,cy=100,r=72,sw=26;
+  const C=2*Math.PI*r, gap=2, tot=sum(DATA.total);
+  let off=0;
+  DATA.cats.forEach(cat=>{
+    const v=DATA.total[cat.key]||0; if(!v) return;
+    const frac=v/tot, len=frac*C;
+    const seg=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    seg.setAttribute("cx",cx); seg.setAttribute("cy",cy); seg.setAttribute("r",r);
+    seg.setAttribute("fill","none"); seg.setAttribute("stroke-width",sw);
+    seg.setAttribute("class","fill-"+cat.cls.slice(2)); // reuse via stroke below
+    seg.style.stroke="var(--"+cat.cls+")";
+    const dash=Math.max(0,len-gap);
+    seg.setAttribute("stroke-dasharray",`${dash} ${C-dash}`);
+    seg.setAttribute("stroke-dashoffset",-off);
+    seg.setAttribute("transform",`rotate(-90 ${cx} ${cy})`);
+    bindTip(seg, `${cat.label}: ${hLabel(v)} · ${Math.round(frac*100)}%`);
+    svg.appendChild(seg);
+    off+=len;
+  });
+  // center label
+  const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+  g.setAttribute("class","dcenter"); g.setAttribute("text-anchor","middle");
+  g.innerHTML=`<text class="big" x="100" y="100">${H(tot).toFixed(1)}h</text>`+
+              `<text class="cap" x="100" y="118">SCHEDULED</text>`;
+  svg.appendChild(g);
+  // legend
+  const leg=document.getElementById("legend");
+  DATA.cats.forEach(cat=>{
+    const v=DATA.total[cat.key]||0; if(!v) return;
+    const row=el("div","lrow",
+      `<span class="sw ${cat.cls}"></span><span class="nm">${cat.label}</span>`+
+      `<span class="vl">${hLabel(v)}</span><span class="pc">${Math.round(v/tot*100)}%</span>`);
+    bindTip(row, cat.blurb);
+    leg.appendChild(row);
+  });
+})();
+
+// ---- week compare (stacked bars, shared scale) ----
+(function(){
+  const box=document.getElementById("wkcompare");
+  const maxTot=Math.max(sum(DATA.week[1]),sum(DATA.week[2]));
+  [1,2].forEach(wk=>{
+    const wd=DATA.week[wk], tot=sum(wd);
+    const row=el("div","wkrow");
+    row.appendChild(el("div","top",
+      `<span class="wk">Week ${wk===1?"one":"two"}</span><span class="tot">${H(tot).toFixed(1)} h total</span>`));
+    const bg=el("div","barbg"); bg.style.width=(tot/maxTot*100)+"%";
+    DATA.cats.forEach(cat=>{
+      const v=wd[cat.key]||0; if(!v) return;
+      const seg=el("div","seg "+cat.cls); seg.style.width=(v/tot*100)+"%";
+      bindTip(seg, `${cat.label}: ${hLabel(v)}`);
+      bg.appendChild(seg);
+    });
+    row.appendChild(bg);
+    box.appendChild(row);
+  });
+  const r1=DATA.week[1].rehearsal, r2=DATA.week[2].rehearsal;
+  document.getElementById("pivotnote").innerHTML =
+    `Rehearsal alone falls <b>${H(r1).toFixed(1)} h → ${H(r2).toFixed(1)} h</b> `+
+    `(down ${Math.round((r1-r2)/r1*100)}%), while performing + dress rise <b>${H(DATA.week[1].perform).toFixed(1)} h → `+
+    `${H(DATA.week[2].perform+DATA.week[2].dress).toFixed(1)} h</b>. Bars share one scale — nearly equal length, opposite makeup.`;
+})();
+
+// ---- day by day (stacked columns) ----
+(function(){
+  const box=document.getElementById("days");
+  const dayKeys=["rehearsal","dress","lesson","perform","attend"];
+  const idx={rehearsal:2,dress:3,lesson:4,perform:5,attend:6};
+  const maxTot=Math.max(...DATA.days.map(d=>d[2]+d[3]+d[4]+d[5]+d[6]));
+  DATA.days.forEach(d=>{
+    const dtot=d[2]+d[3]+d[4]+d[5]+d[6];
+    const col=el("div","daycol");
+    const bar=el("div","daybar"); bar.style.height=(maxTot?dtot/maxTot*150:0)+"px";
+    dayKeys.forEach(k=>{
+      const v=d[idx[k]]; if(!v) return;
+      const p=el("div","p "+byKey(k).cls); p.style.height=(v/dtot*100)+"%";
+      bindTip(p, `${d[1]} · ${byKey(k).label}: ${hLabel(v)}`);
+      bar.appendChild(p);
+    });
+    col.appendChild(bar);
+    const off=dtot===0;
+    const lab=el("div","daylab"+(off?" off":""), d[1].replace(" ","<br>"));
+    if(dtot) bindTip(col, `${d[1]}: ${hLabel(dtot)} scheduled`);
+    col.appendChild(lab);
+    box.appendChild(col);
+  });
+})();
+
+// ---- rehearsal: you vs festival ----
+(function(){
+  const box=document.getElementById("cmp");
+  const c=DATA.ctx;
+  const maxV=Math.max(c.youRehW1,c.youRehW2,c.avgRehW1,c.avgRehW2);
+  const rows=[
+    {who:"You", avg:false, w1:c.youRehW1, w2:c.youRehW2},
+    {who:"Festival average", avg:true, w1:c.avgRehW1, w2:c.avgRehW2},
+  ];
+  rows.forEach(r=>{
+    const row=el("div","cmprow");
+    row.appendChild(el("div","lab",
+      `<span class="who${r.avg?" avg":""}">${r.who}</span>`+
+      `<span class="v">wk1 ${H(r.w1).toFixed(1)}h · wk2 ${H(r.w2).toFixed(1)}h</span>`));
+    const mb=el("div","mb");
+    const s1=el("div","w1"); s1.style.width=(r.w1/maxV*100)+"%"; bindTip(s1,`${r.who} · week one: ${hLabel(r.w1)}`);
+    const s2=el("div","w2"); s2.style.width=(r.w2/maxV*100)+"%"; bindTip(s2,`${r.who} · week two: ${hLabel(r.w2)}`);
+    mb.appendChild(s1); mb.appendChild(s2);
+    row.appendChild(mb);
+    box.appendChild(row);
+  });
+  document.getElementById("cmpkey").innerHTML =
+    `Solid = <i>week one</i>, faded = week two. <b style="color:var(--ink)">${c.moreWk1} of ${c.nPlayers}</b> players `+
+    `rehearsed more in week one — the taper wasn't just you.`;
+})();
+
+// ---- insights ----
+(function(){
+  const box=document.getElementById("bullets"), f=DATA.footprint, c=DATA.ctx;
+  const busiest=DATA.days.reduce((a,d)=>{const t=d[2]+d[3]+d[4]+d[5]+d[6]; return t>a.t?{lab:d[1],t}:a},{t:0});
+  const avgBlock=DATA.total.rehearsal/f.blocks;
+  const items=[
+    {k:f.blocks, t:`rehearsal blocks across the fortnight — averaging <b>${Math.round(avgBlock)} min</b> each.`},
+    {k:f.pieces, t:`pieces prepared, coached in <b>${f.rooms}</b> different rooms by <b>${f.coaches}</b> faculty.`},
+    {k:busiest.lab, t:`was the fullest day — <b>${hLabel(busiest.t)}</b> of scheduled music.`},
+    {k:`${Math.round(DATA.total.rehearsal/DATA.total.perform)}:1`, t:`hours <b>rehearsed for every hour performed</b> — the chamber-music ratio.`},
+  ];
+  items.forEach(i=>box.appendChild(el("div","bul",`<span class="k">${i.k}</span>${i.t}`)));
+})();
+
+// ---- table ----
+(function(){
+  const t=document.getElementById("table");
+  let head=`<thead><tr><th>Category</th><th>Week 1</th><th>Week 2</th><th>Total</th></tr></thead><tbody>`;
+  let body="";
+  DATA.cats.forEach(cat=>{
+    const v1=DATA.week[1][cat.key]||0, v2=DATA.week[2][cat.key]||0, vt=DATA.total[cat.key]||0;
+    if(!vt) return;
+    body+=`<tr><td><span class="catdot" style="background:var(--${cat.cls})"></span>${cat.label}</td>`+
+      `<td>${H(v1).toFixed(1)}</td><td>${H(v2).toFixed(1)}</td><td>${H(vt).toFixed(1)}</td></tr>`;
+  });
+  const T1=sum(DATA.week[1]),T2=sum(DATA.week[2]),TT=sum(DATA.total);
+  const foot=`</tbody><tfoot><tr><td>Total</td><td>${H(T1).toFixed(1)}</td><td>${H(T2).toFixed(1)}</td><td>${H(TT).toFixed(1)}</td></tr></tfoot>`;
+  t.innerHTML=head+body+foot;
+  document.getElementById("method").innerHTML =
+    `<b>Method.</b> Rehearsal, dress, and lesson minutes are exact block durations from the schedule, personalized `+
+    `with the app's own <b>mineOf / dressOf / lessonsOf</b>. Each concert is counted as a nominal `+
+    `<b>${DATA.concertMin} min</b>; a concert you play in is "performing", one you don't is "attending" `+
+    `(assuming you attend all concerts during your weeks). Festival average is over the ${DATA.ctx.nPlayers} `+
+    `participants with scheduled rehearsals — no names, only minutes, leave the sandbox.`;
+})();
+</script>
+</body>
+</html>
