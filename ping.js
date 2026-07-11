@@ -5,12 +5,13 @@
 // reversible only against the roster itself (=UID() in the sheet builds the key). URL_ empty =
 // endpoint not deployed yet: pings still queue (capped) but nothing is sent, nothing errors.
 //
-// Beyond opens, pages can log *feature-use events* via window.AKMPing.event(action, toName):
-// concerts.html fires event("kudos", <recipient>) when a kudos chip is tapped, so Jason can see
-// whether applause is a couple of friends or widespread. An event carries an empty page (so the
-// usage crunch, which counts opens, skips it), the sender's uid in `who`, and the *recipient's*
-// uid in `to` — recipientName hashed with the same recipe, so no names enter the stream and both
-// ends reverse through =UID(). Events aren't throttled (each is a real tap).
+// Beyond opens, pages can log *feature-use events* via window.AKMPing.event(action, toName, label):
+// concerts.html fires event("kudos", <recipient>, <composer>) when a kudos chip is tapped, so Jason
+// can see whether applause is a couple of friends or widespread — and for which piece. An event
+// carries an empty page (so the usage crunch, which counts opens, skips it), the sender's uid in
+// `who`, the *recipient's* uid in `to` (recipientName hashed with the same recipe, so no names enter
+// the stream — both ends reverse through =UID()), and an optional non-PII `label` in plaintext (the
+// composer). Events aren't throttled (each is a real tap).
 (function(){
   const URL_ = "https://script.google.com/macros/s/AKfycbzCjWSTVOhqusGhbFp23q0MZukSXjHIEouTf3AWe9uaT_GPbYq5yH4yaT8_bTssnvEC/exec";
   const TOK  = "akm-2026";      // matches TOK in analytics.gs; public in the repo, just filters scanners
@@ -37,9 +38,10 @@
       while(true){                          // re-read the queue each pass so a ping enqueued mid-flush isn't clobbered
         const a = q();
         if(!a.length) break;
-        const {ts,p,u,act,to} = a[0];
+        const {ts,p,u,act,to,lbl} = a[0];
         const url = `${URL_}?k=${TOK}&ts=${ts}&p=${p||""}&u=${u||""}`
-                  + (act ? `&a=${act}` : "") + (to ? `&t=${to}` : "");
+                  + (act ? `&a=${act}` : "") + (to ? `&t=${to}` : "")
+                  + (lbl ? `&l=${encodeURIComponent(lbl)}` : "");   // label is plaintext (kudos → composer), may hold diacritics
         try{ await fetch(url, {mode:"no-cors"}); }
         catch{ break; }                     // unreachable — keep the rest for next time
         save(q().slice(1));                 // drop the head we just sent (still the oldest, flush is single-flight)
@@ -53,8 +55,8 @@
     save([...q(), {ts: Date.now(), p: page, u: await uid()}]);
     flush();
   }
-  async function event(action, toName){     // a feature-use tap — unthrottled, empty page, recipient in `to`
-    save([...q(), {ts: Date.now(), p: "", u: await uid(), act: action, to: await hash(toName)}]);
+  async function event(action, toName, label){   // a feature-use tap — unthrottled, empty page, recipient in `to`, non-PII label (kudos → composer)
+    save([...q(), {ts: Date.now(), p: "", u: await uid(), act: action, to: await hash(toName), lbl: label || ""}]);
     flush();
   }
   window.AKMPing = { event };

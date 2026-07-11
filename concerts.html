@@ -128,7 +128,7 @@ function nameChip(find, [name, inst], composer){
   const me = (window.Roster && Roster.me() || "").split(/\s+/)[0];
   const loved = composer ? ` I loved your ${composer}` : "";
   const msg = encodeURIComponent(`Kudos on an amazing performance!${loved} 👏👏👏${me?` — ${me}`:""}`);
-  return `<a class="duo" href="https://wa.me/${num}?text=${msg}" target="_blank" rel="noopener" data-to="${esc(p.name)}" `
+  return `<a class="duo" href="https://wa.me/${num}?text=${msg}" target="_blank" rel="noopener" data-to="${esc(p.name)}" data-piece="${esc(composer||"")}" `
     + `title="Send kudos to ${esc(p.name)} on WhatsApp" aria-label="Send kudos to ${esc(p.name)} on WhatsApp">`
     + `<span class="who">${esc(first)}${tail}</span>`
     + `<span class="kudos"><span class="clap" aria-hidden="true">👏</span></span></a>`;
@@ -176,7 +176,7 @@ function scrollToday(){
 // opens. Delegated on the stable #concerts div (render() only swaps its innerHTML).
 $("#concerts").addEventListener("click", e => {
   const a = e.target.closest("a.duo");
-  if(a && a.dataset.to && window.AKMPing) AKMPing.event("kudos", a.dataset.to);
+  if(a && a.dataset.to && window.AKMPing) AKMPing.event("kudos", a.dataset.to, a.dataset.piece);
 });
 
 render(Roster.cached());
