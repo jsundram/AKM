@@ -100,6 +100,9 @@
     font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em;color:var(--muted)}
   .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
 
+  .klab{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--faint);margin:0 0 6px}
+
   .notes{border-left:2px solid var(--warm-line);padding:2px 0 2px 14px;display:grid;gap:9px}
   .notes p{font-size:13.5px;max-width:62ch}
   .notes p b{font-weight:600}
@@ -180,6 +183,18 @@
       <h2>Pages</h2>
       <p class="sub">Opens and reach — how many of the <span id="idcount"></span> identified people opened each page at least once</p>
       <div class="chwrap"></div>
+    </div>
+  </section>
+
+  <section id="s-kudos" style="display:none">
+    <div class="card" id="c-kudos">
+      <h2>Kudos</h2>
+      <p class="sub">The 👏 applause chips on the <b>concerts</b> page — one tap opens WhatsApp to congratulate a performer. New this festival, so only the closing concerts are covered.</p>
+      <p class="sub" id="kudosStat" style="margin-bottom:14px"></p>
+      <div class="klab">Most applauded</div>
+      <div class="chwrap recip"></div>
+      <div class="klab" style="margin-top:16px">By piece</div>
+      <div class="chwrap piece"></div>
     </div>
   </section>
 
@@ -495,6 +510,44 @@ function nonUsersList(){
     : `<p class="sub" style="margin:0">Everyone on the roster has opened it at least once.</p>`;
 }
 
+// a plain horizontal-bar list (label → count); items: {label, full?, n}
+function barList(wrap, items, color){
+  wrap.innerHTML = "";
+  if (!items.length) return;
+  const W = wrap.clientWidth, rh = 15, gap = 10, numW = 30, nameW = Math.min(160, W * .42);
+  const maxV = Math.max(...items.map(d => d.n));
+  const H = items.length * (rh + gap) - gap + 4;
+  const svg = el("svg", { viewBox:`0 0 ${W} ${H}`, height:H, role:"img" }, wrap);
+  const tip = tipFor(wrap.closest(".card"));
+  items.forEach((d, i) => {
+    const y = i * (rh + gap);
+    const t = txt(svg, nameW - 8, y + rh - 4, "", { class:"nm", "text-anchor":"end" });
+    if (d.full && d.full !== d.label) el("title", {}, t).textContent = d.full;
+    t.appendChild(document.createTextNode(d.label));
+    const w = Math.max(d.n / maxV * (W - nameW - numW), 3);
+    barH(svg, nameW, y, w, rh, 4, color, true);
+    txt(svg, nameW + w + 6, y + rh - 4, d.n, { class:"val" });
+    const hit = el("rect", { x:nameW, y, width:Math.max(w, 20), height:rh, fill:"transparent" }, svg);
+    hit.addEventListener("pointerenter", () => tip.show(`${d.full || d.label}<br><b>${d.n}</b> kudos`, nameW + w/2, y));
+    hit.addEventListener("pointerleave", tip.hide);
+  });
+}
+
+// the 👏 chips — hidden until there's at least one (only the closing concerts are covered)
+function kudosSection(){
+  const sec = document.getElementById("s-kudos"), k = DATA.kudos;
+  if (!k || !k.total){ sec.style.display = "none"; return; }
+  sec.style.display = "";
+  document.getElementById("kudosStat").innerHTML =
+    `<b>${k.total}</b> kudos sent · from <b>${k.senders}</b> ${k.senders === 1 ? "person" : "people"} · ` +
+    `to <b>${k.recipients}</b> performer${k.recipients === 1 ? "" : "s"}`;
+  const card = document.getElementById("c-kudos");
+  barList(card.querySelector(".chwrap.recip"),
+          k.toList.map(r => ({ label:firstOf(r), full:nameOf(r), n:r.n })), "var(--c-concerts)");
+  barList(card.querySelector(".chwrap.piece"),
+          k.byComposer.map(c => ({ label:c.label, n:c.n })), "var(--brass)");
+}
+
 function pagesChart(){
   const card = document.getElementById("c-pages"), wrap = card.querySelector(".chwrap");
   wrap.innerHTML = "";
@@ -590,7 +643,7 @@ function main(){
     `<a href="../roster.html">roster</a> when it loads, so none are stored here. Refreshed nightly.</p>` +
     `<p>Generated ${DATA.generated} · <a href="../">back to the app</a> · <a href="../buildlog/">how it was built</a></p>`;
 
-  flowChart(); adoptChart(); hodChart(); usersChart(); usersTable(); nonUsersList(); pagesChart(); anonChart();
+  flowChart(); adoptChart(); hodChart(); usersChart(); usersTable(); nonUsersList(); pagesChart(); kudosSection(); anonChart();
 }
 // live refresh: re-crunch the pings CSV in-browser — the same pull-only,
 // stale-while-revalidate shape as the app. Offline, we keep the cached/baked blob.
@@ -613,7 +666,7 @@ async function boot(){
 boot();
 addEventListener("visibilitychange", () => { if (!document.hidden) refresh().then(main); });
 let rt;
-addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { flowChart(); adoptChart(); hodChart(); usersChart(); pagesChart(); anonChart(); }, 150); });
+addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { flowChart(); adoptChart(); hodChart(); usersChart(); pagesChart(); kudosSection(); anonChart(); }, 150); });
 </script>
 </body>
 </html>

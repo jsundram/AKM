@@ -37,15 +37,38 @@ def T(s):
     m = re.match(r"(\d+)/(\d+)/(\d+) (\d+):(\d+):(\d+)", s or "")
     return datetime(int(m[3]), int(m[1]), int(m[2]), int(m[4]), int(m[5]), int(m[6])) if m else None
 
+def kudos_crunch(krows):
+    """The 👏 applause events (empty page, action=kudos): who was cheered, for which piece.
+    Same interrupted-flush dedup + launch filter as opens; recipients/senders stay uid-keyed
+    (joined to names at runtime), composer labels are non-PII plaintext."""
+    seen, dd = set(), []
+    for x in krows:                                   # dedup on (opened, sender, recipient, composer)
+        if x not in seen: seen.add(x); dd.append(x)
+    dd = [x for x in dd if x[0] and x[0] >= LAUNCH]
+    to_ct, comp_ct, senders = {}, {}, set()
+    for opened, who, to, label in dd:
+        if who: senders.add(who)
+        if to: to_ct[to] = to_ct.get(to, 0) + 1
+        if label: comp_ct[label] = comp_ct.get(label, 0) + 1
+    return {
+        "total": len(dd), "senders": len(senders), "recipients": len(to_ct),
+        "byComposer": sorted(({"label": l, "n": n} for l, n in comp_ct.items()),
+                             key=lambda c: (-c["n"], c["label"])),
+        "toList": sorted(({"uid": u, "n": n} for u, n in to_ct.items()),
+                         key=lambda t: (-t["n"], t["uid"])),
+    }
+
 def crunch(csv_text=None, roster=None):
     if roster is None: roster = roster_uids()          # inject both to test offline (also the JS-parity oracle)
     if csv_text is None: csv_text = fetch(CSV)
-    rows = []
+    rows, krows = [], []
     for r in csv.DictReader(io.StringIO(csv_text)):
         rec, opened = T(r.get("received")), T(r.get("opened")) or T(r.get("received"))
         page, who = (r.get("page") or "").strip(), (r.get("who") or "").strip()
         if rec and page and page != "page":
             rows.append((opened, rec, page, who))
+        elif rec and (r.get("action") or "").strip() == "kudos":     # a feature-use event, empty page
+            krows.append((opened, who, (r.get("to") or "").strip(), (r.get("label") or "").strip()))
     rows.sort()
     raw = len(rows)
     seen, dd = set(), []
@@ -100,6 +123,7 @@ def crunch(csv_text=None, roster=None):
                          for p, v in pages.items()], key=lambda p: -p["opens"]),
         "byDay": by_day, "anonByDay": anon_day, "byHour": by_hour,
         "series": series, "adopt": adopt,
+        "kudos": kudos_crunch(krows),
     }
 
 if __name__ == "__main__":

@@ -123,7 +123,14 @@ the one place full names show, since it's the ask, and it needs the roster loade
 On-screen names elsewhere show **first name only**, with the full name on hover/tap (`firstOf` +
 an SVG `<title>` / table `title=` / the bar tooltip's `nameOf`). The **rhythm-of-day chart excludes
 launch night** (the crunch drops the launch day from `by_hour` only — not `by_day`/`series`) so the
-19:30 WhatsApp burst doesn't masquerade as a routine 7pm habit. noindex, **not**
+19:30 WhatsApp burst doesn't masquerade as a routine 7pm habit. A **Kudos** section (`s-kudos`,
+hidden until there's ≥1) surfaces the concert-page 👏 applause events: total sent · unique senders ·
+unique recipients, plus two `barList` bars — **most-applauded performers** (recipient uid → name,
+joined at runtime like everyone else) and **by piece** (composer, the non-PII `label`). It's driven by
+the crunch's **`kudos` block** (`kudos_crunch`/`kudosCrunch`): the empty-page `action:"kudos"` rows the
+opens pass skips, deduped on `(opened, sender, recipient, composer)` + the same launch filter, then
+counted uid-keyed (`byComposer`/`toList`, both fully tiebroken so py/js sort identically). Since kudos
+only shipped for the closing concerts, early data is sparse (the section's sub says so). noindex, **not**
 SW-precached, shareable (it has its own OG card, `usage/og.svg` → `og.png`, rendered via
 `scripts/make-og.sh usage/og.svg`).
 
@@ -142,8 +149,9 @@ pure: `crunch(csv_text, roster)`), not a deployed job — `usage/update.py` is g
 `scripts/usage-test.js` asserts `crunch.js` reproduces the frozen `scripts/usage-fixtures/golden.json`
 field-by-field (a synthetic, PII-free fixture hitting every branch: dedup, pre-launch drop,
 opened→received fallback, offline-queued, anon, launch-day hour exclusion, an unknown uid, Jason out of
-adoption) and, when `python3` is present, re-derives the golden from `crunch.py` so it can't rot — run
-`node scripts/usage-test.js` (offline-safe).
+adoption, **and the kudos block — a deduped re-send, a pre-launch kudos dropped, an anon sender, two
+recipients, three composers**) and, when `python3` is present, re-derives the golden from `crunch.py` so
+it can't rot — run `node scripts/usage-test.js` (offline-safe).
 
 **PII posture — names never land in the repo.** The DATA blob is keyed by ping uid (first 8 hex of
 SHA-256 of the roster name); the page joins names back **at runtime** from the roster via

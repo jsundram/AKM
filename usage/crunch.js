@@ -44,13 +44,38 @@
     return rows.slice(1).map(r => { const o = {}; head.forEach((h, i) => o[h] = r[i]); return o; });
   }
 
+  // the 👏 applause events (empty page, action=kudos): who was cheered, for which piece.
+  // same interrupted-flush dedup + launch filter as opens; recipients/senders stay uid-keyed.
+  function kudosCrunch(krows) {
+    const seen = new Set(), dd = [];                          // dedup on (opened, sender, recipient, composer)
+    for (const x of krows) { const k = `${x.opened}|${x.who}|${x.to}|${x.label}`;
+      if (!seen.has(k)) { seen.add(k); dd.push(x); } }
+    const kept = dd.filter(x => x.opened !== null && x.opened >= LAUNCH);
+    const toCt = new Map(), compCt = new Map(), senders = new Set();
+    for (const { who, to, label } of kept) {
+      if (who) senders.add(who);
+      if (to) toCt.set(to, (toCt.get(to) || 0) + 1);
+      if (label) compCt.set(label, (compCt.get(label) || 0) + 1);
+    }
+    const scmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+    return {
+      total: kept.length, senders: senders.size, recipients: toCt.size,
+      byComposer: [...compCt.entries()].map(([label, n]) => ({ label, n }))
+        .sort((a, b) => b.n - a.n || scmp(a.label, b.label)),
+      toList: [...toCt.entries()].map(([uid, n]) => ({ uid, n }))
+        .sort((a, b) => b.n - a.n || scmp(a.uid, b.uid)),
+    };
+  }
+
   function crunch(csvText, rosterUids, now = new Date()) {
     const roster = rosterUids instanceof Set ? rosterUids : new Set(rosterUids || []);
-    let rows = [];
+    let rows = [], krows = [];
     for (const r of parseCSV(csvText)) {
       const rec = T(r.received), opened = T(r.opened) || T(r.received);
       const page = (r.page || "").trim(), who = (r.who || "").trim();
       if (rec !== null && page && page !== "page") rows.push({ opened, rec, page, who });
+      else if (rec !== null && (r.action || "").trim() === "kudos")    // a feature-use event, empty page
+        krows.push({ opened, who, to: (r.to || "").trim(), label: (r.label || "").trim() });
     }
     // sort by (opened, rec, page, who) — same tuple order Python sorts, so dedup keeps
     // the same first occurrence and every insertion-ordered dict below matches
@@ -112,6 +137,7 @@
         .sort((a, b) => b.opens - a.opens),
       byDay, anonByDay: anonDay, byHour,
       series, adopt,
+      kudos: kudosCrunch(krows),
     };
   }
 

@@ -45,6 +45,12 @@ check("invariant · one uid matches nobody on the roster", js.unknown, 1);
 check("invariant · Jason is in the users list", js.users.some(u => u.uid === "70f71792"), true);
 check("invariant · but Jason never lifts the adoption count", js.adopt.every(a => a.n <= 4), true);
 check("invariant · byHour excludes launch night (hour 21 empty)", js.byHour[21], 0);
+// kudos events (empty page, action=kudos): deduped, launch-filtered, uid-keyed
+check("kudos · total after dedup + pre-launch drop", js.kudos.total, 5);
+check("kudos · unique senders (anon sender excluded)", js.kudos.senders, 3);
+check("kudos · unique recipients", js.kudos.recipients, 2);
+check("kudos · most-applauded piece is Brahms ×3", js.kudos.byComposer[0], { label: "Brahms", n: 3 });
+check("kudos · top recipient by uid", js.kudos.toList[0], { uid: "eeee5555", n: 3 });
 
 // 3) if python3 is available, re-derive the golden from the oracle and confirm the
 //    committed golden still equals it — catches a golden that rotted vs crunch.py

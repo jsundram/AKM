@@ -473,5 +473,34 @@
       "t": "7/8 12",
       "n": 4
     }
-  ]
+  ],
+  "kudos": {
+    "total": 5,
+    "senders": 3,
+    "recipients": 2,
+    "byComposer": [
+      {
+        "label": "Brahms",
+        "n": 3
+      },
+      {
+        "label": "Bruch",
+        "n": 1
+      },
+      {
+        "label": "Dvořák",
+        "n": 1
+      }
+    ],
+    "toList": [
+      {
+        "uid": "eeee5555",
+        "n": 3
+      },
+      {
+        "uid": "ffff6666",
+        "n": 2
+      }
+    ]
+  }
 }
