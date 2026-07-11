@@ -434,7 +434,7 @@ function stackRow(g, tip, u, y, rh, x0, maxW, maxV){
   let acc = 0;
   const segs = PAGE_ORDER.filter(p => u.pages[p]).concat(Object.keys(u.pages).filter(p => !PAGE_ORDER.includes(p)));
   segs.forEach((p, si) => {
-    const n = u.pages[p], w = n / maxV * maxW - (si < segs.length - 1 ? 2 : 0);
+    const n = u.pages[p], w = n / maxV * maxW;
     if (w > 0){
       barH(g, x0 + acc / maxV * maxW, y, w, rh, 4, pageCol(p), si === segs.length - 1);
       const hit = el("rect", { x:x0 + acc / maxV * maxW, y, width:Math.max(w, 6), height:rh, fill:"transparent" }, g);
