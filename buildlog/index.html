@@ -188,7 +188,7 @@ details[open] summary{padding-bottom:0}
         <span><i style="background:var(--s-claude)"></i>cloud</span>
       </span></h2>
     <div class="chartwrap" id="todwrap"></div>
-    <p class="note">Every commit bucketed into 15-minute slots by when it landed (Europe/Vienna). Brass from this laptop, blue from cloud sessions. Hover for the count.</p>
+    <p class="note">Every commit bucketed into 30-minute slots by when it landed (Europe/Vienna). Brass from this laptop, blue from cloud sessions. Hover for the count.</p>
   </div>
 
   <h1 style="font-size:24px;margin-top:34px">Ship log</h1>
@@ -402,38 +402,36 @@ function barChart(){
 }
 barChart();
 
-// ---- commits by time of day (15-min buckets) ----
+// ---- commits by time of day (30-min buckets) ----
 function todChart(){
   const wrap = $('#todwrap');
   const W = 860, H = 230, L = 30, R = 10, TOP = 14, B = 26;
-  const N = 96;   // 24h × 4 quarter-hours
+  const N = 48;   // 24h × 2 half-hours
   const bins = Array.from({length:N}, () => ({local:0, cloud:0}));
   commits.forEach(c => {
     const h = +fmt(T(c.t), {hour:'2-digit', hourCycle:'h23'}), m = +fmt(T(c.t), {minute:'2-digit'});
-    bins[h*4 + (m/15|0)][c.cloud?'cloud':'local']++;
+    bins[h*2 + (m/30|0)][c.cloud?'cloud':'local']++;
   });
   const peak = Math.max(1, ...bins.map(b => b.local + b.cloud));
   const step = peak <= 8 ? 2 : peak <= 20 ? 5 : 10;
   const ymax = Math.ceil(peak/step)*step;
   const y = v => TOP + (1 - v/ymax)*(H-TOP-B);
-  const svg = sv('svg', {viewBox:`0 0 ${W} ${H}`, role:'img', 'aria-label':'Commits by time of day, 15-minute buckets'});
+  const svg = sv('svg', {viewBox:`0 0 ${W} ${H}`, role:'img', 'aria-label':'Commits by time of day, 30-minute buckets'});
   for (let v = 0; v <= ymax; v += step){
     svg.append(sv('line', {x1:L, x2:W-R, y1:y(v), y2:y(v), stroke:'var(--line)', 'stroke-width':v?0.6:1}));
     svg.append(Object.assign(sv('text', {x:L-6, y:y(v)+3, 'text-anchor':'end', fill:'var(--faint)',
       'font-size':9.5,'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent:String(v)}));
   }
   const tip = tipFor(wrap);
-  const gw = (W-L-R)/N, bw = Math.min(gw-1, 20);
-  const slot = q => { const h = q/4|0, m = (q%4)*15, e = (q+1)%N, eh = e/4|0, em = (e%4)*15;
-    const p = (a,b) => `${String(a).padStart(2,'0')}:${String(b).padStart(2,'0')}`;
-    return `${p(h,m)}–${p(eh,em)}`; };
+  const gw = (W-L-R)/N;
+  const clock = t => { const h = (t/60|0)%24, m = t%60; return `${h%12||12}:${String(m).padStart(2,'0')} ${h<12?'AM':'PM'}`; };
+  const slot = q => `${clock(q*30)}–${clock((q+1)*30)}`;
   bins.forEach((b, q) => {
-    const cx = L + gw*q + gw/2, bx = cx - bw/2;
-    const seg = (v0, v1, style, rounded) => {
-      const gap = v0 ? 1.5 : 0, yb = y(v0) - gap, yt = y(v1) - gap;
-      if (yb - yt < 1) return null;
-      const r = rounded ? Math.min(1.5, (bw)/2, yb-yt) : 0;
-      const p = sv('path', {d:`M${bx},${yb}V${yt+r}q0,${-r} ${r},${-r}h${bw-2*r}q${r},0 ${r},${r}V${yb}Z`, ...style});
+    const bx = L + gw*q;
+    const seg = (v0, v1, style) => {
+      const yb = y(v0), yt = y(v1);
+      if (yb - yt < 0.5) return null;
+      const p = sv('rect', {x:bx, y:yt, width:gw, height:yb-yt, ...style});
       p.addEventListener('pointerleave', () => tip.hide());
       svg.append(p); return p;
     };
@@ -441,11 +439,14 @@ function todChart(){
     const hover = (p, extra) => p && p.addEventListener('pointerenter', ev =>
       tip.show(`<b>${slot(q)}</b><br>${total} commit${total===1?'':'s'}${extra}`, ev.clientX, ev.clientY));
     const detail = b.local && b.cloud ? `<br>${b.local} laptop · ${b.cloud} cloud` : '';
-    hover(seg(0, b.local, {fill:'var(--brass)'}, !b.cloud), detail);
-    hover(seg(b.local, total, {fill:'var(--s-claude)'}, true), detail);
-    if (q % 12 === 0)   // every 3 hours, on the hour
-      svg.append(Object.assign(sv('text', {x:cx - gw/2, y:H-8, 'text-anchor':'middle', fill:'var(--muted)',
-        'font-size':10,'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent:String(q/4)}));
+    hover(seg(0, b.local, {fill:'var(--brass)'}), detail);
+    hover(seg(b.local, total, {fill:'var(--s-claude)'}), detail);
+    if (q % 6 === 0){   // every 3 hours, on the hour
+      const h = q/2;
+      svg.append(sv('line', {x1:bx, x2:bx, y1:H-B, y2:H-B+3, stroke:'var(--line)'}));
+      svg.append(Object.assign(sv('text', {x:bx, y:H-8, 'text-anchor':'middle', fill:'var(--muted)',
+        'font-size':10,'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent:`${h%12||12}${h<12?'AM':'PM'}`}));
+    }
   });
   wrap.append(svg);
 }
