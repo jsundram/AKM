@@ -111,15 +111,6 @@
   .weeksplit{position:relative}
   .axisnote{display:flex;justify-content:space-between;font-family:"IBM Plex Mono",ui-monospace,monospace;
     font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-top:8px;padding:0 2px}
-  /* context compare */
-  .cmp{display:flex;flex-direction:column;gap:14px}
-  .cmprow .lab{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
-  .cmprow .lab .who{color:var(--ink);font-weight:500} .cmprow .lab .who.avg{color:var(--muted);font-weight:400}
-  .cmprow .lab .v{font-family:"IBM Plex Mono",ui-monospace,monospace;color:var(--muted)}
-  .mb{height:12px;border-radius:4px;background:var(--haze);overflow:hidden;display:flex}
-  .mb .w1{background:var(--c-reh);height:100%} .mb .w2{background:var(--c-reh);opacity:.42;height:100%}
-  .cmpkey{font-size:11.5px;color:var(--faint);margin-top:2px}
-  .cmpkey i{font-style:normal;color:var(--c-reh);font-weight:600}
   /* insights */
   .bullets{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
   .bul{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:13px;color:var(--muted)}
@@ -151,7 +142,7 @@
 <div class="wrap">
   <div class="eyebrow"><span>AKM 2026 · <b>prototype</b></span><span id="dateline"></span></div>
   <h1>Where the fortnight went</h1>
-  <p class="sub">Every scheduled event on <b>Jason's</b> two weeks at Alpenkammermusik, sorted into how the
+  <p class="sub">Every scheduled event on <b>your</b> two weeks at Alpenkammermusik, sorted into how the
   time was actually spent. Built from the live schedule + concert program — the same personalization the
   app already runs. <b>Rehearsal dominates</b>; the interesting part is how the balance shifts week to week.</p>
 
@@ -191,14 +182,6 @@
   </section>
 
   <section>
-    <div class="sechead"><span>Rehearsal: you vs the festival</span><span class="note">total hours, per week</span></div>
-    <div class="card">
-      <div class="cmp" id="cmp"></div>
-      <p class="cmpkey" id="cmpkey"></p>
-    </div>
-  </section>
-
-  <section>
     <div class="sechead"><span>Other insights</span></div>
     <div class="bullets" id="bullets"></div>
   </section>
@@ -226,14 +209,13 @@ const DATA = {
     {key:"rehearsal", label:"Rehearsal",       cls:"c-reh",     blurb:"group rehearsals"},
     {key:"dress",     label:"Dress rehearsal", cls:"c-dress",   blurb:"pre-concert run-throughs"},
     {key:"lesson",    label:"Private lesson",  cls:"c-lesson",  blurb:"lessons taken"},
-    {key:"coach",     label:"Coaching",        cls:"c-coach",   blurb:"faculty duties"},
     {key:"perform",   label:"Performing",      cls:"c-perform", blurb:"concerts you play in"},
     {key:"attend",    label:"Attending",       cls:"c-attend",  blurb:"concerts as audience"},
   ],
-  total:{rehearsal:2145, dress:43, lesson:30, coach:0, perform:360, attend:270},
+  total:{rehearsal:2145, dress:43, lesson:30, perform:360, attend:270},
   week:{
-    1:{rehearsal:1215, dress:0,  lesson:30, coach:0, perform:90,  attend:90},
-    2:{rehearsal:930,  dress:43, lesson:0,  coach:0, perform:270, attend:180},
+    1:{rehearsal:1215, dress:0,  lesson:30, perform:90,  attend:90},
+    2:{rehearsal:930,  dress:43, lesson:0,  perform:270, attend:180},
   },
   days:[  // date, weekday label, rehearsal, dress, lesson, perform, attend  (coach omitted — 0)
     ["06-29","Mon 29", 180,0,0,0,0],   ["06-30","Tue 30", 225,0,0,0,0],
@@ -246,9 +228,7 @@ const DATA = {
     ["07-12","Sun 12", 0,0,0,0,0],
   ],
   concerts:{total:7, performed:4, attended:3},
-  ctx:{ nPlayers:55, avgRehW1:1149, avgRehW2:834, moreWk1:47,
-        youRehW1:1215, youRehW2:930 },
-  footprint:{ pieces:5, rooms:7, coaches:7, blocks:32 },
+  footprint:{ pieces:5, rooms:7, blocks:32 },
 };
 
 // ---- helpers ----
@@ -393,40 +373,14 @@ document.getElementById("footL").textContent = "generated "+DATA.generated+" · 
   });
 })();
 
-// ---- rehearsal: you vs festival ----
-(function(){
-  const box=document.getElementById("cmp");
-  const c=DATA.ctx;
-  const maxV=Math.max(c.youRehW1,c.youRehW2,c.avgRehW1,c.avgRehW2);
-  const rows=[
-    {who:"You", avg:false, w1:c.youRehW1, w2:c.youRehW2},
-    {who:"Festival average", avg:true, w1:c.avgRehW1, w2:c.avgRehW2},
-  ];
-  rows.forEach(r=>{
-    const row=el("div","cmprow");
-    row.appendChild(el("div","lab",
-      `<span class="who${r.avg?" avg":""}">${r.who}</span>`+
-      `<span class="v">wk1 ${H(r.w1).toFixed(1)}h · wk2 ${H(r.w2).toFixed(1)}h</span>`));
-    const mb=el("div","mb");
-    const s1=el("div","w1"); s1.style.width=(r.w1/maxV*100)+"%"; bindTip(s1,`${r.who} · week one: ${hLabel(r.w1)}`);
-    const s2=el("div","w2"); s2.style.width=(r.w2/maxV*100)+"%"; bindTip(s2,`${r.who} · week two: ${hLabel(r.w2)}`);
-    mb.appendChild(s1); mb.appendChild(s2);
-    row.appendChild(mb);
-    box.appendChild(row);
-  });
-  document.getElementById("cmpkey").innerHTML =
-    `Solid = <i>week one</i>, faded = week two. <b style="color:var(--ink)">${c.moreWk1} of ${c.nPlayers}</b> players `+
-    `rehearsed more in week one — the taper wasn't just you.`;
-})();
-
 // ---- insights ----
 (function(){
-  const box=document.getElementById("bullets"), f=DATA.footprint, c=DATA.ctx;
+  const box=document.getElementById("bullets"), f=DATA.footprint;
   const busiest=DATA.days.reduce((a,d)=>{const t=d[2]+d[3]+d[4]+d[5]+d[6]; return t>a.t?{lab:d[1],t}:a},{t:0});
   const avgBlock=DATA.total.rehearsal/f.blocks;
   const items=[
     {k:f.blocks, t:`rehearsal blocks across the fortnight — averaging <b>${Math.round(avgBlock)} min</b> each.`},
-    {k:f.pieces, t:`pieces prepared, coached in <b>${f.rooms}</b> different rooms by <b>${f.coaches}</b> faculty.`},
+    {k:f.pieces, t:`pieces prepared, rehearsed across <b>${f.rooms}</b> different rooms.`},
     {k:busiest.lab, t:`was the fullest day — <b>${hLabel(busiest.t)}</b> of scheduled music.`},
     {k:`${Math.round(DATA.total.rehearsal/DATA.total.perform)}:1`, t:`hours <b>rehearsed for every hour performed</b> — the chamber-music ratio.`},
   ];
@@ -451,8 +405,8 @@ document.getElementById("footL").textContent = "generated "+DATA.generated+" · 
     `<b>Method.</b> Rehearsal, dress, and lesson minutes are exact block durations from the schedule, personalized `+
     `with the app's own <b>mineOf / dressOf / lessonsOf</b>. Each concert is counted as a nominal `+
     `<b>${DATA.concertMin} min</b>; a concert you play in is "performing", one you don't is "attending" `+
-    `(assuming you attend all concerts during your weeks). Festival average is over the ${DATA.ctx.nPlayers} `+
-    `participants with scheduled rehearsals — no names, only minutes, leave the sandbox.`;
+    `(assuming you attend all concerts during your weeks). Only your own aggregate minutes appear — `+
+    `no other people, no comparisons, nothing but time.`;
 })();
 </script>
 </body>
