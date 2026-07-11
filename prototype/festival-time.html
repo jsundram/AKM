@@ -84,8 +84,6 @@
   .lrow .pc{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;color:var(--faint);width:38px;text-align:right}
   .sw.c-reh{background:var(--c-reh)} .sw.c-dress{background:var(--c-dress)} .sw.c-lesson{background:var(--c-lesson)}
   .sw.c-coach{background:var(--c-coach)} .sw.c-perform{background:var(--c-perform)} .sw.c-attend{background:var(--c-attend)}
-  .fill-reh{fill:var(--c-reh)} .fill-dress{fill:var(--c-dress)} .fill-lesson{fill:var(--c-lesson)}
-  .fill-coach{fill:var(--c-coach)} .fill-perform{fill:var(--c-perform)} .fill-attend{fill:var(--c-attend)}
   .dcenter .big{font-family:"Fraunces",Georgia,serif;font-size:26px;font-weight:500;fill:var(--ink)}
   .dcenter .cap{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:8.5px;letter-spacing:.14em;fill:var(--muted)}
   /* week compare */
@@ -212,19 +210,22 @@ const DATA = {
     {key:"perform",   label:"Performing",      cls:"c-perform", blurb:"concerts you play in"},
     {key:"attend",    label:"Attending",       cls:"c-attend",  blurb:"concerts as audience"},
   ],
-  total:{rehearsal:2145, dress:43, lesson:30, perform:360, attend:270},
+  // performing = only the movements you play (each concert split by piece count); the rest of every
+  // concert — including the ones you're in — is attending. So a concert you play one piece in is
+  // mostly attending, not performing.
+  total:{rehearsal:2145, dress:43, lesson:30, perform:43, attend:587},
   week:{
-    1:{rehearsal:1215, dress:0,  lesson:30, perform:90,  attend:90},
-    2:{rehearsal:930,  dress:43, lesson:0,  perform:270, attend:180},
+    1:{rehearsal:1215, dress:0,  lesson:30, perform:13, attend:167},
+    2:{rehearsal:930,  dress:43, lesson:0,  perform:30, attend:420},
   },
   days:[  // date, weekday label, rehearsal, dress, lesson, perform, attend  (coach omitted — 0)
     ["06-29","Mon 29", 180,0,0,0,0],   ["06-30","Tue 30", 225,0,0,0,0],
     ["07-01","Wed 1",  225,0,0,0,0],   ["07-02","Thu 2",  225,0,30,0,0],
-    ["07-03","Fri 3",  180,0,0,0,0],   ["07-04","Sat 4",  180,0,0,90,90],
+    ["07-03","Fri 3",  180,0,0,0,0],   ["07-04","Sat 4",  180,0,0,13,167],
     ["07-05","Sun 5",  0,0,0,0,0],
     ["07-06","Mon 6",  225,0,0,0,0],   ["07-07","Tue 7",  225,0,0,0,0],
-    ["07-08","Wed 8",  180,0,0,0,90],  ["07-09","Thu 9",  180,15,0,90,0],
-    ["07-10","Fri 10", 120,14,0,90,0], ["07-11","Sat 11", 0,14,0,90,90],
+    ["07-08","Wed 8",  180,0,0,0,90],  ["07-09","Thu 9",  180,15,0,10,80],
+    ["07-10","Fri 10", 120,14,0,10,80], ["07-11","Sat 11", 0,14,0,10,170],
     ["07-12","Sun 12", 0,0,0,0,0],
   ],
   concerts:{total:7, performed:4, attended:3},
@@ -294,7 +295,6 @@ document.getElementById("footL").textContent = "generated "+DATA.generated+" · 
     const seg=document.createElementNS("http://www.w3.org/2000/svg","circle");
     seg.setAttribute("cx",cx); seg.setAttribute("cy",cy); seg.setAttribute("r",r);
     seg.setAttribute("fill","none"); seg.setAttribute("stroke-width",sw);
-    seg.setAttribute("class","fill-"+cat.cls.slice(2)); // reuse via stroke below
     seg.style.stroke="var(--"+cat.cls+")";
     const dash=Math.max(0,len-gap);
     seg.setAttribute("stroke-dasharray",`${dash} ${C-dash}`);
@@ -342,10 +342,12 @@ document.getElementById("footL").textContent = "generated "+DATA.generated+" · 
     box.appendChild(row);
   });
   const r1=DATA.week[1].rehearsal, r2=DATA.week[2].rehearsal;
+  const conc1=DATA.week[1].perform+DATA.week[1].attend+DATA.week[1].dress;
+  const conc2=DATA.week[2].perform+DATA.week[2].attend+DATA.week[2].dress;
   document.getElementById("pivotnote").innerHTML =
     `Rehearsal alone falls <b>${H(r1).toFixed(1)} h → ${H(r2).toFixed(1)} h</b> `+
-    `(down ${Math.round((r1-r2)/r1*100)}%), while performing + dress rise <b>${H(DATA.week[1].perform).toFixed(1)} h → `+
-    `${H(DATA.week[2].perform+DATA.week[2].dress).toFixed(1)} h</b>. Bars share one scale — nearly equal length, opposite makeup.`;
+    `(down ${Math.round((r1-r2)/r1*100)}%), while time in concerts — playing, watching, dress — rises `+
+    `<b>${H(conc1).toFixed(1)} h → ${H(conc2).toFixed(1)} h</b>. Bars share one scale — nearly equal length, opposite makeup.`;
 })();
 
 // ---- day by day (stacked columns) ----
@@ -382,7 +384,7 @@ document.getElementById("footL").textContent = "generated "+DATA.generated+" · 
     {k:f.blocks, t:`rehearsal blocks across the fortnight — averaging <b>${Math.round(avgBlock)} min</b> each.`},
     {k:f.pieces, t:`pieces prepared, rehearsed across <b>${f.rooms}</b> different rooms.`},
     {k:busiest.lab, t:`was the fullest day — <b>${hLabel(busiest.t)}</b> of scheduled music.`},
-    {k:`${Math.round(DATA.total.rehearsal/DATA.total.perform)}:1`, t:`hours <b>rehearsed for every hour performed</b> — the chamber-music ratio.`},
+    {k:`${Math.round(DATA.total.rehearsal/DATA.total.perform)}:1`, t:`hours <b>rehearsed for every hour on stage</b> — you play one movement per concert, so stage time is tiny.`},
   ];
   items.forEach(i=>box.appendChild(el("div","bul",`<span class="k">${i.k}</span>${i.t}`)));
 })();
@@ -404,9 +406,9 @@ document.getElementById("footL").textContent = "generated "+DATA.generated+" · 
   document.getElementById("method").innerHTML =
     `<b>Method.</b> Rehearsal, dress, and lesson minutes are exact block durations from the schedule, personalized `+
     `with the app's own <b>mineOf / dressOf / lessonsOf</b>. Each concert is counted as a nominal `+
-    `<b>${DATA.concertMin} min</b>; a concert you play in is "performing", one you don't is "attending" `+
-    `(assuming you attend all concerts during your weeks). Only your own aggregate minutes appear — `+
-    `no other people, no comparisons, nothing but time.`;
+    `<b>${DATA.concertMin} min</b> and split by piece: the movements you play count as <b>performing</b>, `+
+    `the rest of every concert — including ones you're in — as <b>attending</b> (assuming you attend all `+
+    `concerts during your weeks). Only your own aggregate minutes appear — no other people, no comparisons.`;
 })();
 </script>
 </body>

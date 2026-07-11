@@ -83,9 +83,13 @@ const CATS = ["rehearsal","dress","lesson","coach","teach","perform","attend"];
     for(const c of concerts){
       const cw=cwk(c.id.slice(0,10)), date=c.id.slice(0,10);
       if(u.week && u.week!==cw) continue;                            // not at the festival that week
-      const cat = C.myConcertPieces(c,u).length ? "perform" : "attend";
-      t.byCat[cat]+=CONCERT_MIN; t.byWeek[cw][cat]+=CONCERT_MIN;
-      if(t.byDay[date]) t.byDay[date][cat]+=CONCERT_MIN;
+      // split the concert by piece: the movements you play are "performing", the rest (incl. the pieces
+      // you sit out in a concert you're otherwise in) are "attending". One piece of nine ≈ mostly attending.
+      const total = (c.pieces||[]).filter(p=>!p.brk).length || 1;
+      const played = C.myConcertPieces(c,u).length;
+      const perf = played/total*CONCERT_MIN, att = (total-played)/total*CONCERT_MIN;
+      t.byCat.perform+=perf; t.byWeek[cw].perform+=perf; if(t.byDay[date]) t.byDay[date].perform+=perf;
+      t.byCat.attend+=att;   t.byWeek[cw].attend+=att;   if(t.byDay[date]) t.byDay[date].attend+=att;
     }
     t.pieces=[...t.pieces]; t.rooms=[...t.rooms]; t.coaches=[...t.coaches];
     return t;
