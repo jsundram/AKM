@@ -441,13 +441,15 @@ function todChart(){
     const detail = b.local && b.cloud ? `<br>${b.local} laptop · ${b.cloud} cloud` : '';
     hover(seg(0, b.local, {fill:'var(--brass)'}), detail);
     hover(seg(b.local, total, {fill:'var(--s-claude)'}), detail);
-    if (q % 6 === 0){   // every 3 hours, on the hour
-      const h = q/2;
-      svg.append(sv('line', {x1:bx, x2:bx, y1:H-B, y2:H-B+3, stroke:'var(--line)'}));
-      svg.append(Object.assign(sv('text', {x:bx, y:H-8, 'text-anchor':'middle', fill:'var(--muted)',
-        'font-size':10,'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent:`${h%12||12}${h<12?'AM':'PM'}`}));
-    }
   });
+  // hour axis — every 3h, midnight-bookended so the full 24h span reads clearly (12AM … 12PM … 12AM)
+  for (let q = 0; q <= N; q += 6){
+    const bx = L + gw*q, h = (q/2) % 24;
+    const anchor = q === 0 ? 'start' : q === N ? 'end' : 'middle';
+    svg.append(sv('line', {x1:bx, x2:bx, y1:H-B, y2:H-B+3, stroke:'var(--line)'}));
+    svg.append(Object.assign(sv('text', {x:bx, y:H-8, 'text-anchor':anchor, fill:'var(--muted)',
+      'font-size':10,'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent:`${h%12||12}${h<12?'AM':'PM'}`}));
+  }
   wrap.append(svg);
 }
 todChart();
