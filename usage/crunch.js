@@ -9,6 +9,7 @@
 (function () {
   const JASON = "70f71792";                                  // uid("Jason Sundram") — shown, not ranked
   const LAUNCH = Date.UTC(2026, 6, 6, 19, 30);               // shared over dinner; earlier rows = testing
+  const END = Date.UTC(2026, 6, 13, 0, 0);                   // festival's over: frozen dashboard = [LAUNCH, END); later opens → the post-fest block
   const SERIES0 = Date.UTC(2026, 6, 6, 19, 0);               // LAUNCH.replace(minute=0)
   const QUEUED = 90e3;                                        // received this far after opened = was offline
   const HOUR = 36e5;
@@ -50,7 +51,7 @@
     const seen = new Set(), dd = [];                          // dedup on (opened, sender, recipient, composer)
     for (const x of krows) { const k = `${x.opened}|${x.who}|${x.to}|${x.label}`;
       if (!seen.has(k)) { seen.add(k); dd.push(x); } }
-    const kept = dd.filter(x => x.opened !== null && x.opened >= LAUNCH);
+    const kept = dd.filter(x => x.opened !== null && x.opened >= LAUNCH && x.opened < END);
     const toCt = new Map(), compCt = new Map(), senders = new Set();
     for (const { who, to, label } of kept) {
       if (who) senders.add(who);
@@ -65,6 +66,18 @@
       toList: [...toCt.entries()].map(([uid, n]) => ({ uid, n }))
         .sort((a, b) => b.n - a.n || scmp(a.uid, b.uid)),
     };
+  }
+
+  // post-festival trickle — deliberately OUT of the frozen dashboard, surfaced on its own:
+  // opens, unique identified users, anon opens, and a by-day count. Answers "still used?".
+  function postCrunch(postRows) {
+    const users = new Set(), byDay = {}; let anon = 0;
+    for (const { opened, who } of postRows) {
+      const d = day(opened);
+      byDay[d] = (byDay[d] || 0) + 1;
+      if (who) users.add(who); else anon++;
+    }
+    return { opens: postRows.length, users: users.size, anon, byDay };
   }
 
   function crunch(csvText, rosterUids, now = new Date()) {
@@ -89,8 +102,10 @@
       const k = `${x.opened} ${x.page} ${x.who}`;
       if (!seen.has(k)) { seen.add(k); dedup.push(x); }
     }
+    const dupes = raw - dedup.length;                         // duplicate deliveries removed (before any date split)
     const pre = dedup.filter(x => x.opened < LAUNCH).length;
-    const dd = dedup.filter(x => x.opened >= LAUNCH);
+    const postRows = dedup.filter(x => x.opened >= END);
+    const dd = dedup.filter(x => x.opened >= LAUNCH && x.opened < END);
 
     const launchDay = day(LAUNCH);                             // launch night skews the hour-of-day rhythm
     const users = new Map(), pages = new Map(), byDay = {}, anonDay = {};
@@ -127,7 +142,7 @@
     const pad2 = n => String(n).padStart(2, "0");
     return {
       generated: `${now.getMonth() + 1}/${now.getDate()} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`,
-      raw, deduped: raw - dd.length - pre, pre, total: dd.length,
+      raw, deduped: dupes, pre, total: dd.length,
       anon, queued,
       rosterSize: roster.size,
       identified: ulist.length,
@@ -138,6 +153,7 @@
       byDay, anonByDay: anonDay, byHour,
       series, adopt,
       kudos: kudosCrunch(krows),
+      post: postCrunch(postRows),
     };
   }
 

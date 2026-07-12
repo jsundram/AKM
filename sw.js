@@ -1,7 +1,7 @@
-const V = "akm-v99";
+const V = "akm-v100";
 const SHELL = ["./", "./index.html", "./app.js", "./roster-data.js", "./ping.js", "./nav.css", "./manifest.json",
                "./composer-bank.json", "./roster.html", "./notes.html", "./about.html",
-               "./concerts.html", "./concert-data.js",
+               "./concerts.html", "./concert-data.js", "./schedule-archive.js",
                "./network.html", "./network.js", "./d3.v7.min.js",
                "./map.html", "./map.js", "./map-data.json",
                "./map-relief.jpg", "./map-aerial.jpg", "./icon.svg",

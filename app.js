@@ -472,13 +472,10 @@ const skyName = c => c===0?"Clear":c===1?"Mostly clear":c===2?"Partly cloudy":c=
 // festival. Fall back to Open-Meteo's best-match blend if it's ever unavailable. The active source
 // is tagged per day (w.src) and cited in the weather card.
 const WX_SRC = { geosphere: "GeoSphere Austria · AROME + ECMWF", default: "Open-Meteo · best match" };
-async function fetchWx(models){
-  const u = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
-    `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,weathercode`+
-    `&hourly=temperature_2m,precipitation,weathercode&current=temperature_2m&temperature_unit=fahrenheit`+
-    `&timezone=${encodeURIComponent(TZ)}&start_date=${FEST[0]}&end_date=${FEST[1]}`+
-    (models?`&models=${models}`:``);
-  const j = await (await fetch(u)).json();
+// Normalize an Open-Meteo payload (forecast OR ERA5 archive — same hourly/daily shape) into our
+// per-day cache objects. Pure + exported so scripts/build-archive.js can bake the frozen festival
+// snapshot through the exact shape wxcard() reads, with no drift from the live path.
+function normWx(j){
   if(j.error) throw new Error(j.reason||"open-meteo error");
   const out={}, H=j.hourly, D=j.daily;
   D.time.forEach((dt,di)=>{
@@ -500,6 +497,14 @@ async function fetchWx(models){
     Object.assign(out[C.time.slice(0,10)], {cur:Math.round(C.temperature_2m), curAt:C.time});
   }
   return out;
+}
+async function fetchWx(models){
+  const u = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
+    `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,weathercode`+
+    `&hourly=temperature_2m,precipitation,weathercode&current=temperature_2m&temperature_unit=fahrenheit`+
+    `&timezone=${encodeURIComponent(TZ)}&start_date=${FEST[0]}&end_date=${FEST[1]}`+
+    (models?`&models=${models}`:``);
+  return normWx(await (await fetch(u)).json());
 }
 async function weatherRange(){
   for(const [m,key] of [["geosphere_seamless","geosphere"],["","default"]]){
@@ -821,12 +826,25 @@ function schedHead(c){
     + `<a href="${sheetUrl(sel)}" target="_blank" rel="noopener">source ↗</a> · `
     + `<button id="addself" class="addbtn" type="button">＋ add</button></span></div>`;
 }
+// once the festival is over, a quiet note above the day so the schedule reads as an archive, not a stale live page
+const archNote = () => POST_FEST ? `<div class="archnote"><b>The 2026 festival has wrapped.</b> Browsing the archive.</div>` : "";
 
 // ---- cache + state ----
-let BANK={}, COACHES={}, PIECEGRP={}, USER=null, today=viennaToday(), sel=today;
+let BANK={}, COACHES={}, PIECEGRP={}, USER=null, today=viennaToday();
+// After the festival the site is a frozen archive: land on Day 1 (not a blank post-fest "today"),
+// and the foreground handler below won't walk the view off the calendar. `>=` so it reads as an
+// archive from the departure day (FEST[1]) onward — that last day has no schedule of its own.
+const POST_FEST = today >= FEST[1];
+let sel = POST_FEST ? FEST[0] : today;
 let SWVER="", NEWVER="";   // SWVER = the *installed* SW cache (akm-vNN, from caches.keys()); NEWVER = the version live on the server (from the deployed sw.js). Mismatch ⇒ this device is behind.
 const load = () => { try{return JSON.parse(localStorage.getItem(CK))||{}}catch{return {}} };
 const save = c => { try{localStorage.setItem(CK,JSON.stringify(c))}catch{} };
+// Baked festival snapshot (schedule-archive.js → globalThis.Archive) is the data FLOOR: a live or
+// cached day always wins, but a fresh device — or the site after the schedule sheet is deleted —
+// still renders the festival straight from the repo. Every reader (render, chips) goes through these.
+const ARCH = () => (typeof globalThis!=="undefined" && globalThis.Archive) || {sched:{},wx:{}};
+const schedOf = (c,d) => (c.sched&&c.sched[d]) || ARCH().sched[d];
+const wxOf = (c,d) => (c.wx&&c.wx[d]) || ARCH().wx[d];
 
 // ---- personal events (self-added: "someone asked me to play 5:20–6:20") ----
 // Kept in their OWN store, separate from akm-cache: refresh() overwrites c.sched[day] on every
@@ -1015,7 +1033,7 @@ function setupWho(){
 }
 
 function render(){
-  const c=load(), day=c.sched&&c.sched[sel], w=c.wx&&c.wx[sel];
+  const c=load(), day=schedOf(c,sel), w=wxOf(c,sel);
   const now = sel===viennaToday() ? viennaNowH() : null;   // "now" marker on today's curve only
   // prefer the live "current" reading for the now-dot, but only while it's actually current
   const cur = (now!=null && w && w.cur!=null && w.curAt && w.curAt.slice(0,10)===sel
@@ -1028,9 +1046,10 @@ function render(){
   if(!day){
     const fetching = navigator.onLine && !c.ts;       // first load, refresh still in flight
     const head = fetching ? "<b>Loading today's schedule…</b><br>fetching the live sheet."
+      : POST_FEST ? `<b>Nothing in the archive for this day.</b><br>${w?"forecast above.":"Tap a festival day above to browse."}`
       : navigator.onLine ? `<b>Schedule not posted yet for this day.</b><br>${w?"forecast above.":"check back later."}`
       : `<b>You're offline.</b><br>${w?"showing cached forecast.":"reconnect to load this day."}`;
-    html = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + `<div class="tl-empty">${head}</div>`;
+    html = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + archNote() + `<div class="tl-empty">${head}</div>`;
   } else {
     day.mine = mineOf(day,USER); day.lessons = lessonsOf(day,USER);   // whose day this is, decided here
     day.coaching = coachingOf(day,USER);                              // + pieces a coach runs but sits out
@@ -1038,7 +1057,7 @@ function render(){
     day.dress = dressOf(day,USER,sel);                               // + your (KS) dress-rehearsal slots (resolved against the day's concert program)
     day.free = freeOf(day, [...day.mine, ...day.lessons, ...day.coaching, ...day.teaching, ...day.dress, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
     const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
-    html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + `<div class="tl">${timeline(day,w||{})}</div>`
+    html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + archNote() + `<div class="tl">${timeline(day,w||{})}</div>`
       + (USER && USER.name===JASON ? coda(day,BANK,dnum) : "");   // grace notes: his easter egg only
   }
   html += `<div class="who-foot">${USER?"":"no one picked · "}<button id="whobtn" type="button">switch user</button>${verHtml()}</div>`;   // name lives in the header now; keep the nudge only when unpicked. verHtml = the installed SW version, green when current / red+tappable when behind
@@ -1048,11 +1067,11 @@ function render(){
 }
 function chips(){
   const c=load(), box=$("#days"), days=festDays();
-  const sig=sel+"|"+days.map(d=>c.sched&&c.sched[d]?1:0).join("");   // only the selection + which days have data drive the chips
+  const sig=sel+"|"+days.map(d=>schedOf(c,d)?1:0).join("");   // only the selection + which days have data drive the chips
   if(box.__sig===sig) return; box.__sig=sig;
   box.innerHTML="";
   for(const day of days){
-    const d=new Date(day+"T12:00:00"), has=c.sched&&c.sched[day];
+    const d=new Date(day+"T12:00:00"), has=schedOf(c,day);
     const el=document.createElement("button");
     el.className="chip"+(day===sel?" on":"")+(has?"":" empty");
     el.textContent=d.toLocaleDateString("en-US",{weekday:"short",day:"numeric"});
@@ -1111,7 +1130,7 @@ async function boot(){
   // reopening the home-screen card may resume from suspension (no reload) — refresh on foreground
   addEventListener("visibilitychange", ()=>{ if(document.hidden) return;
     const nt=viennaToday();                                    // may have rolled past midnight while suspended
-    if(nt!==today){ if(sel===today){ sel=nt; render(); } today=nt; }   // advance the view if we were on "today"
+    if(!POST_FEST && nt!==today){ if(sel===today){ sel=nt; render(); } today=nt; }   // advance the view if we were on "today" (frozen once the festival's over)
     const c=load(), age=c.ts?Date.now()-new Date(c.ts).getTime():Infinity;
     if(age>60e3) refresh();
     checkVer(); });   // reopening is the moment to re-check whether a newer shell shipped
@@ -1165,4 +1184,4 @@ async function forceUpdate(){   // the hammer: drop every cache, reload → SW r
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
   userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad,
-  myConcertPieces, linkNames, words, fits, overlap, toks };   // words/fits/overlap/toks: the title-matching primitives, for scripts/dress-test.js
+  myConcertPieces, linkNames, words, fits, overlap, toks, normWx };   // words/fits/overlap/toks: the title-matching primitives, for scripts/dress-test.js; normWx: for scripts/build-archive.js

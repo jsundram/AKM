@@ -15,6 +15,8 @@ CSV = ("https://docs.google.com/spreadsheets/d/e/2PACX-1vRXFSKEV0IjMxBH-hSWAvira
        "/pub?gid=0&single=true&output=csv")
 SID, GID = "1j__RMUvFWQlX9UuT-Uxkw7BkqWHCQkbR_hKsTyNwiyo", "800090339"   # keep in sync with roster-data.js
 LAUNCH = datetime(2026, 7, 6, 19, 30)   # shared over dinner; earlier rows = testing
+END = datetime(2026, 7, 13, 0, 0)        # festival's over: the frozen dashboard counts only [LAUNCH, END);
+                                         # later opens go to the separate post-fest block, never diluting it
 JASON = "70f71792"                       # uid("Jason Sundram") — shown, not ranked
 QUEUED = timedelta(seconds=90)           # received this far after opened = was offline
 
@@ -44,7 +46,7 @@ def kudos_crunch(krows):
     seen, dd = set(), []
     for x in krows:                                   # dedup on (opened, sender, recipient, composer)
         if x not in seen: seen.add(x); dd.append(x)
-    dd = [x for x in dd if x[0] and x[0] >= LAUNCH]
+    dd = [x for x in dd if x[0] and LAUNCH <= x[0] < END]
     to_ct, comp_ct, senders = {}, {}, set()
     for opened, who, to, label in dd:
         if who: senders.add(who)
@@ -57,6 +59,18 @@ def kudos_crunch(krows):
         "toList": sorted(({"uid": u, "n": n} for u, n in to_ct.items()),
                          key=lambda t: (-t["n"], t["uid"])),
     }
+
+def post_crunch(post_rows):
+    """Post-festival trickle — deliberately OUT of the frozen dashboard, surfaced on its own:
+    opens, unique identified users, anon opens, and a by-day count. Enough to answer 'still used?'
+    without letting quiet post-fest days extend the adoption/rhythm charts."""
+    users, by_day, anon = set(), {}, 0
+    for opened, rec, page, who in post_rows:
+        d = f"{opened.month}/{opened.day}"
+        by_day[d] = by_day.get(d, 0) + 1
+        if who: users.add(who)
+        else: anon += 1
+    return {"opens": len(post_rows), "users": len(users), "anon": anon, "byDay": by_day}
 
 def crunch(csv_text=None, roster=None):
     if roster is None: roster = roster_uids()          # inject both to test offline (also the JS-parity oracle)
@@ -75,8 +89,10 @@ def crunch(csv_text=None, roster=None):
     for x in rows:                                   # a flush interrupted mid-save re-sends
         k = (x[0], x[2], x[3])
         if k not in seen: seen.add(k); dd.append(x)
+    dupes = raw - len(dd)                             # duplicate deliveries removed (before any date split)
     pre = sum(1 for x in dd if x[0] < LAUNCH)
-    dd = [x for x in dd if x[0] >= LAUNCH]
+    post_rows = [x for x in dd if x[0] >= END]
+    dd = [x for x in dd if LAUNCH <= x[0] < END]
 
     day = lambda d: f"{d.month}/{d.day}"
     launch_day = day(LAUNCH)                 # the launch evening's burst skews the hour-of-day rhythm
@@ -112,7 +128,7 @@ def crunch(csv_text=None, roster=None):
     ulist = sorted(users.values(), key=lambda u: -u["opens"])
     return {
         "generated": datetime.now().strftime("%-m/%-d %H:%M"),
-        "raw": raw, "deduped": raw - len(dd) - pre, "pre": pre, "total": len(dd),
+        "raw": raw, "deduped": dupes, "pre": pre, "total": len(dd),
         "anon": anon, "queued": queued,
         "rosterSize": len(roster),
         "identified": len(ulist),
@@ -124,6 +140,7 @@ def crunch(csv_text=None, roster=None):
         "byDay": by_day, "anonByDay": anon_day, "byHour": by_hour,
         "series": series, "adopt": adopt,
         "kudos": kudos_crunch(krows),
+        "post": post_crunch(post_rows),
     }
 
 if __name__ == "__main__":
