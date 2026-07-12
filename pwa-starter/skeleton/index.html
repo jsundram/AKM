@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+<!-- viewport-fit=cover + the safe-area padding in CSS keeps content clear of the
+     notch / home indicator when installed to the home screen (standalone). -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<!-- Tells the browser both palettes exist so form controls / scrollbars theme correctly
+     even before your CSS loads, and kills the white flash on first paint in dark mode. -->
+<meta name="color-scheme" content="light dark">
+
+<!-- theme-color = the browser UI tint (address bar, task switcher). One per scheme. -->
+<meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
+
+<!-- Add-to-Home-Screen polish. iOS reads apple-touch-icon + these metas directly and
+     mostly ignores the manifest; Android reads the manifest. Ship both. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="APP">   <!-- EDIT: home-screen label -->
+<link rel="manifest" href="./manifest.json">
+
+<!-- Icons. An SVG covers modern browsers at any size; the PNG is the fallback and the
+     apple-touch-icon is what iOS actually uses for the home screen. -->
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-180.png">
+
+<title>APP — tagline</title>   <!-- EDIT -->
+<meta name="description" content="One sentence on what this is.">   <!-- EDIT -->
+
+<!-- Link previews when the URL is texted / DM'd / Slacked. og:image MUST be an ABSOLUTE
+     https URL and a raster (PNG/JPG) — iMessage/WhatsApp reject relative paths and won't
+     render SVG. 1200x630 is the canonical size. Regenerate og.png with make-og.sh. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="APP">
+<meta property="og:title" content="APP — tagline">
+<meta property="og:description" content="One sentence on what this is.">
+<meta property="og:url" content="https://USER.github.io/APP/">   <!-- EDIT: absolute -->
+<meta property="og:image" content="https://USER.github.io/APP/og.png">   <!-- EDIT: absolute -->
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Describe the share card for screen readers.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="APP — tagline">
+<meta name="twitter:description" content="One sentence on what this is.">
+<meta name="twitter:image" content="https://USER.github.io/APP/og.png">   <!-- EDIT: absolute -->
+<link rel="canonical" href="https://USER.github.io/APP/">   <!-- EDIT: absolute -->
+
+<!-- Webfonts are optional. If you use them, preconnect + cache them in the SW (see sw.js)
+     so the type survives offline. They are NOT iOS system fonts — without the SW cache a
+     home-screen open with no network silently falls back to Times/Courier.
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+-->
+
+<style>
+  /* Light palette = the defaults; dark = an override. Two ways in:
+     - prefers-color-scheme: follows the OS automatically (what real users get).
+     - html.dark class: force it for screenshots / a manual toggle / visual regression. */
+  :root{
+    --bg:#f5f5f5; --card:#fff; --ink:#1a1a1a; --muted:#666; --line:#ddd; --accent:#2196f3;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1a1a1a; --card:#2d2d2d; --ink:#eee; --muted:#aaa; --line:#444; --accent:#64b5f6; }
+  }
+  html.dark{ --bg:#1a1a1a; --card:#2d2d2d; --ink:#eee; --muted:#aaa; --line:#444; --accent:#64b5f6; }
+
+  *{ box-sizing:border-box; margin:0; padding:0 }
+  html{ -webkit-text-size-adjust:100% }   /* stop iOS from auto-inflating text on rotate */
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:system-ui, -apple-system, sans-serif; line-height:1.4;
+    overscroll-behavior-y:none;   /* kill the rubber-band / pull-to-refresh bounce in standalone */
+    /* safe-area padding: real gaps on notched phones, 0 elsewhere */
+    padding:calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+            calc(28px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  }
+  main{ max-width:640px; margin:0 auto }   /* mobile-first: full-width on phones, capped on desktop */
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px }
+  a{ color:var(--accent) }
+
+  /* Touch-only mobile (real phones, not just a narrow desktop window). Use this — not a bare
+     max-width — when you want fixed sizing on devices vs. responsive scaling on resizable ones. */
+  @media (hover:none) and (pointer:coarse) and (max-width:800px){
+    /* phone-specific overrides */
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>APP</h1>
+    <p>Hello. This shell is offline-ready, installable, themeable, and shareable.</p>
+  </div>
+</main>
+
+<!-- Optional: usage analytics. See ping.js + analytics.gs. Load last. -->
+<!-- <script src="./ping.js"></script> -->
+
+<script>
+  // Register the service worker (offline + install). Fails silently off https/localhost.
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body>
+</html>
