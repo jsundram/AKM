@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Placeholder app icon — replace with the real thing, then run make-icons.sh. -->
-  <rect width="512" height="512" rx="96" fill="#2196f3"/>
-  <text x="256" y="256" text-anchor="middle" dominant-baseline="central"
-        font-family="system-ui, sans-serif" font-size="220" font-weight="700" fill="#fff">A</text>
-</svg>
