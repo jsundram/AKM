@@ -1,0 +1,4 @@
+# AKM — a private participant tool, not a public web page. No search indexing.
+# (Every page also carries a noindex meta; this is the belt to that suspenders.)
+User-agent: *
+Disallow: /

@@ -51,6 +51,13 @@ check("kudos · unique senders (anon sender excluded)", js.kudos.senders, 3);
 check("kudos · unique recipients", js.kudos.recipients, 2);
 check("kudos · most-applauded piece is Brahms ×3", js.kudos.byComposer[0], { label: "Brahms", n: 3 });
 check("kudos · top recipient by uid", js.kudos.toList[0], { uid: "eeee5555", n: 3 });
+// post-festival partition: opens after END are surfaced separately and never dilute the frozen dashboard
+check("post · opens after END counted separately", js.post.opens, 4);
+check("post · unique identified users", js.post.users, 2);
+check("post · anonymous opens", js.post.anon, 1);
+check("post · by-day breakdown", js.post.byDay, { "7/14": 3, "7/15": 1 });
+check("invariant · post-fest opens don't dilute the frozen total", js.total, 15);
+check("invariant · a post-END kudos stays out of the frozen kudos total", js.kudos.total, 5);
 
 // 3) if python3 is available, re-derive the golden from the oracle and confirm the
 //    committed golden still equals it — catches a golden that rotted vs crunch.py
