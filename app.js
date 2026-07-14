@@ -826,8 +826,8 @@ function schedHead(c){
     + `<a href="${sheetUrl(sel)}" target="_blank" rel="noopener">source ↗</a> · `
     + `<button id="addself" class="addbtn" type="button">＋ add</button></span></div>`;
 }
-// once the festival is over, a quiet note above the day so the schedule reads as an archive, not a stale live page
-const archNote = () => POST_FEST ? `<div class="archnote"><b>The 2026 festival has wrapped.</b> Browsing the archive.</div>` : "";
+// once the festival is over, a notable send-off banner above the day (reddish, --draft) so the schedule reads as an archive, not a stale live page; links to Concerts
+const archNote = () => POST_FEST ? `<div class="archnote"><b>The 2026 festival is over — see you next year!</b>Check out the <a href="./concerts.html">Concerts</a>, or browse the archived schedule to revisit your days and the weather.</div>` : "";
 
 // ---- cache + state ----
 let BANK={}, COACHES={}, PIECEGRP={}, USER=null, today=viennaToday();
@@ -1046,10 +1046,10 @@ function render(){
   if(!day){
     const fetching = navigator.onLine && !c.ts;       // first load, refresh still in flight
     const head = fetching ? "<b>Loading today's schedule…</b><br>fetching the live sheet."
-      : POST_FEST ? `<b>Nothing in the archive for this day.</b><br>${w?"forecast above.":"Tap a festival day above to browse."}`
+      : POST_FEST ? ""                                   // the archive banner (archNote) says it all — no redundant empty line
       : navigator.onLine ? `<b>Schedule not posted yet for this day.</b><br>${w?"forecast above.":"check back later."}`
       : `<b>You're offline.</b><br>${w?"showing cached forecast.":"reconnect to load this day."}`;
-    html = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + archNote() + `<div class="tl-empty">${head}</div>`;
+    html = masthead(sel,"") + (w?wxcard(w,now,cur):"") + schedHead(c) + archNote() + (head?`<div class="tl-empty">${head}</div>`:"");
   } else {
     day.mine = mineOf(day,USER); day.lessons = lessonsOf(day,USER);   // whose day this is, decided here
     day.coaching = coachingOf(day,USER);                              // + pieces a coach runs but sits out
