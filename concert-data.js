@@ -12,15 +12,15 @@ const g = typeof window !== "undefined" ? window : globalThis;   // Node-requira
 const C = [
  {id:"2026-07-03-eve", title:"Faculty Concert", time:"8:00 pm",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-03-evening.pdf", pieces:[
-  {c:"Fauré", t:"Piano Quartet No. 1 in C minor, Op. 15", m:"I. Allegro molto moderato · II. Scherzo: Allegro vivo · III. Adagio · IV. Allegro molto",
-   who:[["Emi Ohi Resnick","vn"],["Gijs Kramers","va"],["Jesús Morales","vc"],["Tanya Bannister","pf"]]},
   {c:"Shaw", t:"Entr'acte", m:"",
    who:[["Claudia Ajmone-Marsan","vn"],["Nathan Meltzer","vn"],["Emi Ohi Resnick","va"],["Yoanna Prodanova","vc"]]},
-  {brk:1},
-  {c:"Schumann", t:"Märchenerzählungen (Fairy Tales), Op. 132", m:"I. Lebhaft, nicht zu schnell · II. Lebhaft und sehr markiert · III. Ruhiges Tempo, mit zartem Ausdruck · IV. Lebhaft, sehr markiert",
-   who:[["Chad Burrow","cl"],["Xinyuan Wang","va"],["Mark Zang","pf"]]},
   {c:"Webern", t:"Langsamer Satz", m:"",
    who:[["YooJin Jang","vn"],["Claudia Ajmone-Marsan","vn"],["Ilinca Forna","va"],["Yoanna Prodanova","vc"]]},
+  {c:"Schumann", t:"Märchenerzählungen (Fairy Tales), Op. 132", m:"I. Lebhaft, nicht zu schnell · II. Lebhaft und sehr markiert · III. Ruhiges Tempo, mit zartem Ausdruck · IV. Lebhaft, sehr markiert",
+   who:[["Chad Burrow","cl"],["Xinyuan Wang","va"],["Mark Zang","pf"]]},
+  {brk:1},
+  {c:"Fauré", t:"Piano Quartet No. 1 in C minor, Op. 15", m:"I. Allegro molto moderato · II. Scherzo: Allegro vivo · III. Adagio · IV. Allegro molto",
+   who:[["Emi Ohi Resnick","vn"],["Gijs Kramers","va"],["Jesús Morales","vc"],["Tanya Bannister","pf"]]},
  ]},
  {id:"2026-07-04-aft", title:"Afternoon Concert", time:"4:30 pm",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-04-afternoon.pdf", pieces:[
