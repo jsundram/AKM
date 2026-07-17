@@ -100,15 +100,17 @@
     text-underline-offset:2px;padding:0}
   #reclock .fwd:hover{color:var(--muted)}
   /* Solid ink pill — deliberately unlike the outlined mono performer chips (Inter/600, filled, a play
-     glyph) so the recording reads as the piece's one clear action, not another name. Not brass: that's
-     reserved for the kudos clap / own playing. Fills flip in dark mode (the --ink/--paper vars swap). */
+     triangle) so the recording reads as the piece's one clear action, not another name. The triangle is
+     an inline SVG, not the ▶ (U+25B6) glyph, which Apple renders as the blue emoji ▶️ — same reason STAR
+     is an SVG. Not brass: that's reserved for the kudos clap / own playing. Fills flip in dark mode. */
   a.rec{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
     font-family:"Inter",sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.01em;
     color:var(--paper);background:var(--ink);text-decoration:none;border-radius:8px;padding:5px 13px 5px 11px;
     transition:opacity .16s ease}
   a.rec:hover{opacity:.82}
   a.rec .tri{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
-    border-radius:50%;background:var(--paper);color:var(--ink);font-size:8px;padding-left:1px}
+    border-radius:50%;background:var(--paper);color:var(--ink)}
+  a.rec .tri svg{width:9px;height:9px;display:block}
 
   #msg{padding:18px 0 0;color:var(--faint);font-size:12px}
 
@@ -164,7 +166,7 @@ async function decryptRec(pw){                                    // throws on a
 }
 const recLink = (c, p) => {
   const url = REC && REC[recKey(c, p)];
-  return url ? `<a class="rec" href="${esc(url)}" target="_blank" rel="noopener"><span class="tri" aria-hidden="true">▶</span> Recording</a>` : "";
+  return url ? `<a class="rec" href="${esc(url)}" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"><svg viewBox="0 0 12 12"><path fill="currentColor" d="M4.6 3.2 9 6 4.6 8.8Z"/></svg></span> Recording</a>` : "";
 };
 function renderLock(){
   const bar = $("#reclock");
