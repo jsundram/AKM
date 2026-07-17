@@ -66,7 +66,7 @@ const C = [
    who:[["Nikolaus Lanner sen.","flugelhorn"],["Robert Lexer","flugelhorn"],["Roman Cecco","flugelhorn"],["Nathan Meltzer","vn"],["Ilinca Forna","vn"],["Gijs Kramers","va"],["Jesús Morales","vc"]]},
   {c:"Kühr", t:"Portraits", m:"",
    who:[["Jesús Morales","vc"],["Stephen Buck","pf"]]},
-  {c:"arr. Gijs Kramers", t:"Songs: Sammy · Ozean · Sternenstaub · Sie glaubt an mich · Schwarz-Weiß", m:"Ramses Shaffy · Racoon · André Hazes · De Jeugd van Tegenwoordig · Frank Boeijen",
+  {c:"arr. Gijs Kramers", t:"Songs: Sammy · Ozean · Sternenstaub · Sie glaubt an mich · Schwarz-Weiß", nick:"Dutch Pop Songs", m:"Ramses Shaffy · Racoon · André Hazes · De Jeugd van Tegenwoordig · Frank Boeijen",
    who:[["Ilinca Forna","vn"],["Gijs Kramers","va"],["Jesús Morales","vc"],["Stephen Buck","pf"]]},
   {c:"Messiaen", t:"Quartet for the End of Time", m:"Complete — eight movements · ~50 min",
    who:[["Chad Burrow","cl"],["Nathan Meltzer","vn"],["Yoanna Prodanova","vc"],["James Cheung","pf"]]},

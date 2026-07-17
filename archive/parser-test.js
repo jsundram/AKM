@@ -3,7 +3,7 @@
 // whose day it is comes from userCtx (roster row) + mineOf/lessonsOf, exercised here as Jason.
 require("../roster-data.js");   // defines globalThis.Roster; app.js fams() now derives from Roster.instKind
 require("../concert-data.js");  // defines globalThis.Concerts; dressOf resolves slots against the day's concert program
-const { parse, rowsFrom, norm, evblocks, userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, freeOf, linkNames } = require("../app.js");
+const { parse, rowsFrom, norm, evblocks, userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, facDressOf, facDressSlots, freeOf, linkNames } = require("../app.js");
 const R = (...vals) => ({ c: vals.map(v => v === null ? null : { v: String(v) }) });
 const N = null;
 
@@ -99,6 +99,15 @@ const friBeeth = { dress: [["17:16", "17:30", "Beethoven Piano Trio", "KS"]] };
 const satBeeth = { dress: [["16:30", "16:44", "Beethoven Ghost", "KS"], ["16:58", "17:12", "Beethoven String Quartet", "KS"]] };
 const satHaydn = { dress: [["8:40", "8:54", "Haydn String Quartet", "KS"]] };
 const dz = (d, name, date) => dressOf(d, { name }, date);
+// faculty dress — inline "Faculty Dress [in KS] HH:MM Piece …" cells that parse() files under
+// day.evening (evening block, kind "faculty") or day.fac (a stray faculty column), resolved
+// per-performer against the SAME concert programs. The 7/3 sheet writes it in the KS column with no
+// "in KS"; the 7/8 one splits across an evening block ("in KS", parked in AH) and a fac cell, and
+// labels the Kramers set "Dutch Pop Songs" (its match-only nick) and the folk piece "Austrian … Flugelhorn".
+const facFri = { evening: [["17:20", "18:50", "Faculty Dress 17:20 Shaw 17:35 Schumann 17:50 Webern 18:05 Faure", "KS", "faculty"]], fac: [] };
+const facWed = { evening: [["15:50", "18:00", "Faculty Dress in KS 15:50 Messiaen 16:50 Mendelssohn 17:30 Dutch Pop Songs 17:45 Kühr", "AH", "faculty"]],
+                 fac: [["19:30", "", "Faculty Dress in KS 19:30 Austrian trad. w/ Flugelhorn", "AH"]] };
+const fz = (d, name, date) => facDressOf(d, { name }, date);
 const checks = [
   ["eyebrow Week One", day.eyebrow === "Week One"],
   ["3 rehearsals", day.mine.length === 3],
@@ -202,6 +211,25 @@ const checks = [
     dz(satBeeth, "Aaron Kinghorn", "2026-07-11").every(d => /^\d{1,2}:\d{2}$/.test(d[0]) && /^\d{1,2}:\d{2}$/.test(d[1]))],
   ["dress: no program for the day (or no date) → no slots",
     dz(friBeeth, "Bernhard Zojer", "2026-06-30").length === 0 && dressOf(friBeeth, { name: "Bernhard Zojer" }).length === 0],
+  // faculty dress — extracted from the inline cell, hall read off "in KS"/column, ends chained per cell
+  ["facdress: 7/3 → 4 KS slots, ends chained (last to the block end)",
+    (s => s.length === 4 && s.every(x => x[3] === "KS") && s.map(x => x[0] + "-" + x[1]).join(",") === "17:20-17:35,17:35-17:50,17:50-18:05,18:05-18:50")(facDressSlots(facFri))],
+  ["facdress: 7/8 → 5 KS slots across the evening block + the stray fac cell",
+    (s => s.length === 5 && s.every(x => x[3] === "KS") && s[4][0] === "19:30" && s[4][1] === "19:45")(facDressSlots(facWed))],
+  ["facdress: a day with no faculty-dress cell → no slots", facDressSlots(day).length === 0],
+  // per-performer surfacing against the day's Faculty Concert program (public printed names)
+  ["facdress: Emi gets her two 7/3 pieces (Shaw 17:20 + Fauré 18:05)",
+    (x => x.length === 2 && x.map(c => c[0] + " " + c[2]).join(", ") === "17:20 Shaw Entr'acte, 18:05 Fauré Piano Quartet")(fz(facFri, "Emi Ohi Resnick", "2026-07-03"))],
+  ["facdress: Chad gets only the Schumann he plays", (x => x.length === 1 && x[0][2] === "Schumann Märchenerzählungen")(fz(facFri, "Chad Burrow", "2026-07-03"))],
+  ["facdress: a non-performer gets nothing", fz(facFri, "Jason Sundram", "2026-07-03").length === 0],
+  // the sloppy 7/8 labels resolve via nick/composer tokens: "Dutch Pop Songs" → the Kramers set,
+  // "Austrian … Flugelhorn" → the folk piece (English short title on the card)
+  ["facdress: 'Dutch Pop Songs' → the Kramers set for its player",
+    fz(facWed, "Stephen Buck", "2026-07-08").some(c => c[0] === "17:30" && c[2] === "Songs, arr. Kramers")],
+  ["facdress: 'Austrian … Flugelhorn' → 'In die Berg bin i gern' at 19:30",
+    fz(facWed, "Nathan Meltzer", "2026-07-08").some(c => c[0] === "19:30" && c[2] === "In die Berg bin i gern")],
+  ["facdress: no program for the day (or no date) → no slots",
+    fz(facFri, "Emi Ohi Resnick", "2026-06-30").length === 0 && facDressOf(facFri, { name: "Emi Ohi Resnick" }).length === 0],
   // informational events — surfaced to everyone (day.info), never routed through rehearsals/allhands/fac
   ["info: both events parsed, chronological", day.info.length === 2 && day.info.map(i => i[0]).join(",") === "8:20,15:30"],
   ["info: separate-cell event, room + subtitle off the inline 'in AH'", day.info.some(i => i[0] === "8:20" && i[1] === "8:50" && i[2] === "Emi Presentation — Vibrato!" && i[3] === "AH")],
