@@ -8,12 +8,12 @@ before sharing with new people or after anything that touches identity, matching
 ## Automated
 
 ```
-node archive/parser-test.js     # 81/81 — grid parsing + multi-user matching + faculty coaching view + student & faculty dress + informational events (everyone), synthetic fixture (offline; runs anywhere)
+node archive/parser-test.js     # 83/83 — grid parsing + multi-user matching + faculty coaching view + student & faculty dress + informational events (everyone), synthetic fixture (offline; runs anywhere)
 node scripts/inst-test.js       # 35/35 — the shared instrument classifier (Roster.instKind) + network's Winds grouping (offline)
 node scripts/concert-match-test.js  # 15/15 — the shared printed-name → roster matcher (kudos links + "you're performing" brass), namesake/wobble/guest cases (offline)
 node scripts/network-test.js    # 14/14 — pieces↔roster co-performance join + both graph layouts, against the live sheets
 node scripts/schedule-test.js   # 17/17 — schedule personalizes (mineOf non-empty, no over-claims) + coaching stays faculty-only, every festival day, live
-node scripts/dress-test.js      # 12/12 — student & faculty dress cards == the day's concert cast (Beethoven-phantom + Haydn-drop guards; faculty dress on 7/3 + 7/8) + week-aware repertoire cross-check, live
+node scripts/dress-test.js      # 14/14 — student & faculty dress cards == the day's concert cast (Beethoven-phantom + Haydn-drop guards; faculty dress on 7/3 + 7/8) + week-aware repertoire cross-check, live
 ```
 
 The three live tests pull the real sheets (public gviz) to catch what the offline fixture can't — the
@@ -100,5 +100,11 @@ ground truth no test can know.
 - New "Goes by X" note: that nickname matches lesson slots on next refresh.
 
 **Known-expected oddities:** standalone re-asks identity once (separate storage); week-2 days
-show only two-week groups until the sheets fill; the 7/10–7/11 dress-rehearsal blocks don't
-surface (placeholder time lists in the sheet — see CLAUDE.md open items).
+show only two-week groups until the sheets fill. (Dress rehearsals now DO surface per-performer —
+student KS dress on 7/9–7/11 and faculty dress on 7/3 + 7/8; faculty *readings* remain deferred.)
+
+**Faculty dress spot-check (any faculty identity, 7/3 or 7/8).** Pick a Faculty Concert performer
+(e.g. Emi on 7/3, Jesús on 7/8): the day shows a brass **concert card** (their pieces) AND brass
+**"Dress rehearsal · be on time"** cards for each of their pieces, at the printed dress times, in KS.
+A non-performer (a student, or a guest) sees **neither** — the faculty dress never renders as an open
+cell to everyone.

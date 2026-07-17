@@ -148,6 +148,23 @@ function festTabs() {
   ok(dressDays >= 1, `swept ${Object.keys(days).length} tabs, ${dressDays} dress days (${slotsSeen} slots, ${cardsSeen} cards) checked`);
   ok(facDays >= 1, `faculty dress checked on ${facDays} day(s)`);
 
+  // drift guard (every day, not just concert days): a "Faculty Dress" cell must land ONLY in
+  // day.evening(kind "faculty")/day.fac — the buckets facDressSlots reads, and the ones parse never
+  // renders to everyone. If the sheet ever parks one in a rendered bucket (rehearsals/info/allhands) it
+  // would BOTH leak to non-faculty AND vanish from the per-performer surfacing (facDressSlots can't see
+  // it). And wherever such a cell does sit in the right bucket, extraction must actually yield slots —
+  // a wording change that breaks the inline HH:MM parse would otherwise silently drop everyone's cards.
+  let misbucket = 0, emptyExtract = 0;
+  const facRe = /faculty\s+dress/i;
+  for (const [date, day] of Object.entries(days)) {
+    const rendered = ["rehearsals", "info", "allhands"].flatMap(b => (day[b] || []).filter(row => row.some(c => typeof c === "string" && facRe.test(c))));
+    if (rendered.length) { misbucket += rendered.length; warns.push(`${date}: a 'Faculty Dress' cell landed in a rendered bucket (would leak to everyone AND drop from per-performer view)`); }
+    const inFacBuckets = [...(day.evening || []).filter(e => e[4] === "faculty"), ...(day.fac || [])].some(c => facRe.test(c[2] || ""));
+    if (inFacBuckets && !C.facDressSlots(day).length) { emptyExtract++; warns.push(`${date}: a 'Faculty Dress' cell is present but facDressSlots extracted no slots — the inline parse likely broke`); }
+  }
+  ok(misbucket === 0, `no 'Faculty Dress' cell leaks into a rendered bucket, all festival days (${misbucket} found)`);
+  ok(emptyExtract === 0, `every day with a faculty-dress cell yields ≥1 extracted slot (${emptyExtract} empty)`);
+
   out.forEach(l => console.log(l));
   const fails = warns.filter(w => !w.startsWith("~")), soft = warns.filter(w => w.startsWith("~"));
   if (fails.length) { console.log("\n--- cast/card mismatches (these failed an assertion) ---"); fails.forEach(w => console.log("  " + w)); }

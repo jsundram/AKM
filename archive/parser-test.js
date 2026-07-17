@@ -108,6 +108,13 @@ const facFri = { evening: [["17:20", "18:50", "Faculty Dress 17:20 Shaw 17:35 Sc
 const facWed = { evening: [["15:50", "18:00", "Faculty Dress in KS 15:50 Messiaen 16:50 Mendelssohn 17:30 Dutch Pop Songs 17:45 Kühr", "AH", "faculty"]],
                  fac: [["19:30", "", "Faculty Dress in KS 19:30 Austrian trad. w/ Flugelhorn", "AH"]] };
 const fz = (d, name, date) => facDressOf(d, { name }, date);
+// parse-routing for the faculty dress: a real grid where the evening Practice Block parks a "Faculty
+// Dress …" cell in a room column. It must land in day.evening (kind "faculty") — a bucket parse never
+// renders to everyone and facDressSlots reads — and NEVER in rehearsals/info (rendered to all).
+const facGrid = parse(rowsFrom({ table: { rows: [
+  R(N, N, "A1", "A2", "AH", "KS", "BAND ROOM", "THEATRE", "CHAPEL"),
+  R(N, "17:20 - 18:50\nPractice Block", N, N, N, "Faculty Dress 17:20 Shaw 17:35 Schumann 17:50 Webern 18:05 Faure", "Closed"),
+] } }));
 const checks = [
   ["eyebrow Week One", day.eyebrow === "Week One"],
   ["3 rehearsals", day.mine.length === 3],
@@ -230,6 +237,12 @@ const checks = [
     fz(facWed, "Nathan Meltzer", "2026-07-08").some(c => c[0] === "19:30" && c[2] === "In die Berg bin i gern")],
   ["facdress: no program for the day (or no date) → no slots",
     fz(facFri, "Emi Ohi Resnick", "2026-06-30").length === 0 && facDressOf(facFri, { name: "Emi Ohi Resnick" }).length === 0],
+  // parse routing: the cell lands in day.evening (kind faculty), NOT in a bucket rendered to everyone
+  ["facdress: parse files the cell under day.evening (kind faculty), not rehearsals/info",
+    facGrid.evening.some(e => e[4] === "faculty" && /faculty dress/i.test(e[2]) && e[3] === "KS")
+    && !facGrid.rehearsals.some(r => /faculty dress/i.test(r[2])) && !facGrid.info.some(i => /faculty dress/i.test(i[2]))],
+  ["facdress: facDressSlots reads it back off the real parse → 4 KS slots",
+    (s => s.length === 4 && s.every(x => x[3] === "KS") && s[0][2] === "Shaw" && s[3][2] === "Faure")(facDressSlots(facGrid))],
   // informational events — surfaced to everyone (day.info), never routed through rehearsals/allhands/fac
   ["info: both events parsed, chronological", day.info.length === 2 && day.info.map(i => i[0]).join(",") === "8:20,15:30"],
   ["info: separate-cell event, room + subtitle off the inline 'in AH'", day.info.some(i => i[0] === "8:20" && i[1] === "8:50" && i[2] === "Emi Presentation — Vibrato!" && i[3] === "AH")],
