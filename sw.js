@@ -1,4 +1,4 @@
-const V = "akm-v101";
+const V = "akm-v104";
 const SHELL = ["./", "./index.html", "./app.js", "./roster-data.js", "./ping.js", "./nav.css", "./manifest.json",
                "./composer-bank.json", "./roster.html", "./notes.html", "./about.html",
                "./concerts.html", "./concert-data.js", "./recordings.enc.js", "./schedule-archive.js",
@@ -7,6 +7,7 @@ const SHELL = ["./", "./index.html", "./app.js", "./roster-data.js", "./ping.js"
                "./map-relief.jpg", "./map-aerial.jpg", "./icon.svg",
                "./icon-180.png", "./icon-192.png", "./icon-512.png",
                // concert programs (PROGRAMS in app.js) — precached so they open offline at the venue
+               "./programs/2026-07-03-evening.pdf",
                "./programs/2026-07-04-afternoon.pdf", "./programs/2026-07-04-evening.pdf",
                "./programs/2026-07-08-evening.pdf",
                "./programs/2026-07-09-evening-draft.pdf", "./programs/2026-07-10-evening.pdf",

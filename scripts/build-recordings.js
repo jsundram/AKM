@@ -51,6 +51,30 @@ function promptHidden(q){                                        // raw-mode rea
   });
 }
 
+// Coverage report: every concert piece keys a recording as "<id> | <composer> | <title>" (the same
+// recKey concerts.html builds). List the concert pieces with no entry (a newly-added concert can't
+// then silently ship linkless — the reason this exists), and any recording key matching no piece (a
+// typo, or a piece dropped from the program). Warn-only: some pieces legitimately have no recording.
+function coverage(map){
+  let Concerts;
+  try { require("./../concert-data.js"); Concerts = globalThis.Concerts; } catch {}
+  if(!Concerts || !Concerts.all){ console.warn("coverage: concert-data.js not loadable — skipping report"); return; }
+  const keyOf = (c, p) => `${c.id} | ${p.c} | ${p.t}`;
+  const pieceKeys = new Set();
+  const missing = [];
+  for(const c of Concerts.all) for(const p of (c.pieces || [])){
+    if(p.brk) continue;
+    const k = keyOf(c, p);
+    pieceKeys.add(k);
+    if(!(k in map)) missing.push(k);
+  }
+  const orphans = Object.keys(map).filter(k => !pieceKeys.has(k));
+  const covered = pieceKeys.size - missing.length;
+  console.log(`coverage: ${covered}/${pieceKeys.size} concert pieces have a recording`);
+  if(missing.length){ console.warn(`  ${missing.length} piece(s) with NO recording:`); missing.forEach(k => console.warn(`    - ${k}`)); }
+  if(orphans.length){ console.warn(`  ${orphans.length} recording key(s) matching NO concert piece (typo/dropped?):`); orphans.forEach(k => console.warn(`    ~ ${k}`)); }
+}
+
 async function resolvePw(){
   if(process.env.REC_PW) return process.env.REC_PW;
   const dot = fromDotenv();
@@ -85,4 +109,5 @@ async function resolvePw(){
     `window.RecEnc = {v:1,iter:${iter},salt:"${b64(salt)}",iv:"${b64(iv)}",ct:"${b64(ct)}"};\n`;
   fs.writeFileSync(path.join(root, "recordings.enc.js"), out);
   console.log(`recordings.enc.js written — ${Object.keys(map).length} links, ${ct.length} bytes ciphertext`);
+  coverage(map);
 })();
