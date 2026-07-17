@@ -1,4 +1,5 @@
-// Live smoke test for (KS) dress-rehearsal personalization.  Run from repo root:  node scripts/dress-test.js
+// Live smoke test for dress-rehearsal personalization — both the (KS) student dress and the faculty
+// dress (a Faculty Concert's run-through).  Run from repo root:  node scripts/dress-test.js
 //
 // The bugs this guards were BOTH live-data problems the offline harness (archive/parser-test.js) can't
 // see: the schedule sheet, the concert program (concert-data.js), and the repertoire tab name the same
@@ -89,15 +90,39 @@ function festTabs() {
   const days = {};
   for (const { tab, date } of festTabs()) { try { days[date] = C.parse(C.rowsFrom({ table: unwrap(await get(url(SSID, "sheet=" + encodeURIComponent(tab)))) })); } catch {} }
 
-  const out = [], warns = []; let pass = 0, dressDays = 0, slotsSeen = 0, cardsSeen = 0;
+  const out = [], warns = []; let pass = 0, dressDays = 0, slotsSeen = 0, cardsSeen = 0, facDays = 0;
   const ok = (cond, label) => { out.push((cond ? "ok  " : "FAIL") + "  " + label); pass += cond ? 1 : 0; return cond; };
   const cast = P => new Set((P.who || []).map(([w, i]) => (match(w, i) || { name: w }).name));
+  const castRoster = P => new Set((P.who || []).map(([w, i]) => match(w, i)).filter(Boolean).map(x => x.name));   // only roster-resolvable performers can get a personalized card (guests/choir/flugelhorn stay off)
 
   for (const [date, day] of Object.entries(days)) {
-    const slots = day.dress || []; if (!slots.length) continue;
-    dressDays++; slotsSeen += slots.length;
     const wk = /week\s+two/i.test(day.eyebrow) ? 2 : 1;
     const cps = globalThis.Concerts.all.filter(c => c.id.startsWith(date)).flatMap(c => (c.pieces || []).filter(p => !p.brk));
+
+    // faculty dress (a Faculty Concert's run-through, inline in day.evening/day.fac) — surfaced per-performer
+    // by facDressOf against the SAME program, so the same cast==cards guard applies, scoped to the pieces the
+    // day's faculty-dress slots actually cover (a composer/nick token shared with a slot).
+    const facSlots = C.facDressSlots(day);
+    if (facSlots.length) {
+      facDays++;
+      const gotF = {};
+      for (const p of people) for (const d of C.facDressOf(day, ctx.get(p.name), date)) (gotF[d[2]] || (gotF[d[2]] = new Set())).add(p.name);
+      const dressed = cps.filter(P => facSlots.some(([, , title]) => {
+        const st = new Set(C.words(title));
+        return [...C.words(P.c), ...C.words(P.nick || "")].some(t => st.has(t));
+      }));
+      let fdrop = 0, ffalse = 0;
+      for (const P of dressed) {
+        const want = castRoster(P), got = gotF[P.s] || new Set();   // guests can't get a personalized card, so judge against the roster-resolvable cast
+        for (const n of want) if (!got.has(n)) { fdrop++; warns.push(`${date} facdress "${P.s}": ${n} is in the printed cast but got NO dress card`); }
+        for (const n of got) if (!want.has(n)) { ffalse++; warns.push(`${date} facdress "${P.s}": ${n} got a dress card but isn't in the printed cast`); }
+      }
+      ok(fdrop === 0, `${date} (wk${wk}): faculty dress — every covered piece's printed cast gets a card (${fdrop} dropped)`);
+      ok(ffalse === 0, `${date} (wk${wk}): faculty dress — no card goes to a non-cast member (${ffalse} false)`);
+    }
+
+    const slots = day.dress || []; if (!slots.length) continue;
+    dressDays++; slotsSeen += slots.length;
     // every user's dress cards once, indexed by the short title dressOf emits
     const gotByTitle = {};                         // p.s → Set(names who got that dress card)
     for (const p of people) for (const d of C.dressOf(day, ctx.get(p.name), date)) { cardsSeen++; (gotByTitle[d[2]] || (gotByTitle[d[2]] = new Set())).add(p.name); }
@@ -121,6 +146,24 @@ function festTabs() {
       warns.push(`~ ${date} ${s} "${title}": no program piece by this composer — unexplained dress slot`);
   }
   ok(dressDays >= 1, `swept ${Object.keys(days).length} tabs, ${dressDays} dress days (${slotsSeen} slots, ${cardsSeen} cards) checked`);
+  ok(facDays >= 1, `faculty dress checked on ${facDays} day(s)`);
+
+  // drift guard (every day, not just concert days): a "Faculty Dress" cell must land ONLY in
+  // day.evening(kind "faculty")/day.fac — the buckets facDressSlots reads, and the ones parse never
+  // renders to everyone. If the sheet ever parks one in a rendered bucket (rehearsals/info/allhands) it
+  // would BOTH leak to non-faculty AND vanish from the per-performer surfacing (facDressSlots can't see
+  // it). And wherever such a cell does sit in the right bucket, extraction must actually yield slots —
+  // a wording change that breaks the inline HH:MM parse would otherwise silently drop everyone's cards.
+  let misbucket = 0, emptyExtract = 0;
+  const facRe = /faculty\s+dress/i;
+  for (const [date, day] of Object.entries(days)) {
+    const rendered = ["rehearsals", "info", "allhands"].flatMap(b => (day[b] || []).filter(row => row.some(c => typeof c === "string" && facRe.test(c))));
+    if (rendered.length) { misbucket += rendered.length; warns.push(`${date}: a 'Faculty Dress' cell landed in a rendered bucket (would leak to everyone AND drop from per-performer view)`); }
+    const inFacBuckets = [...(day.evening || []).filter(e => e[4] === "faculty"), ...(day.fac || [])].some(c => facRe.test(c[2] || ""));
+    if (inFacBuckets && !C.facDressSlots(day).length) { emptyExtract++; warns.push(`${date}: a 'Faculty Dress' cell is present but facDressSlots extracted no slots — the inline parse likely broke`); }
+  }
+  ok(misbucket === 0, `no 'Faculty Dress' cell leaks into a rendered bucket, all festival days (${misbucket} found)`);
+  ok(emptyExtract === 0, `every day with a faculty-dress cell yields ≥1 extracted slot (${emptyExtract} empty)`);
 
   out.forEach(l => console.log(l));
   const fails = warns.filter(w => !w.startsWith("~")), soft = warns.filter(w => w.startsWith("~"));

@@ -365,8 +365,13 @@ function mineOf(day, u){
 // runs — so a dress card and its concert card can never disagree about who's performing. The one gap the
 // program can't bridge is a nickname the sheet uses but the printed title omits (the "Ghost" trio): that
 // piece carries a match-only `nick` alias in concert-data.js. Card shows the program's short title.
-function dressOf(day, u, date){
-  if(!u || !u.name || !date) return [];
+// resolve a list of loose dress slots ([start,end,piece,room]) against the day's concert PROGRAM,
+// returning [start,end,shortTitle,room] for only the pieces the picked user actually performs. Shared
+// by the (KS) student dress (day.dress) and the faculty dress (facDressSlots, below) so the two can't
+// drift. The composer filter also honours a piece's `nick` alias, so a slot the sheet labels by
+// nickname the printed title omits ("Dutch Pop Songs" → the Kramers song-set) still resolves.
+function dressResolve(slots, u, date){
+  if(!u || !u.name || !date || !slots.length) return [];
   const cs = (typeof Concerts!=="undefined" && Concerts.all) ? Concerts.all.filter(c=>c.id.startsWith(date)) : [];
   if(!cs.length) return [];                                                  // no program for the day → no dress cards
   const pieces = cs.flatMap(c => (c.pieces||[]).filter(p=>!p.brk));
@@ -374,9 +379,9 @@ function dressOf(day, u, date){
   const bag = p => toks(`${p.c} ${p.s||""} ${p.t||""} ${p.nick||""}`);       // scoring tokens (incl. any nickname alias)
   const ord = p => words(`${p.c} ${p.s||p.t||""}`);                          // composer-first order, for fits()
   const out=[];
-  for(const [s,e,piece,room] of (day.dress||[])){
+  for(const [s,e,piece,room] of slots){
     const sw = words(piece), sset = new Set(sw);
-    const comp = pieces.filter(p => words(p.c).some(t=>sset.has(t)));        // same composer on today's program
+    const comp = pieces.filter(p => [...words(p.c), ...words(p.nick||"")].some(t=>sset.has(t)));   // same composer (or nick) on today's program
     let hit=null;
     if(comp.length===1) hit=comp[0];                                        // the day's lone composer → trust it, wording slop and all
     else if(comp.length>1){                                                  // composer plays twice today → disambiguate
@@ -390,6 +395,29 @@ function dressOf(day, u, date){
   }
   return out;
 }
+// (KS) student dress — the per-piece slots parse() collects into day.dress.
+function dressOf(day, u, date){ return dressResolve(day.dress||[], u, date); }
+// Faculty dress rehearsals — a Faculty Concert's run-through, written inline in ONE cell ("Faculty
+// Dress [in KS] 17:20 Shaw 17:35 Schumann …") that parse() files under day.evening (an evening
+// practice block, kind "faculty") or day.fac (a stray faculty column). It books its hall like any
+// faculty item, but unlike a plain faculty rehearsal it's a fixed short slot each performer must make,
+// so we surface it per-performer (never as an open cell to everyone: faculty rehearsals aren't
+// invitations). Pull the HH:MM/piece pairs out here — chaining each end to the next start (the last to
+// the block's end) and reading the hall from an "in ROOM" note (else the cell's own column, else KS) —
+// then resolve them against the day's concert program exactly like the student dress.
+function facDressSlots(day){
+  const cells = [...(day.evening||[]).filter(e=>e[4]==="faculty"), ...(day.fac||[])]
+    .filter(c=>/faculty\s+dress/i.test(c[2]||""));
+  const out=[];
+  for(const [bStart,bEnd,text,col] of cells){
+    const room = (text.match(/\bin\s+([A-Z][A-Z0-9]{0,3})\b/)||[])[1] || col || "KS";
+    const body = text.replace(/^.*?faculty\s+dress\b/i,"").replace(/\bin\s+[A-Z][A-Z0-9]{0,3}\b/,"");
+    const pairs = [...body.matchAll(/(\d{1,2}:\d{2})\s+(.+?)(?=\s+\d{1,2}:\d{2}\b|$)/g)].map(m=>[m[1],m[2].trim()]).filter(x=>x[1]);
+    pairs.forEach(([s,p],i)=>{ const e = i+1<pairs.length ? pairs[i+1][0] : (bEnd || hhmm(mins(s)+15)); out.push([s,e,p,room]); });
+  }
+  return out;
+}
+function facDressOf(day, u, date){ return dressResolve(facDressSlots(day), u, date); }
 // your unscheduled rehearsal blocks, called out explicitly: every Group slot where you have no
 // rehearsal/lesson/self-added event is free time — a tappable card that can become an event.
 // Only meaningful on a day you're actually scheduled (guests/blank days get no phantom free time).
@@ -1054,7 +1082,7 @@ function render(){
     day.mine = mineOf(day,USER); day.lessons = lessonsOf(day,USER);   // whose day this is, decided here
     day.coaching = coachingOf(day,USER);                              // + pieces a coach runs but sits out
     day.teaching = teachingOf(day,USER);                             // + private lessons a coach gives
-    day.dress = dressOf(day,USER,sel);                               // + your (KS) dress-rehearsal slots (resolved against the day's concert program)
+    day.dress = [...dressOf(day,USER,sel), ...facDressOf(day,USER,sel)];   // + your dress-rehearsal slots — student (KS) and faculty — resolved against the day's concert program
     day.free = freeOf(day, [...day.mine, ...day.lessons, ...day.coaching, ...day.teaching, ...day.dress, ...(loadMine()[sel]||[]).map(m=>[m.s,m.e])]);
     const dnum=Math.max(0,Math.round((new Date(sel+"T12:00:00")-new Date(FEST[0]+"T12:00:00"))/864e5));
     html = masthead(sel,day.eyebrow) + wxcard(w,now,cur) + schedHead(c) + archNote() + `<div class="tl">${timeline(day,w||{})}</div>`
@@ -1183,5 +1211,5 @@ async function forceUpdate(){   // the hammer: drop every cache, reload → SW r
 }
 if (typeof document !== "undefined") boot();
 if (typeof module !== "undefined") module.exports = { parse, rowsFrom, mins, norm, despace, evblocks,
-  userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad,
+  userCtx, mineOf, lessonsOf, coachingOf, teachingOf, dressOf, facDressOf, facDressSlots, dressResolve, freeOf, dayTimes, selfCardHtml, loadMine, saveMine, pad2, unpad,
   myConcertPieces, linkNames, words, fits, overlap, toks, normWx };   // words/fits/overlap/toks: the title-matching primitives, for scripts/dress-test.js; normWx: for scripts/build-archive.js
