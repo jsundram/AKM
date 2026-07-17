@@ -5,7 +5,8 @@
   "description": "Tooling for the AKM briefing PWA — the site itself is static, this is just the test harnesses.",
   "scripts": {
     "test": "node archive/parser-test.js",
-    "test:ui": "node scripts/ui-test.mjs"
+    "test:ui": "node scripts/ui-test.mjs",
+    "test:rec": "node scripts/recordings-test.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.48.0"

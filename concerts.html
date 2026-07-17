@@ -83,6 +83,28 @@
   @media (prefers-reduced-motion:reduce){
     .names .kudos{transition:none} .names .duo:hover .clap{animation:none} }
 
+  /* concert recordings — password-gated per-piece links (recordings.enc.js, decrypted client-side).
+     Neutral ink, deliberately NOT brass: brass here is the kudos clap / the picked user's own playing. */
+  #reclock{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:0 0 20px;
+    padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--haze);
+    font-size:12px;color:var(--muted);line-height:1.4}
+  #reclock .lk{font-size:14px;line-height:1}
+  #reclock form{display:inline-flex;gap:6px;align-items:center}
+  #reclock input{font-family:"IBM Plex Mono",monospace;font-size:12px;padding:5px 8px;width:140px;
+    border:1px solid var(--line);border-radius:7px;background:var(--paper);color:var(--ink)}
+  #reclock button{font-family:"Inter",sans-serif;font-size:12px;font-weight:600;cursor:pointer;
+    padding:5px 12px;border:1px solid var(--warm-line);border-radius:7px;background:var(--warm);color:var(--brass-deep)}
+  #reclock button:hover{border-color:var(--brass)}
+  #reclock .err{color:var(--draft);font-size:11px}
+  #reclock .fwd{background:none;border:none;color:var(--faint);font-weight:400;text-decoration:underline;
+    text-underline-offset:2px;padding:0}
+  #reclock .fwd:hover{color:var(--muted)}
+  a.rec{display:inline-flex;align-items:center;gap:6px;margin-top:8px;
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.02em;color:var(--muted);
+    text-decoration:none;border:1px solid var(--line);border-radius:7px;padding:3px 10px}
+  a.rec:hover{color:var(--ink);border-color:var(--warm-line)}
+  a.rec .tri{font-size:8px}
+
   #msg{padding:18px 0 0;color:var(--faint);font-size:12px}
 
   @media (prefers-color-scheme: dark){
@@ -99,13 +121,15 @@
     <nav><a href="./index.html">Today</a><a href="./map.html">Map</a><a href="./roster.html">Roster</a><a href="./network.html">Network</a><span aria-current="page">Concerts</span></nav>
   </header>
   <h1>Concerts</h1>
-  <p class="lede">Each festival concert in brief, with the printed program linked. Tap the 👏 by a player's name to send them a quick kudos on WhatsApp.</p>
+  <p class="lede">Each festival concert in brief, with the printed program and a recording of every piece linked. Tap the 👏 by a player's name to send them a quick kudos on WhatsApp.</p>
+  <div id="reclock" hidden></div>
   <nav class="index" id="index" aria-label="Jump to concert"></nav>
   <div id="concerts"></div>
   <div id="msg" hidden></div>
 </div>
 <script src="./roster-data.js"></script>
 <script src="./concert-data.js"></script>
+<script src="./recordings.enc.js"></script>
 <script>
 // Program data lives in concert-data.js (window.Concerts) — shared with the schedule page,
 // which renders each concert as a card and needs the same performer lists. Edit it there.
@@ -113,6 +137,52 @@ const CONCERTS = Concerts.all;
 
 const $ = s => document.querySelector(s);
 const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+// --- password-gated recordings. The per-piece Drive links live encrypted in recordings.enc.js
+// (window.RecEnc, AES-GCM); the shared participant password decrypts them client-side, so the
+// public repo/URL only ever holds ciphertext. Once decrypted the map is cached in localStorage —
+// instant + offline on later opens, no re-prompt. Key = "<concert id> | <composer> | <title>",
+// built from concert-data.js so the two Mendelssohn Op. 87 performances stay distinct.
+const REC_KEY = "akm-rec";
+const recKey = (c, p) => `${c.id} | ${p.c} | ${p.t}`;
+let REC = (() => { try { return JSON.parse(localStorage.getItem(REC_KEY)) || null; } catch { return null; } })();
+let lastPeople = [];
+
+const b64d = s => Uint8Array.from(atob(s), ch => ch.charCodeAt(0));
+async function decryptRec(pw){                                    // throws on a wrong password (GCM auth fail)
+  const e = window.RecEnc;
+  const km = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({ name:"PBKDF2", salt:b64d(e.salt), iterations:e.iter, hash:"SHA-256" },
+    km, { name:"AES-GCM", length:256 }, false, ["decrypt"]);
+  const pt = await crypto.subtle.decrypt({ name:"AES-GCM", iv:b64d(e.iv) }, key, b64d(e.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+const recLink = (c, p) => {
+  const url = REC && REC[recKey(c, p)];
+  return url ? `<a class="rec" href="${esc(url)}" target="_blank" rel="noopener"><span class="tri" aria-hidden="true">▶</span> Recording</a>` : "";
+};
+function renderLock(){
+  const bar = $("#reclock");
+  if(!window.RecEnc){ bar.hidden = true; return; }               // no blob deployed → no recordings UI at all
+  bar.hidden = false;
+  bar.innerHTML = REC
+    ? `<span class="lk" aria-hidden="true">🔓</span><span>Recordings unlocked — a “▶ Recording” link sits under each piece.</span> <button type="button" class="fwd" id="reclock-fwd">lock again</button>`
+    : `<span class="lk" aria-hidden="true">🔒</span><span>Concert recordings are for participants.</span>`
+      + `<form id="recform" autocomplete="off"><input type="password" id="recpw" placeholder="password" aria-label="Recordings password">`
+      + `<button type="submit">Unlock</button></form><span class="err" id="recerr" hidden></span>`;
+}
+$("#reclock").addEventListener("submit", async e => {
+  e.preventDefault();
+  const err = $("#recerr");
+  try {
+    REC = await decryptRec($("#recpw").value);
+    localStorage.setItem(REC_KEY, JSON.stringify(REC));
+    renderLock(); render(lastPeople);
+  } catch { if(err){ err.textContent = "Wrong password"; err.hidden = false; } }
+});
+$("#reclock").addEventListener("click", e => {
+  if(e.target.id === "reclock-fwd"){ REC = null; localStorage.removeItem(REC_KEY); renderLock(); render(lastPeople); }
+});
 
 // programmed name → roster person via the shared matcher (concert-data.js) — the same rules the
 // schedule's "you're performing" card uses, so the two pages can't drift. A matched player becomes a
@@ -135,6 +205,7 @@ function nameChip(find, [name, inst], composer){
 }
 
 function render(people){
+  lastPeople = people || [];
   const find = Concerts.matcher(people);
   $("#index").innerHTML = CONCERTS.map(c =>
     `<a href="#${c.id}">${esc(c.day.slice(0,3))} ${c.day.replace(/\D+/g,"")} · ${esc(c.time.replace(":00","").replace(" ",""))}</a>`).join("");
@@ -145,7 +216,8 @@ function render(people){
       ? `<li class="brk">Intermission</li>`
       : `<li value="${++n}"><div class="pt"><b>${esc(p.c)}</b> — ${esc(p.t)}</div>`
         + (p.m ? `<div class="mv">${esc(p.m)}</div>` : "")
-        + `<div class="names">${p.who.map(w => nameChip(find, w, p.c)).join("")}</div></li>`).join("");
+        + `<div class="names">${p.who.map(w => nameChip(find, w, p.c)).join("")}</div>`
+        + recLink(c, p) + `</li>`).join("");
     return `<section id="${c.id}"><h2>${esc(c.day)}</h2>`
       + `<div class="cmeta">${esc(c.time)} · <a href="./map.html#${encodeURIComponent(c.poi)}">${esc(c.venue)}</a>`
       + ` · <a href="${c.pdf}" target="_blank" rel="noopener">original program ↗</a>${dr}</div>`
@@ -180,6 +252,7 @@ $("#concerts").addEventListener("click", e => {
 });
 
 render(Roster.cached());
+renderLock();
 if(navigator.onLine) Roster.pull().then(render).catch(()=>{});
 document.addEventListener("visibilitychange", () => {   // resume after days on the home screen → re-pull
   if(!document.hidden && navigator.onLine) Roster.pull().then(render).catch(()=>{});

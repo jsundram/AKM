@@ -10,6 +10,11 @@ __pycache__/
 # source archives (map + roster), not for the public repo
 *.zip
 
+# plaintext concert-recording links — only the encrypted recordings.enc.js ships (build-recordings.js)
+recordings.json
+# local recordings password for build-recordings.js (REC_PW=…) — never commit a secret
+.env
+
 # network diagram previews (bake in participant names — regenerate locally)
 network-preview-*.svg
 network-ego-*.svg
