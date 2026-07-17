@@ -26,6 +26,9 @@ EXTS = "js html json css png svg jpg jpeg py sh gs md plist pdf txt webmanifest"
 # root files intentionally not in CLAUDE.md (build/meta, not app surface)
 ORPHAN_OK = {"CLAUDE.md", "README.md", "RESTRUCTURE.md", "ANALYTICS.md",
              ".gitignore", "package.json", "package-lock.json"}
+# files the doc must name but that are intentionally gitignored (PII / secrets), so `git ls-files`
+# never lists them — don't flag these as broken refs
+UNTRACKED_OK = {"recordings.json"}
 FILEISH = re.compile(r"^[\w./-]+\.(" + "|".join(EXTS) + r")$")
 DIRISH = re.compile(r"^[\w.-][\w./-]*/$")
 
@@ -48,7 +51,8 @@ def main():
         if t.endswith("/"):                                      # directory ref
             if DIRISH.match(t) and t not in dirs:
                 broken.append(t)
-        elif FILEISH.match(t) and t not in files and Path(t).name not in bases:
+        elif FILEISH.match(t) and Path(t).name not in UNTRACKED_OK \
+                and t not in files and Path(t).name not in bases:
             broken.append(t)
 
     orphans = [f for f in files if "/" not in f and f not in ORPHAN_OK
