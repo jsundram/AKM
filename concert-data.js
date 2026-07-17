@@ -10,6 +10,18 @@
 (() => {
 const g = typeof window !== "undefined" ? window : globalThis;   // Node-requirable for the test harness
 const C = [
+ {id:"2026-07-03-eve", title:"Faculty Concert", time:"8:00 pm",
+  venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-03-evening.pdf", pieces:[
+  {c:"Fauré", t:"Piano Quartet No. 1 in C minor, Op. 15", m:"I. Allegro molto moderato · II. Scherzo: Allegro vivo · III. Adagio · IV. Allegro molto",
+   who:[["Emi Ohi Resnick","vn"],["Gijs Kramers","va"],["Jesús Morales","vc"],["Tanya Bannister","pf"]]},
+  {c:"Shaw", t:"Entr'acte", m:"",
+   who:[["Claudia Ajmone-Marsan","vn"],["Nathan Meltzer","vn"],["Emi Ohi Resnick","va"],["Yoanna Prodanova","vc"]]},
+  {brk:1},
+  {c:"Schumann", t:"Märchenerzählungen (Fairy Tales), Op. 132", m:"I. Lebhaft, nicht zu schnell · II. Lebhaft und sehr markiert · III. Ruhiges Tempo, mit zartem Ausdruck · IV. Lebhaft, sehr markiert",
+   who:[["Chad Burrow","cl"],["Xinyuan Wang","va"],["Mark Zang","pf"]]},
+  {c:"Webern", t:"Langsamer Satz", m:"",
+   who:[["YooJin Jang","vn"],["Claudia Ajmone-Marsan","vn"],["Ilinca Forna","va"],["Yoanna Prodanova","vc"]]},
+ ]},
  {id:"2026-07-04-aft", title:"Afternoon Concert", time:"4:30 pm",
   venue:"Kultursaal", poi:"Kultursaal", pdf:"programs/2026-07-04-afternoon.pdf", pieces:[
   {c:"Fauré", t:"Piano Quartet No. 1 in C minor, Op. 15", m:"I. Allegro molto moderato",
@@ -180,6 +192,9 @@ const SHORTS = {
   "Mozart · Mendelssohn | Ave verum corpus · Wirf dein Anliegen auf den Herrn — with Vokalensemble Singmazomm": "Ave verum · Wirf dein Anliegen",
   "Debussy | String Quartet in G minor, Op. 10": "Debussy Quartet",
   "Mendelssohn | String Quintet No. 2 in B-flat major, Op. 87": "Mendelssohn String Quintet",
+  "Shaw | Entr'acte": "Shaw Entr'acte",
+  "Schumann | Märchenerzählungen (Fairy Tales), Op. 132": "Schumann Märchenerzählungen",
+  "Webern | Langsamer Satz": "Webern Langsamer Satz",
   "Austrian folk song, arr. Stephen Buck | In die Berg bin i gern": "In die Berg bin i gern",
   "Kühr | Portraits": "Kühr Portraits",
   "arr. Gijs Kramers | Songs: Sammy · Ozean · Sternenstaub · Sie glaubt an mich · Schwarz-Weiß": "Songs, arr. Kramers",
