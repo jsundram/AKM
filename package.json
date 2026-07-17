@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node archive/parser-test.js",
     "test:ui": "node scripts/ui-test.mjs",
-    "test:rec": "node scripts/recordings-test.mjs"
+    "test:rec": "node scripts/recordings-test.mjs",
+    "build:rec": "node scripts/build-recordings.js"
   },
   "devDependencies": {
     "playwright-core": "^1.48.0"

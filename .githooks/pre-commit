@@ -20,4 +20,11 @@ fi
 if command -v python3 >/dev/null 2>&1; then
   python3 scripts/sw-lint.py || echo "  (sw-lint: bump V in sw.js — not blocking)"
 fi
+
+# Warn (never block) when the shipped recordings.enc.js is stale vs recordings.json — a forgotten
+# rebuild after editing links. Self-skips where it can't check (no recordings.json / no REC_PW), so
+# it only fires on the machine holding the links + password. Run `node scripts/rec-lint.js` for CI.
+if command -v node >/dev/null 2>&1; then
+  node scripts/rec-lint.js || echo "  (rec-lint: recordings.enc.js is stale — not blocking)"
+fi
 exit 0
