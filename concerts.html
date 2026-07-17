@@ -99,16 +99,20 @@
   #reclock .fwd{background:none;border:none;color:var(--faint);font-weight:400;text-decoration:underline;
     text-underline-offset:2px;padding:0}
   #reclock .fwd:hover{color:var(--muted)}
-  /* Solid ink pill — deliberately unlike the outlined mono performer chips (Inter/600, filled, a play
-     glyph) so the recording reads as the piece's one clear action, not another name. Not brass: that's
-     reserved for the kudos clap / own playing. Fills flip in dark mode (the --ink/--paper vars swap). */
+  /* Outlined mono chip in the site's index/performer-chip idiom, so the recording action *belongs* on the
+     card rather than shouting — the old solid-ink pill read as too bold. What keeps it from being mistaken
+     for a performer name is the one filled ink play disc: a small SVG triangle (not the ▶ U+25B6 glyph,
+     which Apple renders as the blue emoji ▶️ — same reason STAR is an SVG), sized to fill the disc so it
+     reads as play at a glance. Hover warms to brass like the other chips. Not brass at rest: that's
+     reserved for the kudos clap / own playing. The disc's ink/paper fills flip in dark mode. */
   a.rec{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
-    font-family:"Inter",sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.01em;
-    color:var(--paper);background:var(--ink);text-decoration:none;border-radius:8px;padding:5px 13px 5px 11px;
-    transition:opacity .16s ease}
-  a.rec:hover{opacity:.82}
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.02em;
+    color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:7px;
+    padding:4px 11px 4px 6px;transition:color .16s ease,border-color .16s ease}
+  a.rec:hover{color:var(--brass-deep);border-color:var(--warm-line)}
   a.rec .tri{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
-    border-radius:50%;background:var(--paper);color:var(--ink);font-size:8px;padding-left:1px}
+    border-radius:50%;background:var(--ink);color:var(--paper);flex:none}
+  a.rec .tri svg{width:13px;height:13px;display:block}
 
   #msg{padding:18px 0 0;color:var(--faint);font-size:12px}
 
@@ -164,7 +168,7 @@ async function decryptRec(pw){                                    // throws on a
 }
 const recLink = (c, p) => {
   const url = REC && REC[recKey(c, p)];
-  return url ? `<a class="rec" href="${esc(url)}" target="_blank" rel="noopener"><span class="tri" aria-hidden="true">▶</span> Recording</a>` : "";
+  return url ? `<a class="rec" href="${esc(url)}" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"><svg viewBox="0 0 12 12"><path fill="currentColor" d="M3.4 2 10.6 6 3.4 10Z"/></svg></span> Recording</a>` : "";
 };
 function renderLock(){
   const bar = $("#reclock");
