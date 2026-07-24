@@ -227,6 +227,8 @@ const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).
 const hm = s => { const h = Math.floor(s/3600), m = Math.round(s%3600/60); return h ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m`; };
 const hrs1 = s => (s/3600).toFixed(1).replace(/\.0$/,'') + 'h';
 const fmt = (d, o) => new Intl.DateTimeFormat('en-US', {timeZone: TZ, ...o}).format(d);
+const mmdd = d => fmt(d, {month:'2-digit', day:'2-digit'}).replace('/', '.');   // axis ticks: too many days now for "Mon, 6/29"
+const TICKW = 34;   // "07.17" at 9.5px mono + breathing room, in viewBox units
 const T = iso => new Date(iso).getTime();
 
 const {totals, daily, sessions, commits, series} = DATA;
@@ -287,13 +289,16 @@ function cumChart(){
       'font-size':9.5, 'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: s/3600+'h'}));
   }
   // midnights (local) — dotted, like the app's sunrise lines
+  let lastX = -1e9;
   days.forEach(d => {
     const m = T(d + 'T00:00:00+02:00');
     if (m <= t0 || m >= t1) return;
     const X = x(m);
     svg.append(sv('line', {x1:X, x2:X, y1:TOP, y2:H-B, stroke:'var(--line)', 'stroke-dasharray':'2 4'}));
+    if (X < lastX + TICKW) return;   // every line, but only a label that clears the last one
+    lastX = X;
     svg.append(Object.assign(sv('text', {x:X+4, y:H-9, fill:'var(--faint)', 'font-size':9.5,
-      'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: fmt(m + 4.32e7, {weekday:'short', month:'numeric', day:'numeric'})}));
+      'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: mmdd(m + 4.32e7)}));
   });
   // commit rug
   commits.forEach(c => {
@@ -396,7 +401,7 @@ function barChart(){
     });
     svg.append(Object.assign(sv('text', {x:cx, y:H-8, 'text-anchor':'middle', fill:'var(--muted)',
       'font-size':10,'font-family':'IBM Plex Mono,ui-monospace,monospace'}),
-      {textContent: fmt(T(d+'T12:00:00Z'),{weekday:'short',month:'numeric',day:'numeric'})}));
+      {textContent: mmdd(T(d+'T12:00:00Z'))}));
   });
   wrap.append(svg);
 }
@@ -469,12 +474,15 @@ function locChart(){
     svg.append(Object.assign(sv('text', {x:L-6, y:y(v)+3, 'text-anchor':'end', fill:'var(--faint)',
       'font-size':9.5,'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: v ? v/1000+'k' : '0'}));
   }
+  let lastX = -1e9;
   days.forEach(d => {
     const m = T(d + 'T00:00:00+02:00');
     if (m <= t0 || m >= t1) return;
     svg.append(sv('line', {x1:x(m), x2:x(m), y1:TOP, y2:H-B, stroke:'var(--line)', 'stroke-dasharray':'2 4'}));
+    if (x(m) < lastX + TICKW) return;
+    lastX = x(m);
     svg.append(Object.assign(sv('text', {x:x(m)+4, y:H-9, fill:'var(--faint)', 'font-size':9.5,
-      'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: fmt(m + 4.32e7, {weekday:'short', month:'numeric', day:'numeric'})}));
+      'font-family':'IBM Plex Mono,ui-monospace,monospace'}), {textContent: mmdd(m + 4.32e7)}));
   });
   let d0 = `M${x(t0)},${y(0)}`;
   commits.forEach(c => { d0 += `H${x(T(c.t))}V${y(c.loc)}`; });
