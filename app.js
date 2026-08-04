@@ -1161,7 +1161,7 @@ async function boot(){
     if(!POST_FEST && nt!==today){ if(sel===today){ sel=nt; render(); } today=nt; }   // advance the view if we were on "today" (frozen once the festival's over)
     const c=load(), age=c.ts?Date.now()-new Date(c.ts).getTime():Infinity;
     if(age>60e3) refresh();
-    checkVer(); });   // reopening is the moment to re-check whether a newer shell shipped
+    checkVer(); requestShellTopUp(); });   // reopening: re-check the shell version AND repair an evicted precache
   setupPTR();
   setupAdd();
   setupWho();
@@ -1177,8 +1177,14 @@ async function boot(){
     const ed=e.target.closest("[data-edit]"); if(ed) openAdd(+ed.dataset.edit);
   });
   refresh();                // stale-while-revalidate
-  if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+    // A registration can exist with no ACTIVE worker for a moment (first install, or the swap
+    // during an update), and the top-up ping is fire-and-forget — retry when a worker takes over.
+    navigator.serviceWorker.addEventListener("controllerchange", requestShellTopUp);
+  }
   checkVer();               // stamp the footer with the installed version + compare to the server
+  requestShellTopUp();      // repair an iOS-evicted precache on any online launch
 }
 // The footer version tag. sw.js does caches.open(V), so the installed cache name *is* akm-vNN — read
 // it back (can't drift from a hardcoded string). Then fetch the *server's* sw.js and pull its V: if the
@@ -1197,13 +1203,44 @@ function paintVer(){   // patch the tag in place (no full re-render); inject it 
   if(cur) cur.outerHTML=h; else if(h) foot.insertAdjacentHTML("beforeend", h);
 }
 async function checkVer(){
-  try{ SWVER=(await caches.keys()).find(k=>/^akm-v/.test(k))||""; }catch{ SWVER=""; }
+  // HIGHEST version among NON-EMPTY akm-v* caches, not the first key: sw.js keeps the old
+  // generation as a net until the new precache is complete, so two caches legitimately coexist —
+  // and caches.keys() is creation order, so find() would report the OLD version as installed and
+  // show a permanent "tap to update" tag on an already-current device. Empty caches are excluded
+  // because ensureShellOnce() opens V before fetching anything: a bumped version exists as an
+  // empty placeholder the moment an install starts, and ranking on names alone would read it as
+  // "installed" and hide the tag on a device still serving the previous release.
+  SWVER="";
+  try{
+    const keys=(await caches.keys()).filter(k=>/^akm-v/.test(k));
+    const sized=await Promise.all(keys.map(async k=>[(await (await caches.open(k)).keys()).length,k]));
+    SWVER=sized.filter(([n])=>n>0)
+      .map(([,k])=>[parseInt(k.slice("akm-v".length),10)||0,k])
+      .sort((a,b)=>a[0]-b[0]).map(([,k])=>k).pop()||"";
+  }catch{ SWVER=""; }
   NEWVER="";
   try{   // ?_= + no-store dodges both the SW cache (query never matches) and the HTTP cache → the live sw.js
     const t=await (await fetch("./sw.js?_="+Date.now(),{cache:"no-store"})).text();
-    NEWVER=(t.match(/akm-v\d+/)||[""])[0];
+    // Read the DECLARATION, not the first akm-v-shaped string anywhere in the file: sw.js's
+    // comments cite version names as examples, so an unanchored /akm-v\d+/ scan can match a
+    // comment and pin a permanent "tap to update" tag that does nothing when tapped. Same
+    // expression as scripts/sw-lint.py; keep the two in agreement.
+    NEWVER=(t.match(/const V\s*=\s*"([^"]*)"/)||["",""])[1];
   }catch{}   // offline: leave NEWVER empty → neutral tag, never a false "behind"
   paintVer();
+}
+
+// Ask the active SW to top up any missing precache entries. iOS can reclaim Cache API contents
+// (storage pressure, ~7 idle days) while leaving the registration in place, and sw.js only
+// precaches on install — i.e. on a V bump. Without this nudge a device whose cache got evicted
+// stays broken offline indefinitely; with it, one online launch repairs it.
+function requestShellTopUp(){
+  if(!("serviceWorker" in navigator) || !navigator.onLine) return;
+  // getRegistration() resolves undefined when there's nothing registered; .ready would just
+  // never settle, leaving a pending promise behind on every foreground.
+  navigator.serviceWorker.getRegistration()
+    .then(reg=>{ if(reg && reg.active) reg.active.postMessage("ensure-shell"); })
+    .catch(()=>{});
 }
 async function forceUpdate(){   // the hammer: drop every cache, reload → SW reinstalls the latest shell from network
   try{ await Promise.all((await caches.keys()).map(k=>caches.delete(k))); }catch{}
